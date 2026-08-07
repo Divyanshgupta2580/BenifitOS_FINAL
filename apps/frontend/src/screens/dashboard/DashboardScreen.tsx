@@ -20,6 +20,8 @@ interface Props {
   onNavigateToVault?: () => void;
   onNavigateToApplications?: () => void;
   onNavigateToAi?: () => void;
+  onNavigateToGovernmentServices?: () => void;
+  onNavigateToAiCopilot?: () => void;
 }
 
 export const DashboardScreen: React.FC<Props> = ({
@@ -29,6 +31,8 @@ export const DashboardScreen: React.FC<Props> = ({
   onNavigateToVault,
   onNavigateToApplications,
   onNavigateToAi,
+  onNavigateToGovernmentServices,
+  onNavigateToAiCopilot,
 }) => {
   const { user, logout } = useAuthStore();
   const { profile, isLoading: isProfileLoading, refetch: refetchProfile } = useCitizenProfile();
@@ -136,9 +140,9 @@ export const DashboardScreen: React.FC<Props> = ({
 
           {/* 4. Quick Government Action Buttons */}
           <View style={styles.quickActionsGrid}>
-            <TouchableOpacity style={styles.actionBtn} onPress={onNavigateToProfile} accessibilityLabel="Citizen Profile">
-              <Text style={styles.actionIcon}>👤</Text>
-              <Text style={styles.actionText}>My Profile</Text>
+            <TouchableOpacity style={styles.actionBtn} onPress={onNavigateToGovernmentServices} accessibilityLabel="Government Hub">
+              <Text style={styles.actionIcon}>🏛️</Text>
+              <Text style={styles.actionText}>Gov Hub</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.actionBtn} onPress={onNavigateToVault} accessibilityLabel="Document Vault">
@@ -172,16 +176,16 @@ export const DashboardScreen: React.FC<Props> = ({
             </Card>
           </View>
 
-          {/* 6. AI Assistant Quick Access Banner */}
-          <TouchableOpacity activeOpacity={0.85} onPress={onNavigateToAi} accessibilityLabel="Open AI Welfare Assistant">
+          {/* 6. AI Citizen Copilot Quick Access Banner */}
+          <TouchableOpacity activeOpacity={0.85} onPress={onNavigateToAiCopilot || onNavigateToAi} accessibilityLabel="Open AI Citizen Copilot">
             <Card style={styles.aiBanner}>
               <View style={styles.aiContent}>
-                <Text style={styles.aiTitle}>AI Welfare Assistant</Text>
+                <Text style={styles.aiTitle}>AI Citizen Copilot</Text>
                 <Text style={styles.aiDesc}>
-                  Chat or speak in your regional language to find eligible government welfare programs.
+                  Your intelligent welfare journey copilot. Context-aware help in English & Hindi.
                 </Text>
               </View>
-              <Badge label="24/7 ASSISTANT" variant="warning" />
+              <Badge label="COPILOT v5.3" variant="warning" />
             </Card>
           </TouchableOpacity>
 

@@ -30,6 +30,8 @@ import { ApplicationWizardScreen } from '../screens/applications/ApplicationWiza
 import { ApplicationTimelineScreen } from '../screens/applications/ApplicationTimelineScreen';
 import { ApplicationDetailScreen } from '../screens/applications/ApplicationDetailScreen';
 import { AiAssistantScreen } from '../screens/ai/AiAssistantScreen';
+import { AiCopilotScreen } from '../screens/ai/AiCopilotScreen';
+import { GovernmentServicesScreen } from '../screens/integrations/GovernmentServicesScreen';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 type AuthStep = 'LANGUAGE' | 'ONBOARDING' | 'LOGIN' | 'REGISTER' | 'RESET' | 'MFA';
@@ -55,7 +57,9 @@ type AppStep =
   | 'APPLICATION_WIZARD'
   | 'APPLICATION_TIMELINE'
   | 'APPLICATION_DETAIL'
-  | 'AI_ASSISTANT';
+  | 'AI_ASSISTANT'
+  | 'GOVERNMENT_SERVICES'
+  | 'AI_COPILOT';
 
 export const AppNavigator: React.FC = () => {
   const { isAuthenticated, isLoading, loadAuthFromStorage } = useAuthStore();
@@ -241,6 +245,18 @@ export const AppNavigator: React.FC = () => {
         );
       case 'AI_ASSISTANT':
         return <AiAssistantScreen onBack={() => setAppStep('DASHBOARD')} />;
+      case 'GOVERNMENT_SERVICES':
+        return <GovernmentServicesScreen onBack={() => setAppStep('DASHBOARD')} />;
+      case 'AI_COPILOT':
+        return (
+          <AiCopilotScreen
+            onBack={() => setAppStep('DASHBOARD')}
+            onNavigateToSchemes={() => setAppStep('SCHEMES_CATALOG')}
+            onNavigateToVault={() => setAppStep('DOCUMENT_VAULT')}
+            onNavigateToApplications={() => setAppStep('APPLICATIONS_LIST')}
+            onNavigateToGovernmentServices={() => setAppStep('GOVERNMENT_SERVICES')}
+          />
+        );
       case 'DASHBOARD':
       default:
         return (
@@ -250,7 +266,9 @@ export const AppNavigator: React.FC = () => {
             onNavigateToRecommendations={() => setAppStep('RECOMMENDATIONS_DASHBOARD')}
             onNavigateToVault={() => setAppStep('DOCUMENT_VAULT')}
             onNavigateToApplications={() => setAppStep('APPLICATIONS_LIST')}
-            onNavigateToAi={() => setAppStep('AI_ASSISTANT')}
+            onNavigateToAi={() => setAppStep('AI_COPILOT')}
+            onNavigateToGovernmentServices={() => setAppStep('GOVERNMENT_SERVICES')}
+            onNavigateToAiCopilot={() => setAppStep('AI_COPILOT')}
           />
         );
     }
