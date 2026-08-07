@@ -19,6 +19,7 @@ interface Props {
   onNavigateToRecommendations?: () => void;
   onNavigateToVault?: () => void;
   onNavigateToApplications?: () => void;
+  onNavigateToAi?: () => void;
 }
 
 export const DashboardScreen: React.FC<Props> = ({
@@ -27,6 +28,7 @@ export const DashboardScreen: React.FC<Props> = ({
   onNavigateToRecommendations,
   onNavigateToVault,
   onNavigateToApplications,
+  onNavigateToAi,
 }) => {
   const { user, logout } = useAuthStore();
   const { profile, isLoading: isProfileLoading, refetch: refetchProfile } = useCitizenProfile();
@@ -171,15 +173,17 @@ export const DashboardScreen: React.FC<Props> = ({
           </View>
 
           {/* 6. AI Assistant Quick Access Banner */}
-          <Card style={styles.aiBanner}>
-            <View style={styles.aiContent}>
-              <Text style={styles.aiTitle}>AI Welfare Assistant</Text>
-              <Text style={styles.aiDesc}>
-                Chat or speak in your regional language to find eligible government welfare programs.
-              </Text>
-            </View>
-            <Badge label="24/7 ASSISTANT" variant="warning" />
-          </Card>
+          <TouchableOpacity activeOpacity={0.85} onPress={onNavigateToAi} accessibilityLabel="Open AI Welfare Assistant">
+            <Card style={styles.aiBanner}>
+              <View style={styles.aiContent}>
+                <Text style={styles.aiTitle}>AI Welfare Assistant</Text>
+                <Text style={styles.aiDesc}>
+                  Chat or speak in your regional language to find eligible government welfare programs.
+                </Text>
+              </View>
+              <Badge label="24/7 ASSISTANT" variant="warning" />
+            </Card>
+          </TouchableOpacity>
 
           {/* 7. Notifications Preview */}
           <Card style={styles.card}>

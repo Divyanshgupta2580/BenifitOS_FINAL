@@ -29,6 +29,7 @@ import { ApplicationsListScreen } from '../screens/applications/ApplicationsList
 import { ApplicationWizardScreen } from '../screens/applications/ApplicationWizardScreen';
 import { ApplicationTimelineScreen } from '../screens/applications/ApplicationTimelineScreen';
 import { ApplicationDetailScreen } from '../screens/applications/ApplicationDetailScreen';
+import { AiAssistantScreen } from '../screens/ai/AiAssistantScreen';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 type AuthStep = 'LANGUAGE' | 'ONBOARDING' | 'LOGIN' | 'REGISTER' | 'RESET' | 'MFA';
@@ -53,7 +54,8 @@ type AppStep =
   | 'APPLICATIONS_LIST'
   | 'APPLICATION_WIZARD'
   | 'APPLICATION_TIMELINE'
-  | 'APPLICATION_DETAIL';
+  | 'APPLICATION_DETAIL'
+  | 'AI_ASSISTANT';
 
 export const AppNavigator: React.FC = () => {
   const { isAuthenticated, isLoading, loadAuthFromStorage } = useAuthStore();
@@ -237,6 +239,8 @@ export const AppNavigator: React.FC = () => {
             onBack={() => setAppStep('APPLICATION_TIMELINE')}
           />
         );
+      case 'AI_ASSISTANT':
+        return <AiAssistantScreen onBack={() => setAppStep('DASHBOARD')} />;
       case 'DASHBOARD':
       default:
         return (
@@ -246,6 +250,7 @@ export const AppNavigator: React.FC = () => {
             onNavigateToRecommendations={() => setAppStep('RECOMMENDATIONS_DASHBOARD')}
             onNavigateToVault={() => setAppStep('DOCUMENT_VAULT')}
             onNavigateToApplications={() => setAppStep('APPLICATIONS_LIST')}
+            onNavigateToAi={() => setAppStep('AI_ASSISTANT')}
           />
         );
     }
