@@ -1,0 +1,14 @@
+{
+  "name": "benefit-os",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter backend build",
+    "start": "pnpm --filter backend start",
+    "start:dev": "pnpm --filter backend start:dev",
+    "lint": "pnpm --filter backend lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
