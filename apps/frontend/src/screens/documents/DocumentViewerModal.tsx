@@ -1,6 +1,4 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { theme } from '../../theme';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -22,71 +20,80 @@ export const DocumentViewerModal: React.FC<Props> = ({ documentId, onBack, onRun
 
   if (isError || !doc) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Could not load document preview.</Text>
-        <Button title="Retry" onPress={() => refetch()} style={styles.retryBtn} />
-        <Button title="Back" onPress={onBack} variant="outline" style={styles.backBtn} />
-      </View>
+      <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6 text-center">
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 max-w-md w-full shadow-xs">
+          <p className="text-sm font-semibold text-rose-600 mb-4">Could not load document preview from server.</p>
+          <Button title="Retry" onClick={() => refetch()} className="w-full mb-2 py-2.5" />
+          <Button title="Back" variant="outline" onClick={onBack} className="w-full py-2.5" />
+        </div>
+      </main>
     );
   }
 
   const handleDownload = () => {
-    Alert.alert('Secure Download', `Initiating encrypted download for ${doc.fileName}...`);
+    if (doc.storagePath && doc.storagePath.startsWith('http')) {
+      window.open(doc.storagePath, '_blank');
+    } else {
+      alert(`Initiating download for ${doc.fileName}...`);
+    }
   };
 
+  const isImage = doc.mimeType?.startsWith('image/') || doc.fileName?.match(/\.(jpeg|jpg|png)$/i);
+  const isPdf = doc.mimeType === 'application/pdf' || doc.fileName?.endsWith('.pdf');
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity onPress={onBack} style={styles.backLink}>
-        <Text style={styles.backText}>← Close Viewer</Text>
-      </TouchableOpacity>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+            ← Close Viewer
+          </button>
+          <span className="text-xs font-mono font-bold text-slate-500">{doc.fileName}</span>
+        </div>
+      </header>
 
-      {/* Main Document Details */}
-      <Card style={styles.mainCard}>
-        <View style={styles.badgeRow}>
-          <Badge label={doc.documentType} variant="primary" />
-          <Badge label={doc.verificationStatus} variant={doc.verificationStatus === 'VERIFIED' ? 'success' : 'warning'} />
-        </View>
+      <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
+        <Card>
+          <div className="flex justify-between items-center mb-4">
+            <Badge label={doc.documentType} variant="primary" />
+            <Badge label={doc.verificationStatus} variant={doc.verificationStatus === 'VERIFIED' ? 'success' : 'warning'} />
+          </div>
 
-        <Text style={styles.fileName}>{doc.fileName}</Text>
-        <Text style={styles.mimeText}>{doc.mimeType} • {(doc.fileSize / 1024).toFixed(1)} KB</Text>
+          <h2 className="text-xl font-bold text-slate-900 mb-1">{doc.fileName}</h2>
+          <p className="text-xs text-slate-500 mb-6">
+            {doc.mimeType} • {(doc.fileSize / 1024).toFixed(1)} KB • Path: {doc.storagePath}
+          </p>
 
-        <View style={styles.previewBox}>
-          <Text style={styles.previewPlaceholder}>📄 Secure Presigned Document Preview</Text>
-          <Text style={styles.pathText}>Storage Reference: {doc.storagePath}</Text>
-        </View>
+          {/* Web Preview Container */}
+          <div className="bg-slate-100 rounded-2xl p-4 border border-slate-200 min-h-[320px] flex items-center justify-center mb-6 overflow-hidden">
+            {isImage && doc.storagePath?.startsWith('http') ? (
+              <img src={doc.storagePath} alt={doc.fileName} className="max-h-[500px] object-contain rounded-lg" />
+            ) : isPdf && doc.storagePath?.startsWith('http') ? (
+              <iframe src={doc.storagePath} title={doc.fileName} className="w-full h-[500px] rounded-lg border-0" />
+            ) : (
+              <div className="text-center p-8">
+                <span className="text-4xl mb-3 block">📄</span>
+                <p className="text-sm font-bold text-slate-800">Secure Web Presigned Preview Ready</p>
+                <p className="text-xs text-slate-500 mt-1">Ref: {doc.storagePath}</p>
+              </div>
+            )}
+          </div>
 
-        <Button title="Download Document File" onPress={handleDownload} variant="secondary" style={styles.downloadBtn} />
-        {onRunOcr && (
-          <Button
-            title="🔍 Run AI Vision OCR Extraction"
-            onPress={() => onRunOcr(doc.id)}
-            variant="outline"
-            style={{ marginTop: theme.spacing.xs }}
-          />
-        )}
-      </Card>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button title="Download File" onClick={handleDownload} variant="secondary" className="flex-1 py-2.5 font-bold" />
+            {onRunOcr && (
+              <Button
+                title="🔍 Run AI Vision OCR Extraction"
+                onClick={() => onRunOcr(doc.id)}
+                variant="outline"
+                className="flex-1 py-2.5 font-bold"
+              />
+            )}
+          </div>
+        </Card>
 
-      <Button title="Close Viewer" onPress={onBack} variant="outline" style={styles.closeBtn} />
-    </ScrollView>
+        <Button title="Close Viewer" variant="outline" onClick={onBack} className="w-full py-2.5" />
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.lg, paddingTop: 50 },
-  backLink: { marginBottom: theme.spacing.md },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  errorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.spacing.lg },
-  errorText: { fontSize: theme.typography.sizes.md, color: theme.colors.danger, marginBottom: theme.spacing.md },
-  retryBtn: { marginBottom: theme.spacing.sm },
-  backBtn: { marginTop: theme.spacing.xs },
-  mainCard: { marginBottom: theme.spacing.md },
-  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.xs },
-  fileName: { fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginVertical: 4 },
-  mimeText: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, marginBottom: theme.spacing.md },
-  previewBox: { backgroundColor: theme.colors.background, padding: theme.spacing.lg, borderRadius: theme.spacing.borderRadius.md, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border, marginBottom: theme.spacing.md },
-  previewPlaceholder: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: 4 },
-  pathText: { fontSize: 10, color: theme.colors.textMuted },
-  downloadBtn: { marginTop: theme.spacing.xs },
-  closeBtn: { marginTop: theme.spacing.xs, marginBottom: 40 },
-});

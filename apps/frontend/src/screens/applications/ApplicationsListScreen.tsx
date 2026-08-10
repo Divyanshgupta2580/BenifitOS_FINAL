@@ -1,6 +1,4 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
-import { theme } from '../../theme';
+import React, { useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -23,13 +21,6 @@ export const ApplicationsListScreen: React.FC<Props> = ({
 }) => {
   const { applications, isLoading, isError, refetch } = useApplications();
   const [filter, setFilter] = useState<'ALL' | 'DRAFT' | 'ACTIVE' | 'APPROVED'>('ALL');
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-  }, [refetch]);
 
   const filteredApps = applications.filter((app) => {
     if (filter === 'DRAFT') return app.status === 'DRAFT';
@@ -52,139 +43,120 @@ export const ApplicationsListScreen: React.FC<Props> = ({
     }
   };
 
-  const renderItem = ({ item }: { item: ApplicationItem }) => {
-    const title = item.scheme?.title || `Application #${item.applicationNumber || item.id.slice(0, 8)}`;
-    const category = item.scheme?.category || 'WELFARE';
-
-    return (
-      <Card style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.appNumber}>{item.applicationNumber || `APP-${item.id.slice(0, 6)}`}</Text>
-          <Badge label={item.status} variant={getStatusVariant(item.status)} />
-        </View>
-
-        <TouchableOpacity activeOpacity={0.8} onPress={() => (onSelectApplicationTimeline ? onSelectApplicationTimeline(item.id) : onSelectApplication(item.id))}>
-          <Text style={styles.schemeTitle}>{title}</Text>
-          <View style={styles.metaRow}>
-            <Badge label={category} variant="primary" />
-            <Text style={styles.dateText}>Updated {new Date(item.updatedAt).toLocaleDateString()}</Text>
-          </View>
-        </TouchableOpacity>
-
-        <View style={styles.cardFooter}>
-          <Text style={styles.docsCount}>{item.attachedDocumentIds?.length || 0} Vault Documents Linked</Text>
-          <Button title="Track Timeline →" onPress={() => (onSelectApplicationTimeline ? onSelectApplicationTimeline(item.id) : onSelectApplication(item.id))} size="sm" variant="outline" />
-        </View>
-      </Card>
-    );
-  };
-
   return (
-    <View style={styles.container}>
-      <View style={styles.topHeader}>
-        {onBack && (
-          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {onBack && (
+              <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+                ← Back
+              </button>
+            )}
+            <h1 className="text-lg font-bold text-blue-900">Applications Portal</h1>
+          </div>
+          <Button title="+ Apply for Scheme" onClick={onStartNewApplication} size="sm" variant="secondary" />
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
+        {/* Header & Filter Bar */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-base font-bold text-blue-900">Submitted Welfare Benefit Applications</h2>
+            <p className="text-xs text-slate-500">Track real-time workflow status and lifecycle timeline.</p>
+          </div>
+
+          <div className="flex gap-2">
+            {(['ALL', 'DRAFT', 'ACTIVE', 'APPROVED'] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setFilter(tab)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
+                  filter === tab
+                    ? 'bg-blue-900 border-blue-900 text-white shadow-xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                {tab === 'ALL'
+                  ? `All (${applications.length})`
+                  : tab === 'DRAFT'
+                  ? 'Drafts'
+                  : tab === 'ACTIVE'
+                  ? 'Under Review'
+                  : 'Approved'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Applications List Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Skeleton height={150} className="rounded-xl" />
+            <Skeleton height={150} className="rounded-xl" />
+          </div>
+        ) : isError ? (
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center">
+            <p className="text-sm text-rose-600 font-semibold mb-4">Unable to load application records.</p>
+            <button
+              onClick={() => refetch()}
+              className="px-4 py-2 bg-blue-900 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
+            >
+              Retry Connection
+            </button>
+          </div>
+        ) : filteredApps.length === 0 ? (
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center flex flex-col items-center">
+            <span className="text-3xl mb-2">📋</span>
+            <p className="text-sm text-slate-500 italic mb-4">No welfare applications match the selected filter.</p>
+            <Button title="Start First Application" onClick={onStartNewApplication} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredApps.map((item: ApplicationItem) => {
+              const title = item.scheme?.title || `Application #${item.applicationNumber || item.id.slice(0, 8)}`;
+              const category = item.scheme?.category || 'WELFARE';
+
+              return (
+                <Card key={item.id} className="flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-xs font-mono font-bold text-amber-700">
+                        {item.applicationNumber || `APP-${item.id.slice(0, 6)}`}
+                      </span>
+                      <Badge label={item.status} variant={getStatusVariant(item.status)} />
+                    </div>
+
+                    <h3
+                      onClick={() => (onSelectApplicationTimeline ? onSelectApplicationTimeline(item.id) : onSelectApplication(item.id))}
+                      className="text-base font-bold text-slate-900 mb-2 hover:text-blue-900 cursor-pointer"
+                    >
+                      {title}
+                    </h3>
+
+                    <div className="flex justify-between items-center mb-4">
+                      <Badge label={category} variant="primary" />
+                      <span className="text-[11px] text-slate-500">Updated {new Date(item.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                    <span className="text-slate-500 font-medium">{item.attachedDocumentIds?.length || 0} Vault Docs Linked</span>
+                    <Button
+                      title="Track Timeline →"
+                      onClick={() => (onSelectApplicationTimeline ? onSelectApplicationTimeline(item.id) : onSelectApplication(item.id))}
+                      size="sm"
+                      variant="outline"
+                    />
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         )}
-        <View style={styles.titleRow}>
-          <Text style={styles.screenTitle}>My Applications</Text>
-          <Button title="+ Apply New" onPress={onStartNewApplication} size="sm" variant="secondary" />
-        </View>
-        <Text style={styles.screenSubtitle}>Track status of submitted welfare schemes and continue saved drafts.</Text>
-      </View>
-
-      {/* Filter Tabs */}
-      <View style={styles.filterRow}>
-        <TouchableOpacity
-          style={[styles.filterTab, filter === 'ALL' && styles.filterTabActive]}
-          onPress={() => setFilter('ALL')}
-        >
-          <Text style={[styles.filterText, filter === 'ALL' && styles.filterTextActive]}>All ({applications.length})</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.filterTab, filter === 'DRAFT' && styles.filterTabActive]}
-          onPress={() => setFilter('DRAFT')}
-        >
-          <Text style={[styles.filterText, filter === 'DRAFT' && styles.filterTextActive]}>Drafts</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.filterTab, filter === 'ACTIVE' && styles.filterTabActive]}
-          onPress={() => setFilter('ACTIVE')}
-        >
-          <Text style={[styles.filterText, filter === 'ACTIVE' && styles.filterTextActive]}>Under Review</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.filterTab, filter === 'APPROVED' && styles.filterTabActive]}
-          onPress={() => setFilter('APPROVED')}
-        >
-          <Text style={[styles.filterText, filter === 'APPROVED' && styles.filterTextActive]}>Approved</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Content */}
-      {isLoading ? (
-        <View style={styles.loadingWrapper}>
-          <Skeleton height={120} borderRadius={12} style={styles.skel} />
-          <Skeleton height={120} borderRadius={12} style={styles.skel} />
-          <Skeleton height={120} borderRadius={12} style={styles.skel} />
-        </View>
-      ) : isError ? (
-        <View style={styles.errorWrapper}>
-          <Text style={styles.errorText}>Unable to load application records.</Text>
-          <Button title="Retry" onPress={() => refetch()} style={styles.retryBtn} />
-        </View>
-      ) : filteredApps.length === 0 ? (
-        <View style={styles.emptyWrapper}>
-          <Text style={styles.emptyText}>No welfare applications match the selected filter.</Text>
-          <Button title="Start First Application" onPress={onStartNewApplication} style={styles.applyFirstBtn} />
-        </View>
-      ) : (
-        <FlatList
-          data={filteredApps}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-          }
-        />
-      )}
-    </View>
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  topHeader: { paddingHorizontal: theme.spacing.lg, paddingTop: 50, paddingBottom: theme.spacing.xs },
-  backBtn: { marginBottom: 6 },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  screenTitle: { fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary },
-  screenSubtitle: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, marginTop: 2, marginBottom: theme.spacing.xs },
-  filterRow: { flexDirection: 'row', paddingHorizontal: theme.spacing.lg, marginBottom: theme.spacing.sm },
-  filterTab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: theme.spacing.borderRadius.full, backgroundColor: theme.colors.surface, marginRight: theme.spacing.xs, borderWidth: 1, borderColor: theme.colors.border },
-  filterTabActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  filterText: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, fontWeight: theme.typography.weights.medium },
-  filterTextActive: { color: theme.colors.surface, fontWeight: theme.typography.weights.bold },
-  listContent: { paddingHorizontal: theme.spacing.lg, paddingBottom: 40 },
-  card: { marginBottom: theme.spacing.md },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  appNumber: { fontSize: theme.typography.sizes.xs, fontWeight: theme.typography.weights.bold, color: theme.colors.saffron },
-  schemeTitle: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginVertical: 4 },
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.sm },
-  dateText: { fontSize: 10, color: theme.colors.textMuted },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: theme.spacing.xs, borderTopWidth: 1, borderTopColor: theme.colors.divider },
-  docsCount: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary },
-  loadingWrapper: { paddingHorizontal: theme.spacing.lg },
-  skel: { marginBottom: theme.spacing.md },
-  errorWrapper: { padding: theme.spacing.xl, alignItems: 'center' },
-  errorText: { fontSize: theme.typography.sizes.md, color: theme.colors.danger, marginBottom: theme.spacing.md },
-  retryBtn: { marginTop: theme.spacing.xs },
-  emptyWrapper: { padding: theme.spacing.xl, alignItems: 'center' },
-  emptyText: { fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted, fontStyle: 'italic', marginBottom: theme.spacing.md },
-  applyFirstBtn: { marginTop: theme.spacing.xs },
-});

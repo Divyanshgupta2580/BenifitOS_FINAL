@@ -1,40 +1,30 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { theme } from '../../theme';
 
 interface BadgeProps {
   label: string;
   variant?: 'primary' | 'success' | 'warning' | 'danger';
+  className?: string;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary' }) => {
-  const getColors = () => {
+export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary', className = '' }) => {
+  const getBadgeStyle = () => {
     switch (variant) {
-      case 'success': return { bg: theme.colors.successLight, text: theme.colors.success };
-      case 'warning': return { bg: theme.colors.warningLight, text: theme.colors.saffron };
-      case 'danger': return { bg: theme.colors.dangerLight, text: theme.colors.danger };
-      default: return { bg: theme.colors.background, text: theme.colors.primary };
+      case 'success':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'warning':
+        return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'danger':
+        return 'bg-rose-100 text-rose-800 border-rose-200';
+      default:
+        return 'bg-blue-100 text-blue-900 border-blue-200';
     }
   };
 
-  const { bg, text } = getColors();
-
   return (
-    <View style={[styles.badge, { backgroundColor: bg }]}>
-      <Text style={[styles.text, { color: text }]}>{label}</Text>
-    </View>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getBadgeStyle()} ${className}`}
+    >
+      {label}
+    </span>
   );
 };
-
-const styles = StyleSheet.create({
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: theme.spacing.borderRadius.full,
-    alignSelf: 'flex-start',
-  },
-  text: {
-    fontSize: theme.typography.sizes.xs,
-    fontWeight: theme.typography.weights.semibold,
-  },
-});

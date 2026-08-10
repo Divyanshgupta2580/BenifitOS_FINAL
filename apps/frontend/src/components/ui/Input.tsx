@@ -1,52 +1,46 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
-import { theme } from '../../theme';
 
-interface InputProps extends TextInputProps {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  className?: string;
+  onChangeText?: (text: string) => void;
 }
 
-export const Input: React.FC<InputProps> = ({ label, error, style, ...props }) => {
+export const Input: React.FC<InputProps> = ({
+  label,
+  error,
+  className = '',
+  onChangeText,
+  onChange,
+  value,
+  id,
+  ...props
+}) => {
+  const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onChange) onChange(e);
+    if (onChangeText) onChangeText(e.target.value);
+  };
+
   return (
-    <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
-      <TextInput
-        placeholderTextColor={theme.colors.textMuted}
-        style={[styles.input, error && styles.inputError, style]}
+    <div className="mb-4 flex flex-col">
+      {label && (
+        <label htmlFor={inputId} className="block text-xs font-semibold text-slate-700 mb-1.5">
+          {label}
+        </label>
+      )}
+      <input
+        id={inputId}
+        value={value}
+        onChange={handleChange}
+        className={`w-full bg-white border ${
+          error ? 'border-rose-500 focus:ring-rose-200' : 'border-slate-300 focus:border-blue-700 focus:ring-blue-100'
+        } rounded-lg px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 transition-colors ${className}`}
         {...props}
       />
-      {error && <Text style={styles.errorText}>{error}</Text>}
-    </View>
+      {error && <span className="mt-1 text-xs font-medium text-rose-600">{error}</span>}
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: theme.spacing.md,
-  },
-  label: {
-    fontSize: theme.typography.sizes.sm,
-    fontWeight: theme.typography.weights.medium,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.xs,
-  },
-  input: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.spacing.borderRadius.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: 12,
-    fontSize: theme.typography.sizes.md,
-    color: theme.colors.textPrimary,
-  },
-  inputError: {
-    borderColor: theme.colors.danger,
-  },
-  errorText: {
-    fontSize: theme.typography.sizes.xs,
-    color: theme.colors.danger,
-    marginTop: 4,
-  },
-});

@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { IWelfareSchemeRepository, ISchemeRecommendationRepository } from '../../../domain/welfare/welfare-repository.interface';
+import { Prisma } from '@prisma/client';
 import { WelfareSchemeEntity, SchemeCategory, DocumentType } from '../../../domain/welfare/scheme.entity';
+import { EligibilityRule } from '../../../domain/welfare/scheme.entity';
 import { SchemeRecommendationEntity } from '../../../domain/welfare/recommendation.entity';
 
 @Injectable()
 export class WelfareSchemeRepositoryImpl implements IWelfareSchemeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapToEntity(data: any): WelfareSchemeEntity {
+  private mapToEntity(data: Prisma.WelfareSchemeGetPayload<{ include: { eligibilityRules: true; requiredDocuments: true } }>): WelfareSchemeEntity {
     return new WelfareSchemeEntity({
       id: data.id,
       code: data.code,
@@ -21,22 +23,22 @@ export class WelfareSchemeRepositoryImpl implements IWelfareSchemeRepository {
       financialBenefit: data.financialBenefit,
       isActive: data.isActive,
       applicationDeadline: data.applicationDeadline,
-      eligibilityRules: data.eligibilityRules ? data.eligibilityRules.map((r: any) => ({
+      eligibilityRules: data.eligibilityRules ? data.eligibilityRules.map((r: Prisma.EligibilityCriteriaGetPayload<{}>) => ({
         id: r.id,
         attributeKey: r.attributeKey,
-        operator: r.operator as any,
+        operator: r.operator as EligibilityRule['operator'],
         targetValue: r.targetValue,
         isRequired: r.isRequired,
         description: r.description,
       })) : [],
-      requiredDocuments: data.requiredDocuments ? data.requiredDocuments.map((d: any) => d.documentType as DocumentType) : [],
+      requiredDocuments: data.requiredDocuments ? data.requiredDocuments.map((d: Prisma.RequiredDocumentGetPayload<{}>) => d.documentType as DocumentType) : [],
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });
   }
 
   async findById(id: string): Promise<WelfareSchemeEntity | null> {
-    const record = await this.prisma.welfareScheme.findUnique({
+    const record = await this.prisma.client.welfareScheme.findUnique({
       where: { id },
       include: { eligibilityRules: true, requiredDocuments: true },
     });
@@ -44,7 +46,7 @@ export class WelfareSchemeRepositoryImpl implements IWelfareSchemeRepository {
   }
 
   async findByCode(code: string): Promise<WelfareSchemeEntity | null> {
-    const record = await this.prisma.welfareScheme.findUnique({
+    const record = await this.prisma.client.welfareScheme.findUnique({
       where: { code },
       include: { eligibilityRules: true, requiredDocuments: true },
     });
@@ -52,19 +54,19 @@ export class WelfareSchemeRepositoryImpl implements IWelfareSchemeRepository {
   }
 
   async findAllActive(category?: SchemeCategory, state?: string): Promise<WelfareSchemeEntity[]> {
-    const where: any = { isActive: true };
+    const where: Prisma.WelfareSchemeWhereInput = { isActive: true };
     if (category) where.category = category;
     if (state) where.OR = [{ state }, { isCentralScheme: true }];
 
-    const records = await this.prisma.welfareScheme.findMany({
+    const records = await this.prisma.client.welfareScheme.findMany({
       where,
       include: { eligibilityRules: true, requiredDocuments: true },
     });
-    return records.map((r) => this.mapToEntity(r));
+    return records.map((r: Prisma.WelfareSchemeGetPayload<{ include: { eligibilityRules: true; requiredDocuments: true } }>) => this.mapToEntity(r));
   }
 
   async save(scheme: WelfareSchemeEntity): Promise<WelfareSchemeEntity> {
-    const record = await this.prisma.welfareScheme.create({
+    const record = await this.prisma.client.welfareScheme.create({
       data: {
         id: scheme.id,
         code: scheme.code,
@@ -83,7 +85,7 @@ export class WelfareSchemeRepositoryImpl implements IWelfareSchemeRepository {
   }
 
   async update(scheme: WelfareSchemeEntity): Promise<WelfareSchemeEntity> {
-    const record = await this.prisma.welfareScheme.update({
+    const record = await this.prisma.client.welfareScheme.update({
       where: { id: scheme.id },
       data: {
         title: scheme.title,
@@ -103,7 +105,7 @@ export class WelfareSchemeRepositoryImpl implements IWelfareSchemeRepository {
 export class SchemeRecommendationRepositoryImpl implements ISchemeRecommendationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapToEntity(data: any): SchemeRecommendationEntity {
+  private mapToEntity(data: Prisma.SchemeRecommendationGetPayload<{}>): SchemeRecommendationEntity {
     return new SchemeRecommendationEntity({
       id: data.id,
       citizenProfileId: data.citizenProfileId,
@@ -119,14 +121,14 @@ export class SchemeRecommendationRepositoryImpl implements ISchemeRecommendation
   }
 
   async findByCitizenId(citizenProfileId: string): Promise<SchemeRecommendationEntity[]> {
-    const records = await this.prisma.schemeRecommendation.findMany({
+    const records = await this.prisma.client.schemeRecommendation.findMany({
       where: { citizenProfileId },
     });
-    return records.map((r) => this.mapToEntity(r));
+    return records.map((r: Prisma.SchemeRecommendationGetPayload<{}>) => this.mapToEntity(r));
   }
 
   async findByCitizenAndScheme(citizenProfileId: string, schemeId: string): Promise<SchemeRecommendationEntity | null> {
-    const record = await this.prisma.schemeRecommendation.findUnique({
+    const record = await this.prisma.client.schemeRecommendation.findUnique({
       where: { citizenProfileId_schemeId: { citizenProfileId, schemeId } },
     });
     return record ? this.mapToEntity(record) : null;
@@ -134,7 +136,7 @@ export class SchemeRecommendationRepositoryImpl implements ISchemeRecommendation
 
   async saveMany(recommendations: SchemeRecommendationEntity[]): Promise<void> {
     for (const rec of recommendations) {
-      await this.prisma.schemeRecommendation.upsert({
+      await this.prisma.client.schemeRecommendation.upsert({
         where: { citizenProfileId_schemeId: { citizenProfileId: rec.citizenProfileId, schemeId: rec.schemeId } },
         create: {
           id: rec.id,
@@ -160,6 +162,6 @@ export class SchemeRecommendationRepositoryImpl implements ISchemeRecommendation
   }
 
   async deleteForCitizen(citizenProfileId: string): Promise<void> {
-    await this.prisma.schemeRecommendation.deleteMany({ where: { citizenProfileId } });
+    await this.prisma.client.schemeRecommendation.deleteMany({ where: { citizenProfileId } });
   }
 }

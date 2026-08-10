@@ -1,9 +1,12 @@
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, RefreshTokenDto } from './dto/auth.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
-    register(dto: RegisterDto): Promise<{
+    private setRefreshCookie;
+    private clearRefreshCookie;
+    register(dto: RegisterDto, res: Response): Promise<{
         message: string;
         user: {
             id: string;
@@ -12,10 +15,9 @@ export declare class AuthController {
         };
         tokens: {
             accessToken: string;
-            refreshToken: string;
         };
     }>;
-    login(dto: LoginDto): Promise<{
+    login(dto: LoginDto, res: Response): Promise<{
         message: string;
         user: {
             id: string;
@@ -24,17 +26,15 @@ export declare class AuthController {
         };
         tokens: {
             accessToken: string;
-            refreshToken: string;
         };
     }>;
-    refresh(dto: RefreshTokenDto): Promise<{
+    refresh(req: Request, dto: Partial<RefreshTokenDto>, res: Response): Promise<{
         message: string;
         tokens: {
             accessToken: string;
-            refreshToken: string;
         };
     }>;
-    logout(dto: RefreshTokenDto): Promise<{
+    logout(req: Request, dto: Partial<RefreshTokenDto>, res: Response): Promise<{
         message: string;
     }>;
 }

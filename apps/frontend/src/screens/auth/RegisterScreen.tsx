@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { theme } from '../../theme';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { apiClient } from '../../services/api-client';
@@ -15,11 +13,15 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { setAuth } = useAuthStore();
 
-  const handleRegister = async () => {
+  const handleRegister = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setErrorMessage(null);
+
     if (!email || !password) {
-      Alert.alert('Validation Error', 'Email and password are required.');
+      setErrorMessage('Email address and password are required.');
       return;
     }
     setIsLoading(true);
@@ -32,91 +34,75 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
       });
       await setAuth(response.user, response.tokens.accessToken, response.tokens.refreshToken);
     } catch (err: any) {
-      Alert.alert('Registration Failed', err.message || 'Could not register account.');
+      setErrorMessage(err.message || 'Could not register account.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>Register as a citizen to discover welfare scheme benefits.</Text>
+    <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6">
+      <div className="w-full max-w-md bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+        <div className="mb-6 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 text-white text-xl font-bold mb-3 shadow-sm">
+            📜
+          </div>
+          <h1 className="text-2xl font-bold text-blue-900 mb-1">Create Citizen Account</h1>
+          <p className="text-sm text-slate-600">Register as a citizen to discover welfare scheme benefits.</p>
+        </div>
 
-      <View style={styles.form}>
-        <Input
-          label="Email Address"
-          placeholder="citizen@example.com"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        {errorMessage && (
+          <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">
+            {errorMessage}
+          </div>
+        )}
 
-        <Input
-          label="Phone Number (Optional)"
-          placeholder="+91 9876543210"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-        />
+        <form onSubmit={handleRegister} className="space-y-4">
+          <Input
+            label="Email Address"
+            type="email"
+            placeholder="citizen@example.com"
+            value={email}
+            onChangeText={setEmail}
+            required
+            autoComplete="email"
+          />
 
-        <Input
-          label="Password"
-          placeholder="At least 8 characters"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+          <Input
+            label="Phone Number (Optional)"
+            type="tel"
+            placeholder="+91 9876543210"
+            value={phone}
+            onChangeText={setPhone}
+            autoComplete="tel"
+          />
 
-        <Button title="Create Account" onPress={handleRegister} isLoading={isLoading} style={styles.button} />
-      </View>
+          <Input
+            label="Password"
+            type="password"
+            placeholder="At least 8 characters"
+            value={password}
+            onChangeText={setPassword}
+            required
+            autoComplete="new-password"
+          />
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Already have an account? </Text>
-        <TouchableOpacity onPress={onNavigateToLogin}>
-          <Text style={styles.loginLink}>Sign In</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          <Button type="submit" title="Create Account" isLoading={isLoading} className="w-full py-3 mt-2" />
+        </form>
+
+        <div className="mt-6 pt-6 border-t border-slate-200 text-center">
+          <p className="text-xs text-slate-600">
+            Already have an account?{' '}
+            <button
+              type="button"
+              onClick={onNavigateToLogin}
+              className="font-bold text-blue-900 hover:underline focus:outline-none ml-1"
+            >
+              Sign In
+            </button>
+          </p>
+        </div>
+      </div>
+    </main>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    padding: theme.spacing.lg,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: theme.typography.sizes.xxl,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.primary,
-    marginBottom: theme.spacing.xs,
-  },
-  subtitle: {
-    fontSize: theme.typography.sizes.md,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xl,
-  },
-  form: {
-    marginBottom: theme.spacing.xl,
-  },
-  button: {
-    marginTop: theme.spacing.md,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  footerText: {
-    fontSize: theme.typography.sizes.md,
-    color: theme.colors.textSecondary,
-  },
-  loginLink: {
-    fontSize: theme.typography.sizes.md,
-    color: theme.colors.primary,
-    fontWeight: theme.typography.weights.bold,
-  },
-});

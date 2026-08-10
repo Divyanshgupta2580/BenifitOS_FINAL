@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import { theme } from '../../theme';
-import { Input } from '../../components/ui/Input';
-import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 import { useUploadDocument } from '../../hooks/useUploadDocument';
 
 const TYPES = [
@@ -26,114 +23,133 @@ interface Props {
 export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
   const { uploadDocument, isUploading } = useUploadDocument();
   const [docType, setDocType] = useState('AADHAAR');
-  const [fileName, setFileName] = useState('aadhaar_card_scan.pdf');
-  const [mimeType, setMimeType] = useState('application/pdf');
-  const [fileSizeKb, setFileSizeKb] = useState('512');
-  const [fileUri, setFileUri] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const validateAndConstructPayload = () => {
-    if (!fileName) {
-      Alert.alert('Validation Error', 'File name is required.');
-      return null;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setStatusMessage(null);
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const maxLimitInBytes = 10 * 1024 * 1024; // 10 MB
+      if (file.size > maxLimitInBytes) {
+        setStatusMessage({ type: 'error', text: 'File size exceeds maximum allowed limit of 10 MB.' });
+        setSelectedFile(null);
+        return;
+      }
+      setSelectedFile(file);
     }
-
-    const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    const allowedExtensions = ['.pdf', '.jpeg', '.jpg', '.png'];
-    const ext = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
-
-    if (!allowedMimeTypes.includes(mimeType.toLowerCase()) && !allowedExtensions.includes(ext)) {
-      Alert.alert('Invalid File Format', 'Only PDF, JPEG, and PNG files are allowed.');
-      return null;
-    }
-
-    const sizeInBytes = (parseFloat(fileSizeKb) || 0) * 1024;
-    const maxLimitInBytes = 10 * 1024 * 1024; // 10 MB
-    if (sizeInBytes > maxLimitInBytes) {
-      Alert.alert('File Size Exceeded', 'Maximum file upload size is 10 MB.');
-      return null;
-    }
-
-    const platformUri = fileUri || `file://${fileName}`;
-
-    return {
-      uri: platformUri,
-      name: fileName,
-      type: mimeType,
-    };
   };
 
-  const handleUpload = async () => {
-    const filePayload = validateAndConstructPayload();
-    if (!filePayload) return;
+  const handleUpload = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setStatusMessage(null);
+
+    if (!selectedFile) {
+      setStatusMessage({ type: 'error', text: 'Please select a file to upload.' });
+      return;
+    }
 
     try {
       const formData = new FormData();
       formData.append('documentType', docType);
-      formData.append('file', filePayload as any);
+      formData.append('file', selectedFile);
 
       await uploadDocument(formData);
-      Alert.alert('Upload Successful', `${fileName} uploaded to Document Vault.`, [
-        { text: 'OK', onPress: onBack },
-      ]);
+      setStatusMessage({ type: 'success', text: `${selectedFile.name} uploaded successfully!` });
+      setTimeout(onBack, 1200);
     } catch (err: any) {
-      Alert.alert('Upload Failed', err.message || 'Could not upload document.');
+      setStatusMessage({ type: 'error', text: err.message || 'Could not upload document.' });
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity onPress={onBack} style={styles.backLink}>
-        <Text style={styles.backText}>← Back to Vault</Text>
-      </TouchableOpacity>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+            ← Back to Vault
+          </button>
+          <h1 className="text-lg font-bold text-blue-900">Upload Document</h1>
+        </div>
+      </header>
 
-      <Text style={styles.title}>Upload Document</Text>
-      <Text style={styles.subtitle}>Select document category and file (PDF, JPEG, PNG, max 10MB).</Text>
-
-      {/* Select Category */}
-      <Card style={styles.card}>
-        <Text style={styles.cardTitle}>Document Category</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeRow}>
-          {TYPES.map((t) => (
-            <TouchableOpacity
-              key={t}
-              style={[styles.typeChip, docType === t && styles.typeChipActive]}
-              onPress={() => setDocType(t)}
+      <main className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+          {statusMessage && (
+            <div
+              className={`mb-6 p-3.5 rounded-xl border text-xs font-semibold ${
+                statusMessage.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-rose-50 border-rose-200 text-rose-700'
+              }`}
             >
-              <Text style={[styles.typeText, docType === t && styles.typeTextActive]}>{t}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </Card>
+              {statusMessage.text}
+            </div>
+          )}
 
-      {/* File Specification Form */}
-      <Card style={styles.card}>
-        <Text style={styles.cardTitle}>File Metadata & Validation</Text>
-        <Input label="File Name (.pdf, .jpeg, .png)" value={fileName} onChangeText={setFileName} placeholder="e.g. income_cert_2026.pdf" />
-        <Input label="MIME Type (application/pdf, image/jpeg, image/png)" value={mimeType} onChangeText={setMimeType} />
-        <Input label="File Size (KB, max 10240 KB / 10MB)" value={fileSizeKb} onChangeText={setFileSizeKb} keyboardType="numeric" />
-        <Input label="Platform File URI (Optional)" value={fileUri} onChangeText={setFileUri} placeholder="e.g. file:///path or blob:http://..." />
-      </Card>
+          <form onSubmit={handleUpload} className="space-y-6">
+            {/* Category Select */}
+            <div>
+              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
+                1. Select Document Category
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {TYPES.map((t) => {
+                  const isSelected = docType === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setDocType(t)}
+                      className={`p-3 rounded-xl border text-xs font-semibold text-center transition-all ${
+                        isSelected
+                          ? 'border-blue-900 bg-blue-50/70 text-blue-900 shadow-xs'
+                          : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-      <Button title="Upload File to Vault" onPress={handleUpload} isLoading={isUploading} style={styles.button} />
-      <Button title="Cancel" onPress={onBack} variant="outline" style={styles.cancelBtn} />
-    </ScrollView>
+            {/* Web File Input Dropzone */}
+            <div>
+              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
+                2. Choose File (PDF, JPEG, PNG • Max 10MB)
+              </label>
+              <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center bg-slate-50 hover:bg-slate-100/80 transition-colors relative cursor-pointer">
+                <input
+                  type="file"
+                  accept=".pdf,.jpeg,.png,.jpg"
+                  onChange={handleFileChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-3xl">📄</span>
+                  {selectedFile ? (
+                    <div>
+                      <p className="text-sm font-bold text-blue-900">{selectedFile.name}</p>
+                      <p className="text-xs text-slate-500">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-xs font-bold text-slate-700">Click to browse or drag file here</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Supports .pdf, .jpg, .jpeg, .png</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-slate-200">
+              <Button type="submit" title="Upload Document to Vault" isLoading={isUploading} className="flex-1 py-3 font-bold" />
+              <Button type="button" title="Cancel" variant="outline" onClick={onBack} className="px-6" />
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.lg, paddingTop: 50 },
-  backLink: { marginBottom: theme.spacing.md },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  title: { fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: theme.spacing.xs },
-  subtitle: { fontSize: theme.typography.sizes.md, color: theme.colors.textSecondary, marginBottom: theme.spacing.lg },
-  card: { marginBottom: theme.spacing.md },
-  cardTitle: { fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: theme.spacing.xs },
-  typeRow: { marginVertical: 4 },
-  typeChip: { backgroundColor: theme.colors.surface, paddingHorizontal: 12, paddingVertical: 6, borderRadius: theme.spacing.borderRadius.md, borderWidth: 1, borderColor: theme.colors.border, marginRight: theme.spacing.xs },
-  typeChipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  typeText: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary },
-  typeTextActive: { color: theme.colors.surface, fontWeight: theme.typography.weights.bold },
-  button: { marginTop: theme.spacing.md },
-  cancelBtn: { marginTop: theme.spacing.sm },
-});

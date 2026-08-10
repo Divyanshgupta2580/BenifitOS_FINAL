@@ -1,7 +1,12 @@
 import { io, Socket } from 'socket.io-client';
 import { storageService } from './storage.service';
 
-const WS_BASE_URL = process.env.EXPO_PUBLIC_WS_URL || 'ws://localhost:4000/ws';
+const getWsBaseUrl = (): string => {
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL;
+  }
+  return 'ws://localhost:4000/ws';
+};
 
 class WebSocketService {
   private socket: Socket | null = null;
@@ -12,10 +17,10 @@ class WebSocketService {
     }
 
     const token = await storageService.getItem('accessToken');
-    this.socket = io(WS_BASE_URL, {
+    this.socket = io(getWsBaseUrl(), {
       auth: { token },
       query: { token },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       autoConnect: true,
     });
 

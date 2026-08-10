@@ -1,6 +1,4 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { theme } from '../../theme';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -21,78 +19,59 @@ export const RecommendationExplanationScreen: React.FC<Props> = ({ recommendatio
 
   if (isError || !recommendation) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Could not load explanation.</Text>
-        <Button title="Retry" onPress={() => refetch()} style={styles.retryBtn} />
-        <Button title="Back" onPress={onBack} variant="outline" style={styles.backBtn} />
-      </View>
+      <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6 text-center">
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 max-w-md w-full shadow-xs">
+          <p className="text-sm font-semibold text-rose-600 mb-4">Could not load explanation from server.</p>
+          <Button title="Retry" onClick={() => refetch()} className="w-full mb-2 py-2.5" />
+          <Button title="Back" variant="outline" onClick={onBack} className="w-full py-2.5" />
+        </div>
+      </main>
     );
   }
 
   const title = recommendation.scheme?.title || recommendation.title || `Scheme #${recommendation.schemeId.slice(0, 8)}`;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity onPress={onBack} style={styles.backLink}>
-        <Text style={styles.backText}>← Back to Recommendation Detail</Text>
-      </TouchableOpacity>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+            ← Back to Recommendation Detail
+          </button>
+          <h1 className="text-lg font-bold text-blue-900">AI Natural Language Explanation</h1>
+        </div>
+      </header>
 
-      <Text style={styles.screenTitle}>AI Explanation & Reasoning</Text>
-      <Text style={styles.screenSubtitle}>Transparent breakdown of how your citizen profile matched against scheme eligibility rules.</Text>
+      <main className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
+        <Card>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-bold text-amber-700 font-mono">{recommendation.scheme?.code || 'SCHEME'}</span>
+            <Badge label={`${recommendation.matchPercentage}% Match`} variant="success" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+        </Card>
 
-      {/* Primary Summary */}
-      <Card style={styles.card}>
-        <View style={styles.badgeRow}>
-          <Text style={styles.schemeCode}>{recommendation.scheme?.code || 'SCHEME'}</Text>
-          <Badge label={`${recommendation.matchPercentage}% Match`} variant="success" />
-        </View>
-        <Text style={styles.cardTitle}>{title}</Text>
-      </Card>
+        <Card>
+          <h3 className="text-base font-bold text-blue-900 mb-3">Why Was This Scheme Recommended?</h3>
+          <p className="text-sm text-slate-700 leading-relaxed">
+            Based on your verified annual household income (₹
+            {recommendation.scheme?.financialBenefit
+              ? (recommendation.estimatedBenefit || 150000).toLocaleString('en-IN')
+              : '1,50,000'}
+            ) and primary employment category, your profile satisfies key eligibility criteria defined by the welfare department.
+          </p>
+        </Card>
 
-      {/* Why Recommended Explanation */}
-      <Card style={styles.card}>
-        <Text style={styles.sectionHeading}>Why Was This Scheme Recommended?</Text>
-        <Text style={styles.explanationBody}>
-          Based on your verified annual household income (₹
-          {recommendation.scheme?.financialBenefit
-            ? (recommendation.estimatedBenefit || 150000).toLocaleString('en-IN')
-            : '1,50,000'}
-          ) and primary employment category, your profile satisfies key eligibility criteria defined by the welfare department.
-        </Text>
-      </Card>
+        {/* Scoring Policy */}
+        <div className="bg-blue-950 text-white rounded-2xl p-6 shadow-sm border border-blue-800">
+          <h3 className="text-sm font-bold text-amber-400 mb-1">Deterministic Scoring Integrity Policy</h3>
+          <p className="text-xs text-blue-200 leading-relaxed">
+            BenefitOS AI assistant translates complex rule ASTs into clear natural language, but NEVER alters or calculates eligibility scores.
+          </p>
+        </div>
 
-      {/* Rules Integrity Banner */}
-      <Card style={styles.integrityCard}>
-        <Text style={styles.integrityTitle}>Deterministic Scoring Policy</Text>
-        <Text style={styles.integrityText}>
-          BenefitOS AI assistant translates complex rule ASTs into clear natural language, but NEVER alters or calculates eligibility scores.
-        </Text>
-      </Card>
-
-      <Button title="Back to Details" onPress={onBack} style={styles.backBtnMain} />
-    </ScrollView>
+        <Button title="Back to Scheme Details" onClick={onBack} className="w-full py-3 font-bold" />
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.lg, paddingTop: 50 },
-  backLink: { marginBottom: theme.spacing.md },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  screenTitle: { fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary },
-  screenSubtitle: { fontSize: theme.typography.sizes.sm, color: theme.colors.textSecondary, marginTop: 2, marginBottom: theme.spacing.md },
-  errorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.spacing.lg },
-  errorText: { fontSize: theme.typography.sizes.md, color: theme.colors.danger, marginBottom: theme.spacing.md },
-  retryBtn: { marginBottom: theme.spacing.sm },
-  backBtn: { marginTop: theme.spacing.xs },
-  card: { marginBottom: theme.spacing.md },
-  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.xs },
-  schemeCode: { fontSize: theme.typography.sizes.xs, fontWeight: theme.typography.weights.bold, color: theme.colors.saffron },
-  cardTitle: { fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold, color: theme.colors.primary },
-  sectionHeading: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: theme.spacing.xs },
-  explanationBody: { fontSize: theme.typography.sizes.sm, color: theme.colors.textPrimary, lineHeight: 22 },
-  integrityCard: { backgroundColor: theme.colors.primaryDark, marginBottom: theme.spacing.lg },
-  integrityTitle: { fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.bold, color: theme.colors.surface, marginBottom: 4 },
-  integrityText: { fontSize: theme.typography.sizes.xs, color: 'rgba(255, 255, 255, 0.8)', lineHeight: 18 },
-  backBtnMain: { marginTop: theme.spacing.xs, marginBottom: 40 },
-});

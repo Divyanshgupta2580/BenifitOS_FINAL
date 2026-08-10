@@ -26,7 +26,7 @@ export interface ApplicationProps {
   userId: string;
   schemeId: string;
   status: ApplicationStatus;
-  formData: Record<string, any>;
+  formData: Record<string, unknown>;
   remarks?: string | null;
   documentIds?: string[];
   history?: ApplicationStatusHistoryProps[];

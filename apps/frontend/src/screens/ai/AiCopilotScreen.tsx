@@ -1,18 +1,4 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-} from 'react-native';
-import { theme } from '../../theme';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -59,9 +45,57 @@ export const AiCopilotScreen: React.FC<Props> = ({
 
   const { profile } = useCitizenProfile();
   const [inputQuery, setInputQuery] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
-    if (!inputQuery.trim()) return;
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
+
+  // Web Speech Synthesis TTS for last AI message when speech enabled
+  useEffect(() => {
+    if (isSpeechEnabled && messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.sender === 'assistant' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(lastMsg.text);
+        utterance.lang = language === 'hi' ? 'hi-IN' : 'en-US';
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+  }, [messages, isSpeechEnabled, language]);
+
+  // Web Speech Recognition STT
+  const handleVoiceInput = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser version.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = language === 'hi' ? 'hi-IN' : 'en-US';
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInputQuery(transcript);
+    };
+
+    recognition.start();
+  };
+
+  const handleSend = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!inputQuery.trim() || isLoading) return;
     const text = inputQuery;
     setInputQuery('');
     sendMessage(text, {
@@ -93,215 +127,201 @@ export const AiCopilotScreen: React.FC<Props> = ({
 
   const handleExport = () => {
     const jsonStr = exportHistory();
-    Alert.alert('Export Conversation', 'Conversation history prepared for export.', [
-      { text: 'OK', onPress: () => {} },
-    ]);
-  };
-
-  const renderMessageItem = ({ item }: { item: CopilotMessage }) => {
-    const isUser = item.sender === 'user';
-    return (
-      <View style={[styles.msgWrapper, isUser ? styles.msgWrapperUser : styles.msgWrapperAssistant]}>
-        <View style={[styles.msgBubble, isUser ? styles.msgBubbleUser : styles.msgBubbleAssistant]}>
-          {!isUser && (
-            <View style={styles.assistantMetaRow}>
-              <Text style={styles.assistantBadge}>[Gemini 1.5 Pro AI]</Text>
-              <Text style={styles.timestamp}>{item.timestamp}</Text>
-            </View>
-          )}
-
-          <Text style={[styles.msgText, isUser ? styles.msgTextUser : styles.msgTextAssistant]}>
-            {item.text}
-          </Text>
-
-          {isUser && <Text style={styles.timestampUser}>{item.timestamp}</Text>}
-
-          {/* Module 10: Source Attribution Badges */}
-          {!isUser && item.sources && item.sources.length > 0 && (
-            <View style={styles.sourcesContainer}>
-              <Text style={styles.sourceTitle}>Verified Sources:</Text>
-              <View style={styles.sourcesRow}>
-                {item.sources.map((src, idx) => (
-                  <View key={idx} style={styles.sourcePill}>
-                    <Text style={styles.sourcePillText}>✓ {src}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-        </View>
-      </View>
-    );
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `benefitOS_copilot_chat_${Date.now()}.json`;
+    a.click();
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {/* Module 1: Header Bar */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backLink} accessibilityLabel="Back to Dashboard">
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+              ← Back
+            </button>
+            <div>
+              <h1 className="text-base font-bold text-blue-900 leading-tight">AI Citizen Copilot</h1>
+              <span className="text-[10px] text-slate-500 block font-medium">
+                {profile ? `Assisting ${profile.firstName} ${profile.lastName}` : 'Intelligent Welfare Assistant'}
+              </span>
+            </div>
+          </div>
 
-        <View style={styles.headerTitleRow}>
-          <View>
-            <Text style={styles.title}>AI Citizen Copilot</Text>
-            <Text style={styles.subtitle}>
-              {profile ? `Assisting ${profile.firstName} ${profile.lastName}` : 'Intelligent Welfare Assistant'}
-            </Text>
-          </View>
-
-          <View style={styles.controlsRow}>
-            <TouchableOpacity onPress={toggleLanguage} style={styles.controlBtn} accessibilityLabel="Toggle Language">
-              <Text style={styles.controlText}>{language === 'en' ? '🌐 HI' : '🌐 EN'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={toggleSpeech}
-              style={[styles.controlBtn, isSpeechEnabled && styles.controlBtnActive]}
-              accessibilityLabel="Toggle Speech"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleLanguage}
+              className="px-2.5 py-1 rounded-lg bg-slate-100 text-xs font-bold text-blue-900 hover:bg-slate-200 border border-slate-200"
             >
-              <Text style={styles.controlText}>{isSpeechEnabled ? '🔊 On' : '🎙️ Voice'}</Text>
-            </TouchableOpacity>
+              {language === 'en' ? '🌐 HI' : '🌐 EN'}
+            </button>
 
-            <TouchableOpacity onPress={handleExport} style={styles.controlBtn} accessibilityLabel="Export Chat">
-              <Text style={styles.controlText}>📥</Text>
-            </TouchableOpacity>
+            <button
+              onClick={toggleSpeech}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${
+                isSpeechEnabled
+                  ? 'bg-blue-900 border-blue-900 text-white shadow-xs'
+                  : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              {isSpeechEnabled ? '🔊 Audio On' : '🎙️ TTS Voice'}
+            </button>
 
-            <TouchableOpacity onPress={clearMessages} style={styles.controlBtn} accessibilityLabel="Clear Chat">
-              <Text style={styles.controlText}>🗑️</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+            <button
+              onClick={handleExport}
+              title="Export Conversation"
+              className="px-2.5 py-1 rounded-lg bg-slate-100 text-xs font-bold text-slate-700 hover:bg-slate-200 border border-slate-200"
+            >
+              📥 Export
+            </button>
 
-      {/* Module 2: Context Awareness Banner */}
-      <View style={styles.contextBanner}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.contextRow}>
-          <View style={styles.contextPill}><Text style={styles.contextPillText}>👤 Verified Profile</Text></View>
-          <View style={styles.contextPill}><Text style={styles.contextPillText}>🆔 Aadhaar Linked</Text></View>
-          <View style={styles.contextPill}><Text style={styles.contextPillText}>📂 DigiLocker Synced</Text></View>
-          <View style={styles.contextPill}><Text style={styles.contextPillText}>📜 4 Vault Documents</Text></View>
-          <View style={styles.contextPill}><Text style={styles.contextPillText}>📋 2 Active Applications</Text></View>
-        </ScrollView>
-      </View>
+            <button
+              onClick={clearMessages}
+              title="Clear History"
+              className="px-2.5 py-1 rounded-lg bg-rose-50 text-xs font-bold text-rose-700 hover:bg-rose-100 border border-rose-200"
+            >
+              🗑️ Clear
+            </button>
+          </div>
+        </div>
+      </header>
 
-      {/* Module 1: Quick Actions Chips Bar */}
-      <View style={styles.quickActionsContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickRow}>
+      {/* Context Awareness Bar */}
+      <div className="bg-slate-100 border-b border-slate-200 py-1.5 px-4 text-xs font-medium text-slate-600">
+        <div className="max-w-5xl mx-auto flex items-center gap-3 overflow-x-auto scrollbar-none">
+          <span className="bg-slate-200 px-2 py-0.5 rounded text-[11px] font-bold text-slate-700">👤 Verified Profile</span>
+          <span className="bg-slate-200 px-2 py-0.5 rounded text-[11px] font-bold text-slate-700">🆔 Aadhaar Linked</span>
+          <span className="bg-slate-200 px-2 py-0.5 rounded text-[11px] font-bold text-slate-700">📂 DigiLocker Synced</span>
+          <span className="bg-slate-200 px-2 py-0.5 rounded text-[11px] font-bold text-slate-700">📜 Document Vault Linked</span>
+        </div>
+      </div>
+
+      {/* Main Container */}
+      <main className="max-w-5xl w-full mx-auto flex-1 px-4 py-6 flex flex-col justify-between space-y-4">
+        {/* Quick Action Chips */}
+        <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex gap-2 overflow-x-auto scrollbar-none">
           {QUICK_ACTIONS.map((action, idx) => (
-            <TouchableOpacity
+            <button
               key={idx}
-              style={styles.actionChip}
-              onPress={() => handleQuickAction(action)}
-              accessibilityLabel={action.label}
+              type="button"
+              onClick={() => handleQuickAction(action)}
+              className="px-3 py-1.5 rounded-full bg-blue-50/70 border border-blue-200 text-xs font-semibold text-blue-900 hover:bg-blue-100 whitespace-nowrap transition-colors"
             >
-              <Text style={styles.actionChipText}>✨ {action.label}</Text>
-            </TouchableOpacity>
+              ✨ {action.label}
+            </button>
           ))}
-        </ScrollView>
-      </View>
+        </div>
 
-      {/* Messages List */}
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessageItem}
-        contentContainerStyle={styles.messagesContainer}
-      />
+        {/* Messages Stream */}
+        <div className="flex-1 bg-white rounded-2xl p-4 border border-slate-200 shadow-sm overflow-y-auto space-y-4 max-h-[500px]">
+          {messages.map((item: CopilotMessage) => {
+            const isUser = item.sender === 'user';
+            return (
+              <div key={item.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl border text-sm leading-relaxed ${
+                    isUser
+                      ? 'bg-blue-900 text-white border-blue-900 rounded-br-none shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-900 rounded-bl-none'
+                  }`}
+                >
+                  {!isUser && (
+                    <div className="flex justify-between items-center mb-1 text-[11px] font-bold text-blue-900">
+                      <span>[Gemini 1.5 Pro AI]</span>
+                      <span className="text-slate-400 font-normal">{item.timestamp}</span>
+                    </div>
+                  )}
 
-      {/* Module 9: Streaming / Typing Indicator */}
-      {isLoading && (
-        <View style={styles.typingContainer}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-          <Text style={styles.typingText}>Copilot is analyzing profile & government databases...</Text>
-        </View>
-      )}
+                  <p className="whitespace-pre-wrap">{item.text}</p>
 
-      {/* Error Fallback Bar */}
-      {isError && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Connection timeout. Failed to fetch response.</Text>
-          <Button title="Retry" onPress={retryLast} variant="outline" style={styles.retryBtn} />
-        </View>
-      )}
+                  {isUser && (
+                    <div className="mt-1 text-right">
+                      <span className="text-[10px] text-blue-200">{item.timestamp}</span>
+                    </div>
+                  )}
 
-      {/* Input Bar */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.textInput}
-          placeholder={language === 'hi' ? 'अपनी कल्याणकारी योजना के प्रश्न यहाँ पूछें...' : 'Ask your welfare journey questions...'}
-          placeholderTextColor={theme.colors.textMuted}
-          value={inputQuery}
-          onChangeText={setInputQuery}
-          onSubmitEditing={handleSend}
-          multiline
-        />
+                  {!isUser && item.sources && item.sources.length > 0 && (
+                    <div className="mt-3 pt-2 border-t border-slate-200">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                        Verified Sources:
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {item.sources.map((src, idx) => (
+                          <span
+                            key={idx}
+                            className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold"
+                          >
+                            ✓ {src}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
 
-        <TouchableOpacity style={styles.sendBtn} onPress={handleSend} disabled={isLoading || !inputQuery.trim()}>
-          <Text style={styles.sendBtnText}>➤</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-slate-100 border border-slate-200 rounded-2xl p-3 flex items-center gap-3">
+                <svg className="animate-spin h-4 w-4 text-blue-900" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="text-xs font-medium text-slate-600 animate-pulse">
+                  Copilot is analyzing profile & government databases...
+                </span>
+              </div>
+            </div>
+          )}
+
+          {isError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex justify-between items-center text-xs font-semibold text-rose-800">
+              <span>Connection timeout. Failed to fetch response.</span>
+              <button onClick={retryLast} className="underline font-bold">
+                Retry
+              </button>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Bar with Speech Recognition STT */}
+        <form onSubmit={handleSend} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex gap-2 items-center">
+          <button
+            type="button"
+            onClick={handleVoiceInput}
+            className={`p-2.5 rounded-xl border text-sm transition-colors ${
+              isListening ? 'bg-rose-500 border-rose-500 text-white animate-pulse' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+            }`}
+            title="Speech-to-Text Input"
+          >
+            {isListening ? '🎙️ Listening...' : '🎙️ Mic'}
+          </button>
+
+          <input
+            type="text"
+            value={inputQuery}
+            onChange={(e) => setInputQuery(e.target.value)}
+            placeholder={language === 'hi' ? 'अपनी कल्याणकारी योजना के प्रश्न यहाँ पूछें...' : 'Ask your welfare journey questions...'}
+            disabled={isLoading}
+            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+          />
+
+          <Button
+            type="submit"
+            title="Send"
+            isLoading={isLoading}
+            disabled={!inputQuery.trim() || isLoading}
+            className="px-6 py-2.5 font-bold"
+          />
+        </form>
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  header: { padding: theme.spacing.lg, paddingTop: 50, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  backLink: { marginBottom: theme.spacing.xs },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  headerTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary },
-  subtitle: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary },
-  
-  controlsRow: { flexDirection: 'row', gap: 6 },
-  controlBtn: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: '#F1F5F9', borderBottomWidth: 1, borderColor: theme.colors.border },
-  controlBtnActive: { backgroundColor: theme.colors.primary },
-  controlText: { fontSize: 11, color: theme.colors.primary, fontWeight: theme.typography.weights.bold },
-  
-  contextBanner: { backgroundColor: '#F8FAFC', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  contextRow: { paddingHorizontal: theme.spacing.md },
-  contextPill: { backgroundColor: '#E2E8F0', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginRight: 6 },
-  contextPillText: { fontSize: 10, color: theme.colors.textSecondary, fontWeight: theme.typography.weights.medium },
-  
-  quickActionsContainer: { backgroundColor: theme.colors.surface, paddingVertical: theme.spacing.xs, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  quickRow: { paddingHorizontal: theme.spacing.md },
-  actionChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#EFF6FF', marginRight: 8, borderWidth: 1, borderColor: '#BFDBFE' },
-  actionChipText: { fontSize: theme.typography.sizes.xs, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  
-  messagesContainer: { padding: theme.spacing.md, paddingBottom: 20 },
-  msgWrapper: { marginBottom: theme.spacing.md, maxWidth: '85%' },
-  msgWrapperUser: { alignSelf: 'flex-end' },
-  msgWrapperAssistant: { alignSelf: 'flex-start' },
-  
-  msgBubble: { padding: theme.spacing.md, borderRadius: 16 },
-  msgBubbleUser: { backgroundColor: theme.colors.primary, borderBottomRightRadius: 2 },
-  msgBubbleAssistant: { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, borderBottomLeftRadius: 2 },
-  
-  assistantMetaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  assistantBadge: { fontSize: 10, color: theme.colors.primary, fontWeight: theme.typography.weights.bold },
-  timestamp: { fontSize: 10, color: theme.colors.textMuted },
-  timestampUser: { fontSize: 10, color: '#E2E8F0', alignSelf: 'flex-end', marginTop: 4 },
-  
-  msgText: { fontSize: theme.typography.sizes.sm, lineHeight: 20 },
-  msgTextUser: { color: '#FFFFFF' },
-  msgTextAssistant: { color: theme.colors.textPrimary },
-  
-  sourcesContainer: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: theme.colors.divider },
-  sourceTitle: { fontSize: 10, color: theme.colors.textSecondary, fontWeight: theme.typography.weights.bold, marginBottom: 4 },
-  sourcesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  sourcePill: { backgroundColor: '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
-  sourcePillText: { fontSize: 9, color: theme.colors.success, fontWeight: theme.typography.weights.bold },
-  
-  typingContainer: { flexDirection: 'row', alignItems: 'center', padding: theme.spacing.md, backgroundColor: theme.colors.surface, borderTopWidth: 1, borderTopColor: theme.colors.border },
-  typingText: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, marginLeft: 8 },
-  
-  errorContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: theme.spacing.md, backgroundColor: '#FEF2F2' },
-  errorText: { fontSize: theme.typography.sizes.xs, color: theme.colors.danger },
-  retryBtn: { paddingVertical: 4, paddingHorizontal: 8 },
-  
-  inputContainer: { flexDirection: 'row', alignItems: 'center', padding: theme.spacing.md, backgroundColor: theme.colors.surface, borderTopWidth: 1, borderTopColor: theme.colors.border },
-  textInput: { flex: 1, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: theme.colors.border, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, fontSize: theme.typography.sizes.sm, color: theme.colors.textPrimary, maxHeight: 100 },
-  sendBtn: { marginLeft: 8, backgroundColor: theme.colors.primary, width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  sendBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-});

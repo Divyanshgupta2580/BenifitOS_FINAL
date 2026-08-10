@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
-import { theme } from '../../theme';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
@@ -19,10 +17,14 @@ export const AddressEditScreen: React.FC<Props> = ({ onBack }) => {
   const [state, setState] = useState(addr?.state || '');
   const [pincode, setPincode] = useState(addr?.pincode || '');
   const [isRural, setIsRural] = useState(addr?.isRural || false);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setStatusMessage(null);
+
     if (!streetAddress || !city || !district || !state || !pincode) {
-      Alert.alert('Validation Error', 'All address fields are required.');
+      setStatusMessage({ type: 'error', text: 'All address fields are required.' });
       return;
     }
 
@@ -50,41 +52,74 @@ export const AddressEditScreen: React.FC<Props> = ({ onBack }) => {
         },
       });
 
-      Alert.alert('Address Saved', 'Residential address updated successfully.', [{ text: 'OK', onPress: onBack }]);
+      setStatusMessage({ type: 'success', text: 'Residential address updated successfully!' });
+      setTimeout(onBack, 1000);
     } catch (err: any) {
-      Alert.alert('Save Failed', err.message || 'Could not save residential address.');
+      setStatusMessage({ type: 'error', text: err.message || 'Could not save residential address.' });
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Edit Address</Text>
-      <Text style={styles.subtitle}>Specify your residential location for state and district scheme matching.</Text>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+            ← Back to Profile
+          </button>
+          <h1 className="text-lg font-bold text-blue-900">Edit Residential Address</h1>
+        </div>
+      </header>
 
-      <Input label="Street Address" value={streetAddress} onChangeText={setStreetAddress} />
-      <Input label="City / Village" value={city} onChangeText={setCity} />
-      <Input label="District" value={district} onChangeText={setDistrict} />
-      <Input label="State" value={state} onChangeText={setState} />
-      <Input label="Pincode" value={pincode} onChangeText={setPincode} keyboardType="number-pad" maxLength={6} />
+      <main className="max-w-2xl mx-auto px-4 pt-6">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+          {statusMessage && (
+            <div
+              className={`mb-6 p-3.5 rounded-xl border text-xs font-semibold ${
+                statusMessage.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-rose-50 border-rose-200 text-rose-700'
+              }`}
+            >
+              {statusMessage.text}
+            </div>
+          )}
 
-      <View style={styles.switchRow}>
-        <Text style={styles.switchLabel}>Rural Area Resident?</Text>
-        <Switch value={isRural} onValueChange={setIsRural} trackColor={{ true: theme.colors.primary }} />
-      </View>
+          <form onSubmit={handleSave} className="space-y-4">
+            <Input label="Street Address" value={streetAddress} onChangeText={setStreetAddress} required />
 
-      <Button title="Save Address" onPress={handleSave} isLoading={isUpdating} style={styles.button} />
-      <Button title="Cancel" onPress={onBack} variant="outline" style={styles.cancelBtn} />
-    </ScrollView>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input label="City / Village" value={city} onChangeText={setCity} required />
+              <Input label="District" value={district} onChangeText={setDistrict} required />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input label="State" value={state} onChangeText={setState} required />
+              <Input label="Pincode" value={pincode} onChangeText={setPincode} maxLength={6} required />
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+              <div>
+                <label htmlFor="rural-toggle" className="text-xs font-bold text-slate-900 block cursor-pointer">
+                  Rural Resident Category
+                </label>
+                <span className="text-[11px] text-slate-500">Enable if residing in gram panchayat / rural district area.</span>
+              </div>
+              <input
+                id="rural-toggle"
+                type="checkbox"
+                checked={isRural}
+                onChange={(e) => setIsRural(e.target.checked)}
+                className="w-5 h-5 text-blue-900 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-slate-200">
+              <Button type="submit" title="Save Address" isLoading={isUpdating} className="flex-1 py-3" />
+              <Button type="button" title="Cancel" variant="outline" onClick={onBack} className="px-6" />
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.lg, paddingTop: 50 },
-  title: { fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: theme.spacing.xs },
-  subtitle: { fontSize: theme.typography.sizes.md, color: theme.colors.textSecondary, marginBottom: theme.spacing.xl },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md, paddingVertical: 8 },
-  switchLabel: { fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.medium, color: theme.colors.textPrimary },
-  button: { marginTop: theme.spacing.md },
-  cancelBtn: { marginTop: theme.spacing.sm },
-});

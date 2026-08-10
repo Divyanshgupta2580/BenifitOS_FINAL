@@ -1,19 +1,6 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-} from 'react-native';
-import { theme } from '../../theme';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 import { useAiChat, ChatMessage } from '../../hooks/useAiChat';
 
 interface Props {
@@ -23,210 +10,151 @@ interface Props {
 export const AiAssistantScreen: React.FC<Props> = ({ onBack }) => {
   const { messages, isLoading, sendMessage, retryLastMessage, clearChat, suggestedPrompts } = useAiChat();
   const [inputText, setInputText] = useState('');
-  const flatListRef = useRef<FlatList>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
+
+  const handleSend = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!inputText.trim() || isLoading) return;
     sendMessage(inputText);
     setInputText('');
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
   };
 
   const handlePromptSelect = (prompt: string) => {
+    if (isLoading) return;
     sendMessage(prompt);
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  };
-
-  const renderMessageItem = ({ item }: { item: ChatMessage }) => {
-    const isUser = item.sender === 'user';
-    return (
-      <View
-        style={[
-          styles.messageRow,
-          isUser ? styles.messageRowUser : styles.messageRowAssistant,
-        ]}
-      >
-        <View
-          style={[
-            styles.bubble,
-            isUser ? styles.bubbleUser : styles.bubbleAssistant,
-            item.isError && styles.bubbleError,
-          ]}
-        >
-          {!isUser && (
-            <View style={styles.assistantHeader}>
-              <Text style={styles.assistantBadge}>🤖 {item.provider || 'BenefitOS AI'}</Text>
-            </View>
-          )}
-
-          <Text style={[styles.messageText, isUser ? styles.messageTextUser : styles.messageTextAssistant]}>
-            {item.text}
-          </Text>
-
-          <View style={styles.metaRow}>
-            <Text style={[styles.timestamp, isUser ? styles.timestampUser : styles.timestampAssistant]}>
-              {item.timestamp}
-            </Text>
-          </View>
-
-          {item.isError && (
-            <TouchableOpacity onPress={retryLastMessage} style={styles.retryBtn} accessibilityLabel="Retry sending prompt">
-              <Text style={styles.retryText}>🔄 Retry Request</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    );
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between">
       {/* Header */}
-      <View style={styles.header}>
-        {onBack && (
-          <TouchableOpacity onPress={onBack} style={styles.backBtn} accessibilityLabel="Back button">
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-        )}
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Citizen AI Assistant</Text>
-          <Text style={styles.subtitle}>Powered by BenefitOS Gemini Vision Intelligence</Text>
-        </View>
-        <TouchableOpacity onPress={clearChat} style={styles.clearBtn} accessibilityLabel="Clear chat history">
-          <Text style={styles.clearText}>Clear</Text>
-        </TouchableOpacity>
-      </View>
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {onBack && (
+              <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+                ← Back
+              </button>
+            )}
+            <div>
+              <h1 className="text-base font-bold text-blue-900 leading-tight">Citizen AI Assistant</h1>
+              <span className="text-[10px] text-slate-500 block font-medium">Powered by Google Gemini Vision</span>
+            </div>
+          </div>
+          <button
+            onClick={clearChat}
+            className="text-xs font-semibold text-rose-600 hover:underline px-2 py-1 rounded-md hover:bg-rose-50"
+          >
+            Clear Chat
+          </button>
+        </div>
+      </header>
 
-      {/* Suggested Prompts Bar */}
-      <View style={styles.promptsContainer}>
-        <Text style={styles.promptsTitle}>Suggested Guidance Prompts:</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.promptsRow}>
-          {suggestedPrompts.map((p, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={styles.promptChip}
-              onPress={() => handlePromptSelect(p)}
-              disabled={isLoading}
-              accessibilityLabel={`Suggested prompt: ${p}`}
-            >
-              <Text style={styles.promptText}>💡 {p}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+      {/* Main Chat Container */}
+      <main className="max-w-4xl w-full mx-auto flex-1 px-4 py-6 flex flex-col justify-between space-y-4">
+        {/* Suggested Prompts Chips */}
+        <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2 px-1">
+            Suggested Guidance Prompts:
+          </span>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {suggestedPrompts.map((p, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handlePromptSelect(p)}
+                disabled={isLoading}
+                className="px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-900 whitespace-nowrap transition-colors"
+              >
+                💡 {p}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {/* Message History List */}
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessageItem}
-        contentContainerStyle={styles.messageList}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-      />
+        {/* Message History */}
+        <div className="flex-1 bg-white rounded-2xl p-4 border border-slate-200 shadow-sm overflow-y-auto space-y-4 max-h-[520px]">
+          {messages.map((item: ChatMessage) => {
+            const isUser = item.sender === 'user';
+            return (
+              <div key={item.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl border text-sm leading-relaxed ${
+                    isUser
+                      ? 'bg-blue-900 text-white border-blue-900 rounded-br-none shadow-xs'
+                      : item.isError
+                      ? 'bg-rose-50 border-rose-200 text-rose-800 rounded-bl-none'
+                      : 'bg-slate-50 border-slate-200 text-slate-900 rounded-bl-none'
+                  }`}
+                >
+                  {!isUser && (
+                    <div className="flex items-center gap-1.5 mb-1 text-xs font-bold text-blue-900">
+                      <span>🤖</span>
+                      <span>{item.provider || 'BenefitOS AI'}</span>
+                    </div>
+                  )}
+                  <p className="whitespace-pre-wrap">{item.text}</p>
+                  <div className="mt-2 text-right">
+                    <span className={`text-[10px] ${isUser ? 'text-blue-200' : 'text-slate-400'}`}>
+                      {item.timestamp}
+                    </span>
+                  </div>
 
-      {/* Typing Indicator Loading Container */}
-      {isLoading && (
-        <View style={styles.typingContainer}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-          <Text style={styles.typingText}>BenefitOS AI is analyzing citizen context and generating response...</Text>
-        </View>
-      )}
+                  {item.isError && (
+                    <button
+                      onClick={retryLastMessage}
+                      className="mt-2 text-xs font-bold text-rose-700 underline block"
+                    >
+                      🔄 Retry Request
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
 
-      {/* Input Action Bar */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={inputText}
-          onChangeText={setInputText}
-          placeholder="Ask AI about schemes, documents, or eligibility..."
-          placeholderTextColor={theme.colors.textSecondary}
-          multiline
-          maxLength={1000}
-          editable={!isLoading}
-        />
-        <TouchableOpacity
-          style={[styles.sendBtn, (!inputText.trim() || isLoading) && styles.sendBtnDisabled]}
-          onPress={handleSend}
-          disabled={!inputText.trim() || isLoading}
-          accessibilityLabel="Send message to AI assistant"
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={styles.sendBtnText}>Send</Text>
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-slate-100 border border-slate-200 rounded-2xl p-3 flex items-center gap-3">
+                <svg className="animate-spin h-4 w-4 text-blue-900" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="text-xs font-medium text-slate-600 animate-pulse">
+                  BenefitOS AI is analyzing citizen context...
+                </span>
+              </div>
+            </div>
           )}
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Form Bar */}
+        <form onSubmit={handleSend} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex gap-3 items-center">
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Ask AI about schemes, documents, or eligibility..."
+            disabled={isLoading}
+            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+          />
+          <Button
+            type="submit"
+            title="Send"
+            isLoading={isLoading}
+            disabled={!inputText.trim() || isLoading}
+            className="px-6 py-2.5 font-bold"
+          />
+        </form>
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: 50,
-    paddingBottom: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  backBtn: { paddingRight: theme.spacing.sm },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  titleContainer: { flex: 1, paddingHorizontal: theme.spacing.xs },
-  title: { fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold, color: theme.colors.primary },
-  subtitle: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary },
-  clearBtn: { padding: theme.spacing.xs },
-  clearText: { fontSize: theme.typography.sizes.xs, color: theme.colors.danger, fontWeight: theme.typography.weights.medium },
-  
-  promptsContainer: { backgroundColor: theme.colors.surface, paddingVertical: theme.spacing.xs, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  promptsTitle: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, fontWeight: theme.typography.weights.bold, paddingHorizontal: theme.spacing.lg, marginBottom: 4 },
-  promptsRow: { paddingHorizontal: theme.spacing.lg },
-  promptChip: { backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, marginRight: theme.spacing.xs, borderWidth: 1, borderColor: theme.colors.border },
-  promptText: { fontSize: theme.typography.sizes.xs, color: theme.colors.textPrimary },
-
-  messageList: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
-  messageRow: { marginBottom: theme.spacing.md, flexDirection: 'row' },
-  messageRowUser: { justifyContent: 'flex-end' },
-  messageRowAssistant: { justifyContent: 'flex-start' },
-  
-  bubble: { maxWidth: '85%', padding: theme.spacing.md, borderRadius: theme.spacing.borderRadius.md },
-  bubbleUser: { backgroundColor: theme.colors.primary, borderBottomRightRadius: 2 },
-  bubbleAssistant: { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, borderBottomLeftRadius: 2 },
-  bubbleError: { borderColor: theme.colors.danger, backgroundColor: '#FEF2F2' },
-  
-  assistantHeader: { marginBottom: 4 },
-  assistantBadge: { fontSize: theme.typography.sizes.xs, fontWeight: theme.typography.weights.bold, color: theme.colors.primary },
-  messageText: { fontSize: theme.typography.sizes.sm, lineHeight: 20 },
-  messageTextUser: { color: '#FFFFFF' },
-  messageTextAssistant: { color: theme.colors.textPrimary },
-  
-  metaRow: { marginTop: 6, alignItems: 'flex-end' },
-  timestamp: { fontSize: 10 },
-  timestampUser: { color: '#E2E8F0' },
-  timestampAssistant: { color: theme.colors.textSecondary },
-  
-  retryBtn: { marginTop: 8, backgroundColor: '#FEE2E2', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 4, alignSelf: 'flex-start' },
-  retryText: { fontSize: theme.typography.sizes.xs, color: theme.colors.danger, fontWeight: theme.typography.weights.bold },
-  
-  typingContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.xs, backgroundColor: theme.colors.surface },
-  typingText: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, marginLeft: theme.spacing.xs },
-  
-  inputContainer: { flexDirection: 'row', alignItems: 'center', padding: theme.spacing.md, backgroundColor: theme.colors.surface, borderTopWidth: 1, borderTopColor: theme.colors.border },
-  input: { flex: 1, backgroundColor: '#F8FAFC', borderRadius: theme.spacing.borderRadius.md, borderWidth: 1, borderColor: theme.colors.border, paddingHorizontal: theme.spacing.md, paddingVertical: 8, fontSize: theme.typography.sizes.sm, color: theme.colors.textPrimary, maxHeight: 100 },
-  sendBtn: { marginLeft: theme.spacing.sm, backgroundColor: theme.colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: theme.spacing.borderRadius.md, justifyContent: 'center', alignItems: 'center' },
-  sendBtnDisabled: { backgroundColor: theme.colors.border },
-  sendBtnText: { color: '#FFFFFF', fontWeight: theme.typography.weights.bold, fontSize: theme.typography.sizes.sm },
-});

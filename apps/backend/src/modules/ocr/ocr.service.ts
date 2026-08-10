@@ -22,7 +22,7 @@ export class OcrPipelineService {
     const fileBuffer = await this.storageAdapter.downloadFile(doc.storagePath);
     const ocrResult = await this.geminiAdapter.extractDocumentData(fileBuffer, doc.mimeType, doc.documentType);
 
-    await this.prisma.ocrResult.upsert({
+    await this.prisma.client.ocrResult.upsert({
       where: { documentId: doc.id },
       create: {
         documentId: doc.id,

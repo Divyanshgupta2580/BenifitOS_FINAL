@@ -1,6 +1,4 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
-import { theme } from '../../theme';
+import React, { useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -22,13 +20,6 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
   const { recommendations, isLoading, isError, refetch } = useRecommendations();
   const [filter, setFilter] = useState<'ALL' | 'ELIGIBLE' | 'ACTION_REQUIRED'>('ALL');
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-  }, [refetch]);
 
   const filteredRecs = recommendations.filter((r) => {
     if (filter === 'ELIGIBLE') return r.isEligible;
@@ -36,7 +27,8 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
     return true;
   });
 
-  const toggleSelectForCompare = (id: string) => {
+  const toggleSelectForCompare = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (selectedForCompare.includes(id)) {
       setSelectedForCompare(selectedForCompare.filter((item) => item !== id));
     } else {
@@ -46,165 +38,138 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
     }
   };
 
-  const renderItem = ({ item }: { item: SchemeRecommendationItem }) => {
-    const isSelected = selectedForCompare.includes(item.id);
-    const title = item.scheme?.title || item.title || `Scheme #${item.schemeId.slice(0, 8)}`;
-    const category = item.scheme?.category || item.category || 'WELFARE';
-
-    return (
-      <Card style={styles.card}>
-        <View style={styles.cardHeader}>
-          <TouchableOpacity onPress={() => toggleSelectForCompare(item.id)} style={styles.checkboxRow}>
-            <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-              {isSelected && <Text style={styles.checkmark}>✓</Text>}
-            </View>
-            <Text style={styles.codeText}>{item.scheme?.code || item.code || 'SCHEME'}</Text>
-          </TouchableOpacity>
-          <Badge label={category} variant="primary" />
-        </View>
-
-        <TouchableOpacity activeOpacity={0.8} onPress={() => onSelectRecommendation(item.id)}>
-          <Text style={styles.titleText}>{title}</Text>
-          <View style={styles.statsRow}>
-            <View>
-              <Text style={styles.statLabel}>Match Score</Text>
-              <Text style={styles.matchText}>{item.matchPercentage}%</Text>
-            </View>
-            <View style={styles.rightStat}>
-              <Text style={styles.statLabel}>Est. Financial Benefit</Text>
-              <Text style={styles.benefitText}>₹{item.estimatedBenefit.toLocaleString('en-IN')}</Text>
-            </View>
-          </View>
-
-          <View style={styles.footerRow}>
-            <Badge
-              label={item.isEligible ? 'ELIGIBLE' : 'ACTION REQUIRED'}
-              variant={item.isEligible ? 'success' : 'warning'}
-            />
-            <Text style={styles.detailsLink}>View Reasoning →</Text>
-          </View>
-        </TouchableOpacity>
-      </Card>
-    );
-  };
-
   return (
-    <View style={styles.container}>
-      <View style={styles.topHeader}>
-        {onBack && (
-          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {onBack && (
+              <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+                ← Back
+              </button>
+            )}
+            <h1 className="text-lg font-bold text-blue-900">Scheme Recommendations Engine</h1>
+          </div>
+          <span className="text-xs font-medium text-slate-500">{recommendations.length} Matches Found</span>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
+        {/* Header & Filter Bar */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-base font-bold text-blue-900">Deterministic Match Score Dashboard</h2>
+            <p className="text-xs text-slate-500">Evaluated against verified citizen profile attributes.</p>
+          </div>
+
+          <div className="flex gap-2">
+            {(['ALL', 'ELIGIBLE', 'ACTION_REQUIRED'] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setFilter(tab)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
+                  filter === tab
+                    ? 'bg-blue-900 border-blue-900 text-white shadow-xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                {tab === 'ALL' ? `All (${recommendations.length})` : tab === 'ELIGIBLE' ? 'Eligible' : 'Action Needed'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Floating Compare Bar */}
+        {selectedForCompare.length > 1 && (
+          <div className="bg-blue-950 text-white p-4 rounded-xl shadow-md border border-blue-800 flex justify-between items-center animate-fade-in">
+            <span className="text-xs font-bold text-blue-100">{selectedForCompare.length} Schemes Selected for Side-by-Side Analysis</span>
+            <Button
+              title="Compare Schemes →"
+              variant="secondary"
+              size="sm"
+              onClick={() => onCompareRecommendations(selectedForCompare)}
+            />
+          </div>
         )}
-        <Text style={styles.screenTitle}>AI & Boolean Recommendations</Text>
-        <Text style={styles.screenSubtitle}>
-          Deterministic welfare scheme matches computed by backend rules engine.
-        </Text>
-      </View>
 
-      {/* Filter Tabs */}
-      <View style={styles.filterRow}>
-        <TouchableOpacity
-          style={[styles.filterTab, filter === 'ALL' && styles.filterTabActive]}
-          onPress={() => setFilter('ALL')}
-        >
-          <Text style={[styles.filterText, filter === 'ALL' && styles.filterTextActive]}>All ({recommendations.length})</Text>
-        </TouchableOpacity>
+        {/* Recommendations Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Skeleton height={160} className="rounded-xl" />
+            <Skeleton height={160} className="rounded-xl" />
+          </div>
+        ) : isError ? (
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center">
+            <p className="text-sm text-rose-600 font-semibold mb-4">Unable to calculate scheme recommendations.</p>
+            <button
+              onClick={() => refetch()}
+              className="px-4 py-2 bg-blue-900 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
+            >
+              Retry Rules Engine
+            </button>
+          </div>
+        ) : filteredRecs.length === 0 ? (
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-500 italic text-sm">
+            No recommendations match the selected filter criteria.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredRecs.map((item: SchemeRecommendationItem) => {
+              const isSelected = selectedForCompare.includes(item.id);
+              const title = item.scheme?.title || item.title || `Scheme #${item.schemeId.slice(0, 8)}`;
+              const category = item.scheme?.category || item.category || 'WELFARE';
 
-        <TouchableOpacity
-          style={[styles.filterTab, filter === 'ELIGIBLE' && styles.filterTabActive]}
-          onPress={() => setFilter('ELIGIBLE')}
-        >
-          <Text style={[styles.filterText, filter === 'ELIGIBLE' && styles.filterTextActive]}>Eligible</Text>
-        </TouchableOpacity>
+              return (
+                <Card
+                  key={item.id}
+                  onClick={() => onSelectRecommendation(item.id)}
+                  className="cursor-pointer hover:border-blue-700 transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                      <label
+                        onClick={(e) => toggleSelectForCompare(item.id, e)}
+                        className="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-700"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="w-4 h-4 text-blue-900 rounded border-slate-300 focus:ring-blue-500"
+                        />
+                        <span>{item.scheme?.code || item.code || 'SCHEME'}</span>
+                      </label>
+                      <Badge label={category} variant="primary" />
+                    </div>
 
-        <TouchableOpacity
-          style={[styles.filterTab, filter === 'ACTION_REQUIRED' && styles.filterTabActive]}
-          onPress={() => setFilter('ACTION_REQUIRED')}
-        >
-          <Text style={[styles.filterText, filter === 'ACTION_REQUIRED' && styles.filterTextActive]}>Action Needed</Text>
-        </TouchableOpacity>
-      </View>
+                    <h3 className="text-base font-bold text-slate-900 mb-3">{title}</h3>
 
-      {/* Compare Floating Trigger */}
-      {selectedForCompare.length > 1 && (
-        <View style={styles.compareBar}>
-          <Text style={styles.compareCount}>{selectedForCompare.length} Schemes Selected</Text>
-          <Button
-            title="Compare Schemes"
-            onPress={() => onCompareRecommendations(selectedForCompare)}
-            size="sm"
-            variant="secondary"
-          />
-        </View>
-      )}
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center mb-4">
+                      <div>
+                        <span className="text-[10px] text-slate-500 block uppercase font-medium">Match Score</span>
+                        <span className="text-base font-extrabold text-emerald-700">{item.matchPercentage}%</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-500 block uppercase font-medium">Est. Benefit</span>
+                        <span className="text-base font-extrabold text-amber-700">₹{item.estimatedBenefit.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                  </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <View style={styles.loadingWrapper}>
-          <Skeleton height={120} borderRadius={12} style={styles.skel} />
-          <Skeleton height={120} borderRadius={12} style={styles.skel} />
-          <Skeleton height={120} borderRadius={12} style={styles.skel} />
-        </View>
-      ) : isError ? (
-        <View style={styles.errorWrapper}>
-          <Text style={styles.errorText}>Unable to calculate recommendations.</Text>
-          <Button title="Retry Evaluation" onPress={() => refetch()} style={styles.retryBtn} />
-        </View>
-      ) : filteredRecs.length === 0 ? (
-        <View style={styles.emptyWrapper}>
-          <Text style={styles.emptyText}>No scheme recommendations match the selected filter.</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredRecs}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-          }
-        />
-      )}
-    </View>
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                    <Badge
+                      label={item.isEligible ? 'ELIGIBLE' : 'ACTION REQUIRED'}
+                      variant={item.isEligible ? 'success' : 'warning'}
+                    />
+                    <span className="text-xs font-bold text-blue-900 hover:underline">View Reasoning →</span>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  topHeader: { paddingHorizontal: theme.spacing.lg, paddingTop: 50, paddingBottom: theme.spacing.xs },
-  backBtn: { marginBottom: 6 },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  screenTitle: { fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary },
-  screenSubtitle: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, marginTop: 2 },
-  filterRow: { flexDirection: 'row', paddingHorizontal: theme.spacing.lg, marginBottom: theme.spacing.sm },
-  filterTab: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: theme.spacing.borderRadius.full, backgroundColor: theme.colors.surface, marginRight: theme.spacing.xs, borderWidth: 1, borderColor: theme.colors.border },
-  filterTabActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  filterText: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, fontWeight: theme.typography.weights.medium },
-  filterTextActive: { color: theme.colors.surface, fontWeight: theme.typography.weights.bold },
-  compareBar: { backgroundColor: theme.colors.primaryDark, paddingHorizontal: theme.spacing.lg, paddingVertical: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  compareCount: { fontSize: theme.typography.sizes.sm, color: theme.colors.surface, fontWeight: theme.typography.weights.bold },
-  listContent: { paddingHorizontal: theme.spacing.lg, paddingBottom: 40 },
-  card: { marginBottom: theme.spacing.md },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  checkboxRow: { flexDirection: 'row', alignItems: 'center' },
-  checkbox: { width: 18, height: 18, borderRadius: 4, borderWidth: 1.5, borderColor: theme.colors.primary, marginRight: 8, alignItems: 'center', justifyContent: 'center' },
-  checkboxActive: { backgroundColor: theme.colors.primary },
-  checkmark: { color: theme.colors.surface, fontSize: 12, fontWeight: 'bold' },
-  codeText: { fontSize: theme.typography.sizes.xs, fontWeight: theme.typography.weights.bold, color: theme.colors.saffron },
-  titleText: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary, marginBottom: theme.spacing.sm },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: theme.spacing.sm, paddingVertical: 6, backgroundColor: theme.colors.background, paddingHorizontal: theme.spacing.sm, borderRadius: theme.spacing.borderRadius.md },
-  statLabel: { fontSize: 10, color: theme.colors.textMuted },
-  matchText: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.success },
-  rightStat: { alignItems: 'flex-end' },
-  benefitText: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.saffron },
-  footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  detailsLink: { fontSize: theme.typography.sizes.xs, color: theme.colors.primary, fontWeight: theme.typography.weights.semibold },
-  loadingWrapper: { paddingHorizontal: theme.spacing.lg },
-  skel: { marginBottom: theme.spacing.md },
-  errorWrapper: { padding: theme.spacing.xl, alignItems: 'center' },
-  errorText: { fontSize: theme.typography.sizes.md, color: theme.colors.danger, marginBottom: theme.spacing.md },
-  retryBtn: { marginTop: theme.spacing.xs },
-  emptyWrapper: { padding: theme.spacing.xl, alignItems: 'center' },
-  emptyText: { fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted, fontStyle: 'italic' },
-});

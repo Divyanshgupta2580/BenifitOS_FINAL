@@ -1,6 +1,4 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { theme } from '../../theme';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -22,113 +20,98 @@ export const SchemeDetailScreen: React.FC<Props> = ({ schemeId, onBack, onSimula
 
   if (isError || !scheme) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Could not load scheme details.</Text>
-        <Button title="Retry" onPress={() => refetch()} style={styles.retryBtn} />
-        <Button title="Back to Catalog" onPress={onBack} variant="outline" style={styles.backBtn} />
-      </View>
+      <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6 text-center">
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 max-w-md w-full shadow-xs">
+          <p className="text-sm font-semibold text-rose-600 mb-4">Could not load scheme details from server.</p>
+          <Button title="Retry" onClick={() => refetch()} className="w-full mb-2 py-2.5" />
+          <Button title="Back to Catalog" variant="outline" onClick={onBack} className="w-full py-2.5" />
+        </div>
+      </main>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity onPress={onBack} style={styles.backLink}>
-        <Text style={styles.backText}>← Back to Catalog</Text>
-      </TouchableOpacity>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+            ← Back to Catalog
+          </button>
+          <span className="text-xs font-mono font-bold text-amber-700">{scheme.code}</span>
+        </div>
+      </header>
 
-      {/* Scheme Header Banner */}
-      <Card style={styles.headerCard}>
-        <View style={styles.badgeRow}>
-          <Text style={styles.codeText}>{scheme.code}</Text>
-          <Badge label={scheme.category} variant="primary" />
-        </View>
-        <Text style={styles.title}>{scheme.title}</Text>
-        <Text style={styles.department}>{scheme.department}</Text>
-        <View style={styles.benefitContainer}>
-          <Text style={styles.benefitLabel}>Financial Benefit:</Text>
-          <Text style={styles.benefitAmount}>₹{scheme.financialBenefit.toLocaleString('en-IN')} / Year</Text>
-        </View>
-      </Card>
+      <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
+        {/* Scheme Header Card */}
+        <div className="bg-blue-900 text-white rounded-2xl p-6 shadow-md border border-blue-800">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-xs font-mono font-bold text-amber-400">{scheme.code}</span>
+            <Badge label={scheme.category} variant="primary" />
+          </div>
+          <h1 className="text-2xl font-extrabold mb-1">{scheme.title}</h1>
+          <p className="text-xs text-blue-100 mb-6 font-medium">{scheme.department}</p>
 
-      {/* Description */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Overview & Purpose</Text>
-        <Text style={styles.descText}>{scheme.description}</Text>
-      </Card>
+          <div className="bg-blue-950/60 border border-blue-700/60 p-4 rounded-xl flex justify-between items-center">
+            <span className="text-xs text-blue-200 font-semibold uppercase tracking-wider">Financial Benefit</span>
+            <span className="text-lg font-black text-amber-400">
+              ₹{scheme.financialBenefit.toLocaleString('en-IN')} / Year
+            </span>
+          </div>
+        </div>
 
-      {/* Eligibility Rules */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Eligibility Rules</Text>
-        {scheme.eligibilityRules && scheme.eligibilityRules.length > 0 ? (
-          scheme.eligibilityRules.map((rule) => (
-            <View key={rule.id} style={styles.ruleItem}>
-              <Text style={styles.ruleBullet}>•</Text>
-              <View style={styles.ruleContent}>
-                <Text style={styles.ruleDesc}>{rule.description}</Text>
-                <Text style={styles.ruleMeta}>
-                  {rule.attributeKey} {rule.operator} {rule.targetValue}
-                </Text>
-              </View>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>Standard welfare guidelines apply.</Text>
-        )}
-      </Card>
+        {/* Overview Card */}
+        <Card>
+          <h2 className="text-base font-bold text-blue-900 mb-2">Overview & Purpose</h2>
+          <p className="text-sm text-slate-700 leading-relaxed">{scheme.description}</p>
+        </Card>
 
-      {/* Required Documents */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Required Documents</Text>
-        {scheme.requiredDocuments && scheme.requiredDocuments.length > 0 ? (
-          scheme.requiredDocuments.map((doc) => (
-            <View key={doc.id} style={styles.docItem}>
-              <Badge label={doc.documentType} variant="warning" />
-              <Text style={styles.docDesc}>{doc.description}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>No special document requirements specified.</Text>
-        )}
-      </Card>
+        {/* Eligibility Rules Card */}
+        <Card>
+          <h2 className="text-base font-bold text-blue-900 mb-3">Eligibility Rules & Criteria</h2>
+          {scheme.eligibilityRules && scheme.eligibilityRules.length > 0 ? (
+            <div className="space-y-3">
+              {scheme.eligibilityRules.map((rule) => (
+                <div key={rule.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-3">
+                  <span className="text-blue-900 font-bold text-sm mt-0.5">•</span>
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">{rule.description}</p>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                      {rule.attributeKey} {rule.operator} {rule.targetValue}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 italic">Standard welfare guidelines apply.</p>
+          )}
+        </Card>
 
-      {/* Action Buttons */}
-      <Button
-        title="Check My Eligibility Match"
-        onPress={() => onSimulateEligibility(scheme.id)}
-        variant="secondary"
-        style={styles.simulateBtn}
-      />
-    </ScrollView>
+        {/* Required Documents Card */}
+        <Card>
+          <h2 className="text-base font-bold text-blue-900 mb-3">Required Documents</h2>
+          {scheme.requiredDocuments && scheme.requiredDocuments.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {scheme.requiredDocuments.map((doc) => (
+                <div key={doc.id} className="p-3 bg-amber-50/50 rounded-xl border border-amber-200 flex items-center gap-3">
+                  <Badge label={doc.documentType} variant="warning" />
+                  <span className="text-xs font-semibold text-slate-800">{doc.description}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-500 italic">No special document requirements specified.</p>
+          )}
+        </Card>
+
+        {/* Simulate Action Button */}
+        <Button
+          title="Simulate My Eligibility Match →"
+          variant="secondary"
+          onClick={() => onSimulateEligibility(scheme.id)}
+          className="w-full py-3.5 text-base font-bold shadow-md"
+        />
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.lg, paddingTop: 50 },
-  backLink: { marginBottom: theme.spacing.md },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  errorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.spacing.lg },
-  errorText: { fontSize: theme.typography.sizes.md, color: theme.colors.danger, marginBottom: theme.spacing.md },
-  retryBtn: { marginBottom: theme.spacing.sm },
-  headerCard: { backgroundColor: theme.colors.primary, marginBottom: theme.spacing.md },
-  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.xs },
-  codeText: { fontSize: theme.typography.sizes.xs, fontWeight: theme.typography.weights.bold, color: theme.colors.saffron },
-  title: { fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.surface, marginBottom: 4 },
-  department: { fontSize: theme.typography.sizes.xs, color: 'rgba(255, 255, 255, 0.8)', marginBottom: theme.spacing.md },
-  benefitContainer: { backgroundColor: 'rgba(255, 255, 255, 0.15)', padding: theme.spacing.sm, borderRadius: theme.spacing.borderRadius.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  benefitLabel: { fontSize: theme.typography.sizes.xs, color: theme.colors.surface },
-  benefitAmount: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.saffronLight },
-  sectionCard: { marginBottom: theme.spacing.md },
-  sectionTitle: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: theme.spacing.xs },
-  descText: { fontSize: theme.typography.sizes.sm, color: theme.colors.textPrimary, lineHeight: 22 },
-  ruleItem: { flexDirection: 'row', marginBottom: theme.spacing.xs },
-  ruleBullet: { fontSize: theme.typography.sizes.md, color: theme.colors.primary, marginRight: theme.spacing.xs },
-  ruleContent: { flex: 1 },
-  ruleDesc: { fontSize: theme.typography.sizes.sm, color: theme.colors.textPrimary, fontWeight: theme.typography.weights.medium },
-  ruleMeta: { fontSize: 10, color: theme.colors.textMuted },
-  docItem: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.xs },
-  docDesc: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, marginLeft: theme.spacing.sm },
-  emptyText: { fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted, fontStyle: 'italic' },
-  simulateBtn: { marginTop: theme.spacing.sm, marginBottom: 40 },
-  backBtn: { marginTop: theme.spacing.xs },
-});

@@ -1,6 +1,4 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { theme } from '../../theme';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -21,81 +19,74 @@ export const RecommendationComparisonScreen: React.FC<Props> = ({ recommendation
 
   if (isError || comparedRecommendations.length === 0) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Unable to load comparison data.</Text>
-        <Button title="Retry" onPress={() => refetch()} style={styles.retryBtn} />
-        <Button title="Back" onPress={onBack} variant="outline" style={styles.backBtn} />
-      </View>
+      <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6 text-center">
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 max-w-md w-full shadow-xs">
+          <p className="text-sm font-semibold text-rose-600 mb-4">Unable to load scheme comparison data.</p>
+          <Button title="Retry" onClick={() => refetch()} className="w-full mb-2 py-2.5" />
+          <Button title="Back" variant="outline" onClick={onBack} className="w-full py-2.5" />
+        </div>
+      </main>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity onPress={onBack} style={styles.backLink}>
-        <Text style={styles.backText}>← Back to Recommendations</Text>
-      </TouchableOpacity>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+            ← Back to Recommendations
+          </button>
+          <h1 className="text-lg font-bold text-blue-900">Side-by-Side Scheme Comparison Matrix</h1>
+        </div>
+      </header>
 
-      <Text style={styles.screenTitle}>Scheme Comparison Matrix</Text>
-      <Text style={styles.screenSubtitle}>Side-by-side comparison of selected welfare benefits.</Text>
+      <main className="max-w-6xl mx-auto px-4 pt-6 space-y-6">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+          <h2 className="text-base font-bold text-blue-900 mb-4">Comparative Analysis</h2>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-        <View style={styles.matrixContainer}>
-          {comparedRecommendations.map((rec) => {
-            const title = rec.scheme?.title || rec.title || `Scheme #${rec.schemeId.slice(0, 8)}`;
-            return (
-              <Card key={rec.id} style={styles.colCard}>
-                <Badge label={rec.isEligible ? 'ELIGIBLE' : 'ACTION NEEDED'} variant={rec.isEligible ? 'success' : 'warning'} />
-                <Text style={styles.colTitle} numberOfLines={2}>{title}</Text>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {comparedRecommendations.map((rec) => {
+              const title = rec.scheme?.title || rec.title || `Scheme #${rec.schemeId.slice(0, 8)}`;
+              return (
+                <div key={rec.id} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                      <Badge label={rec.isEligible ? 'ELIGIBLE' : 'ACTION NEEDED'} variant={rec.isEligible ? 'success' : 'warning'} />
+                      <span className="text-xs font-mono font-bold text-slate-500">{rec.scheme?.code || 'SCHEME'}</span>
+                    </div>
 
-                <View style={styles.metricBlock}>
-                  <Text style={styles.metricLabel}>Match Score</Text>
-                  <Text style={styles.matchValue}>{rec.matchPercentage}%</Text>
-                </View>
+                    <h3 className="text-base font-bold text-slate-900 mb-4 line-clamp-2 min-h-[48px]">{title}</h3>
 
-                <View style={styles.metricBlock}>
-                  <Text style={styles.metricLabel}>Annual Benefit</Text>
-                  <Text style={styles.benefitValue}>₹{rec.estimatedBenefit.toLocaleString('en-IN')}</Text>
-                </View>
+                    <div className="space-y-3 mb-6">
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 flex justify-between items-center">
+                        <span className="text-xs text-slate-500 font-medium">Match Score</span>
+                        <span className="text-sm font-black text-emerald-700">{rec.matchPercentage}%</span>
+                      </div>
 
-                <View style={styles.metricBlock}>
-                  <Text style={styles.metricLabel}>Criteria Met</Text>
-                  <Text style={styles.countValue}>{rec.criteriaMet?.length || 0} Rules</Text>
-                </View>
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 flex justify-between items-center">
+                        <span className="text-xs text-slate-500 font-medium">Annual Benefit</span>
+                        <span className="text-sm font-black text-amber-700">₹{rec.estimatedBenefit.toLocaleString('en-IN')}</span>
+                      </div>
 
-                <View style={styles.metricBlock}>
-                  <Text style={styles.metricLabel}>Missing Docs</Text>
-                  <Text style={styles.countValue}>{rec.missingDocuments?.length || 0} Docs</Text>
-                </View>
-              </Card>
-            );
-          })}
-        </View>
-      </ScrollView>
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 flex justify-between items-center">
+                        <span className="text-xs text-slate-500 font-medium">Criteria Met</span>
+                        <span className="text-xs font-bold text-slate-900">{rec.criteriaMet?.length || 0} Rules</span>
+                      </div>
 
-      <Button title="Back to List" onPress={onBack} style={styles.backBtnMain} />
-    </ScrollView>
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 flex justify-between items-center">
+                        <span className="text-xs text-slate-500 font-medium">Missing Documents</span>
+                        <span className="text-xs font-bold text-slate-900">{rec.missingDocuments?.length || 0} Docs</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <Button title="Back to Recommendations List" onClick={onBack} className="w-full py-3 font-bold" />
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.lg, paddingTop: 50 },
-  backLink: { marginBottom: theme.spacing.md },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  screenTitle: { fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary },
-  screenSubtitle: { fontSize: theme.typography.sizes.sm, color: theme.colors.textSecondary, marginTop: 2, marginBottom: theme.spacing.md },
-  errorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.spacing.lg },
-  errorText: { fontSize: theme.typography.sizes.md, color: theme.colors.danger, marginBottom: theme.spacing.md },
-  retryBtn: { marginBottom: theme.spacing.sm },
-  backBtn: { marginTop: theme.spacing.xs },
-  horizontalScroll: { marginBottom: theme.spacing.lg },
-  matrixContainer: { flexDirection: 'row' },
-  colCard: { width: 220, marginRight: theme.spacing.md },
-  colTitle: { fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginTop: theme.spacing.xs, marginBottom: theme.spacing.md, height: 40 },
-  metricBlock: { marginBottom: theme.spacing.sm, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: theme.colors.divider },
-  metricLabel: { fontSize: 10, color: theme.colors.textMuted },
-  matchValue: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.success },
-  benefitValue: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.saffron },
-  countValue: { fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.semibold, color: theme.colors.textPrimary },
-  backBtnMain: { marginTop: theme.spacing.xs, marginBottom: 40 },
-});

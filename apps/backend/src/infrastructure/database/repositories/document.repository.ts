@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { IDocumentRepository } from '../../../domain/document/document-repository.interface';
 import { DocumentEntity, VerificationStatus } from '../../../domain/document/document.entity';
+import { Prisma } from '@prisma/client';
 import { DocumentType } from '../../../domain/welfare/scheme.entity';
 
 @Injectable()
 export class DocumentRepositoryImpl implements IDocumentRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapToEntity(data: any): DocumentEntity {
+  private mapToEntity(data: Prisma.DocumentGetPayload<{ include: { ocrResult: true } }> ): DocumentEntity {
     return new DocumentEntity({
       id: data.id,
       userId: data.userId,
@@ -24,7 +25,7 @@ export class DocumentRepositoryImpl implements IDocumentRepository {
         documentId: data.ocrResult.documentId,
         rawText: data.ocrResult.rawText,
         confidenceScore: data.ocrResult.confidenceScore,
-        extractedData: data.ocrResult.extractedData as Record<string, any>,
+        extractedData: data.ocrResult.extractedData as Record<string, unknown>,
         processedAt: data.ocrResult.processedAt,
       } : null,
       uploadedAt: data.uploadedAt,
@@ -33,7 +34,7 @@ export class DocumentRepositoryImpl implements IDocumentRepository {
   }
 
   async findById(id: string): Promise<DocumentEntity | null> {
-    const record = await this.prisma.document.findUnique({
+    const record = await this.prisma.client.document.findUnique({
       where: { id },
       include: { ocrResult: true },
     });
@@ -41,23 +42,23 @@ export class DocumentRepositoryImpl implements IDocumentRepository {
   }
 
   async findByUserId(userId: string): Promise<DocumentEntity[]> {
-    const records = await this.prisma.document.findMany({
+    const records = await this.prisma.client.document.findMany({
       where: { userId },
       include: { ocrResult: true },
     });
-    return records.map((r) => this.mapToEntity(r));
+    return records.map((r: Prisma.DocumentGetPayload<{ include: { ocrResult: true } }>) => this.mapToEntity(r));
   }
 
   async findByUserAndType(userId: string, documentType: DocumentType): Promise<DocumentEntity[]> {
-    const records = await this.prisma.document.findMany({
+    const records = await this.prisma.client.document.findMany({
       where: { userId, documentType },
       include: { ocrResult: true },
     });
-    return records.map((r) => this.mapToEntity(r));
+    return records.map((r: Prisma.DocumentGetPayload<{ include: { ocrResult: true } }>) => this.mapToEntity(r));
   }
 
   async save(document: DocumentEntity): Promise<DocumentEntity> {
-    const record = await this.prisma.document.create({
+    const record = await this.prisma.client.document.create({
       data: {
         id: document.id,
         userId: document.userId,
@@ -75,7 +76,7 @@ export class DocumentRepositoryImpl implements IDocumentRepository {
   }
 
   async update(document: DocumentEntity): Promise<DocumentEntity> {
-    const record = await this.prisma.document.update({
+    const record = await this.prisma.client.document.update({
       where: { id: document.id },
       data: {
         verificationStatus: document.verificationStatus,
@@ -86,6 +87,6 @@ export class DocumentRepositoryImpl implements IDocumentRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.document.delete({ where: { id } });
+    await this.prisma.client.document.delete({ where: { id } });
   }
 }

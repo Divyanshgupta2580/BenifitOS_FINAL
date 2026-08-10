@@ -1,16 +1,4 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-  Alert,
-  Modal,
-} from 'react-native';
-import { theme } from '../../theme';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -40,7 +28,6 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
   } = useGovernmentServices();
 
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [refreshing, setRefreshing] = useState(false);
 
   // Connection Modal State
   const [activeModalService, setActiveModalService] = useState<GovernmentServiceItem | null>(null);
@@ -48,12 +35,7 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
   const [otp, setOtp] = useState('');
   const [txnId, setTxnId] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-  };
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const filteredServices = services.filter((s) => {
     if (selectedCategory === 'ALL') return true;
@@ -66,83 +48,66 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
 
   const handleOpenConnect = (service: GovernmentServiceItem) => {
     if (service.code === 'DIGILOCKER') {
-      Alert.alert(
-        'DigiLocker Redirect',
-        'Redirecting to official DigiLocker OAuth2 authentication gateway...',
-        [{ text: 'Proceed', onPress: () => Alert.alert('Connected', 'DigiLocker account linked successfully.') }]
-      );
+      alert('Redirecting to official DigiLocker OAuth2 authentication gateway...');
       return;
     }
     setActiveModalService(service);
     setIsOtpSent(false);
     setOtp('');
     setTxnId('');
+    setStatusMessage(null);
   };
 
   const handleRequestOtp = async () => {
+    setStatusMessage(null);
     if (aadhaarNumber.length !== 12) {
-      Alert.alert('Validation Error', 'Aadhaar number must be exactly 12 digits.');
+      setStatusMessage({ type: 'error', text: 'Aadhaar number must be exactly 12 digits.' });
       return;
     }
     try {
       const res: any = await connectService({ aadhaarNumber });
       setTxnId(res.txnId || 'TXN-GOV-' + Date.now());
       setIsOtpSent(true);
-      Alert.alert('OTP Sent', 'Verification OTP dispatched to registered mobile number.');
+      setStatusMessage({ type: 'success', text: 'Verification OTP dispatched to registered mobile number.' });
     } catch (err: any) {
-      Alert.alert('Request Failed', err.message || 'Could not request verification OTP.');
+      setStatusMessage({ type: 'error', text: err.message || 'Could not request verification OTP.' });
     }
   };
 
   const handleVerifyOtp = async () => {
+    setStatusMessage(null);
     if (otp.length !== 6) {
-      Alert.alert('Validation Error', 'Verification OTP must be 6 digits.');
+      setStatusMessage({ type: 'error', text: 'Verification OTP must be 6 digits.' });
       return;
     }
     try {
       await connectService({ otp, txnId: txnId || 'TXN-GOV-LIVE' });
-      Alert.alert('Connection Successful', `${activeModalService?.name} verified and connected.`, [
-        {
-          text: 'OK',
-          onPress: () => {
-            setActiveModalService(null);
-            refetch();
-          },
-        },
-      ]);
+      setStatusMessage({ type: 'success', text: `${activeModalService?.name} verified and connected.` });
+      setTimeout(() => {
+        setActiveModalService(null);
+        refetch();
+      }, 1000);
     } catch (err: any) {
-      Alert.alert('Verification Failed', err.message || 'Invalid verification OTP.');
+      setStatusMessage({ type: 'error', text: err.message || 'Invalid verification OTP.' });
     }
   };
 
   const handleSync = async (service: GovernmentServiceItem) => {
     try {
       await syncService(service.id);
-      Alert.alert('Sync Complete', `${service.name} data updated from national registry.`, [
-        { text: 'OK', onPress: () => refetch() },
-      ]);
+      alert(`${service.name} data updated from national registry.`);
+      refetch();
     } catch (err: any) {
-      Alert.alert('Sync Failed', err.message || 'Could not sync service data.');
+      alert(err.message || 'Could not sync service data.');
     }
   };
 
-  const handleDisconnect = (service: GovernmentServiceItem) => {
-    Alert.alert(
-      'Disconnect Integration',
-      `Are you sure you want to disconnect ${service.name}? You will need to re-verify your identity.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Disconnect',
-          style: 'destructive',
-          onPress: async () => {
-            await disconnectService(service.id);
-            Alert.alert('Disconnected', `${service.name} link unlinked.`);
-            refetch();
-          },
-        },
-      ]
-    );
+  const handleDisconnect = async (service: GovernmentServiceItem) => {
+    if (window.confirm(`Are you sure you want to disconnect ${service.name}? You will need to re-verify your identity.`)) {
+      await disconnectService(service.id);
+      alert(`${service.name} integration unlinked.`);
+      refetch();
+    }
   };
 
   const getBadgeVariant = (status: ServiceStatus): 'success' | 'warning' | 'danger' | 'primary' => {
@@ -160,217 +125,206 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
     }
   };
 
-  const renderServiceCard = ({ item }: { item: GovernmentServiceItem }) => (
-    <Card style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.iconRow}>
-          <Text style={styles.serviceIcon}>{item.icon}</Text>
-          <View style={styles.nameContainer}>
-            <Text style={styles.serviceName}>{item.name}</Text>
-            <Text style={styles.serviceCategory}>{item.category} REGISTRY</Text>
-          </View>
-        </View>
-        <Badge label={item.status} variant={getBadgeVariant(item.status)} />
-      </View>
-
-      <Text style={styles.serviceDesc}>{item.description}</Text>
-
-      <View style={styles.metaRow}>
-        <Text style={styles.healthText}>
-          Health: <Text style={item.health === 'HEALTHY' ? styles.healthOk : styles.healthBad}>{item.health}</Text>
-        </Text>
-        <Text style={styles.syncTime}>Last Synced: {item.lastSynced || 'Never'}</Text>
-      </View>
-
-      <View style={styles.actionsRow}>
-        {item.status === 'NOT_CONNECTED' || item.status === 'EXPIRED' ? (
-          <Button
-            title="Connect Account"
-            onPress={() => handleOpenConnect(item)}
-            isLoading={isConnecting}
-            style={styles.connectBtn}
-          />
-        ) : (
-          <>
-            <Button
-              title="Sync Data"
-              onPress={() => handleSync(item)}
-              isLoading={isSyncing}
-              variant="outline"
-              style={styles.syncBtn}
-            />
-            <Button
-              title="Disconnect"
-              onPress={() => handleDisconnect(item)}
-              isLoading={isDisconnecting}
-              variant="outline"
-              style={styles.disconnectBtn}
-            />
-          </>
-        )}
-      </View>
-    </Card>
-  );
-
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backLink} accessibilityLabel="Back to Dashboard">
-          <Text style={styles.backText}>← Back to Dashboard</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Government Services Hub</Text>
-        <Text style={styles.subtitle}>
-          Connect & verify citizen identity accounts with official national registries.
-        </Text>
-      </View>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+              ← Back
+            </button>
+            <h1 className="text-lg font-bold text-blue-900">Government Services Integration Hub</h1>
+          </div>
+          <span className="text-xs font-medium text-slate-500">{connectedCount} Active Integrations</span>
+        </div>
+      </header>
 
-      {/* Integration Dashboard Summary */}
-      <View style={styles.summaryContainer}>
-        <Card style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>{connectedCount}</Text>
-          <Text style={styles.summaryLabel}>Connected</Text>
-        </Card>
-        <Card style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>{verifiedCount}</Text>
-          <Text style={styles.summaryLabel}>Verified</Text>
-        </Card>
-        <Card style={styles.summaryCard}>
-          <Text style={styles.summaryNumber}>{pendingCount}</Text>
-          <Text style={styles.summaryLabel}>Pending</Text>
-        </Card>
-      </View>
-
-      {/* Category Filter Bar */}
-      <View style={styles.categoryContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRow}>
-          {CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.categoryChip, selectedCategory === cat && styles.categoryChipActive]}
-              onPress={() => setSelectedCategory(cat)}
-              accessibilityLabel={`Filter by ${cat}`}
-            >
-              <Text style={[styles.categoryText, selectedCategory === cat && styles.categoryTextActive]}>
-                {cat}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Services Cards List */}
-      {isLoading ? (
-        <ScrollView style={styles.listPadding}>
-          <Skeleton height={140} borderRadius={12} style={{ marginBottom: 12 }} />
-          <Skeleton height={140} borderRadius={12} style={{ marginBottom: 12 }} />
-          <Skeleton height={140} borderRadius={12} style={{ marginBottom: 12 }} />
-        </ScrollView>
-      ) : (
-        <FlatList
-          data={filteredServices}
-          keyExtractor={(item) => item.id}
-          renderItem={renderServiceCard}
-          contentContainerStyle={styles.listPadding}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
-          }
-        />
-      )}
-
-      {/* Aadhaar / Account Connection Modal */}
-      <Modal visible={!!activeModalService} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <Card style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Connect {activeModalService?.name}</Text>
-            <Text style={styles.modalSub}>
-              Enter your official 12-digit number to request e-KYC authentication OTP.
-            </Text>
-
-            {!isOtpSent ? (
-              <>
-                <Input
-                  label="Aadhaar / Registry Identifier"
-                  value={aadhaarNumber}
-                  onChangeText={setAadhaarNumber}
-                  keyboardType="number-pad"
-                  maxLength={12}
-                />
-                <Button title="Request Verification OTP" onPress={handleRequestOtp} isLoading={isConnecting} style={styles.modalBtn} />
-              </>
-            ) : (
-              <>
-                <Text style={styles.otpNotice}>Transaction ID: {txnId}</Text>
-                <Input
-                  label="6-Digit Verification OTP"
-                  value={otp}
-                  onChangeText={setOtp}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                />
-                <Button title="Verify & Link Account" onPress={handleVerifyOtp} isLoading={isConnecting} style={styles.modalBtn} />
-              </>
-            )}
-
-            <Button
-              title="Cancel"
-              onPress={() => setActiveModalService(null)}
-              variant="outline"
-              style={styles.modalCancel}
-            />
+      <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
+        {/* Summary Widgets Row */}
+        <div className="grid grid-cols-3 gap-4">
+          <Card className="text-center py-4">
+            <span className="text-2xl font-black text-blue-900">{connectedCount}</span>
+            <span className="text-xs text-slate-500 block font-medium mt-0.5">Connected</span>
           </Card>
-        </View>
-      </Modal>
-    </View>
+          <Card className="text-center py-4">
+            <span className="text-2xl font-black text-emerald-700">{verifiedCount}</span>
+            <span className="text-xs text-slate-500 block font-medium mt-0.5">Verified</span>
+          </Card>
+          <Card className="text-center py-4">
+            <span className="text-2xl font-black text-amber-700">{pendingCount}</span>
+            <span className="text-xs text-slate-500 block font-medium mt-0.5">Pending</span>
+          </Card>
+        </div>
+
+        {/* Category Chips Bar */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex gap-2 overflow-x-auto scrollbar-none">
+          {CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors border ${
+                  isSelected
+                    ? 'bg-blue-900 border-blue-900 text-white shadow-xs'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Services Cards Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Skeleton height={160} className="rounded-xl" />
+            <Skeleton height={160} className="rounded-xl" />
+          </div>
+        ) : isError ? (
+          <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center">
+            <p className="text-sm text-rose-600 font-semibold mb-4">Unable to load government integration services.</p>
+            <button
+              onClick={() => refetch()}
+              className="px-4 py-2 bg-blue-900 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredServices.map((item: GovernmentServiceItem) => (
+              <Card key={item.id} className="flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{item.icon}</span>
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900">{item.name}</h3>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.category} REGISTRY</span>
+                      </div>
+                    </div>
+                    <Badge label={item.status} variant={getBadgeVariant(item.status)} />
+                  </div>
+
+                  <p className="text-xs text-slate-600 mb-4">{item.description}</p>
+                </div>
+
+                <div>
+                  <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-[11px] text-slate-500 mb-4">
+                    <span>
+                      Gateway Status:{' '}
+                      <strong className={item.health === 'HEALTHY' ? 'text-emerald-700' : 'text-rose-600'}>
+                        {item.health}
+                      </strong>
+                    </span>
+                    <span>Last Synced: {item.lastSynced || 'Never'}</span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {item.status === 'NOT_CONNECTED' || item.status === 'EXPIRED' ? (
+                      <Button
+                        title="Connect Account"
+                        onClick={() => handleOpenConnect(item)}
+                        isLoading={isConnecting}
+                        className="w-full py-2.5 font-bold"
+                      />
+                    ) : (
+                      <>
+                        <Button
+                          title="Sync Registry"
+                          onClick={() => handleSync(item)}
+                          isLoading={isSyncing}
+                          variant="outline"
+                          className="flex-1 py-2 font-semibold"
+                        />
+                        <Button
+                          title="Disconnect"
+                          onClick={() => handleDisconnect(item)}
+                          isLoading={isDisconnecting}
+                          variant="outline"
+                          className="px-4 py-2 text-rose-600 border-rose-200 hover:bg-rose-50 font-semibold"
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Modal for Aadhaar / Government Gateway OTP Link */}
+        {activeModalService && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full border border-slate-200 shadow-xl space-y-4">
+              <h2 className="text-lg font-bold text-blue-900">Connect {activeModalService.name}</h2>
+              <p className="text-xs text-slate-600">Enter your official 12-digit number to request e-KYC authentication OTP.</p>
+
+              {statusMessage && (
+                <div
+                  className={`p-3 rounded-lg border text-xs font-semibold ${
+                    statusMessage.type === 'success'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                      : 'bg-rose-50 border-rose-200 text-rose-700'
+                  }`}
+                >
+                  {statusMessage.text}
+                </div>
+              )}
+
+              {!isOtpSent ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleRequestOtp();
+                  }}
+                  className="space-y-4"
+                >
+                  <Input
+                    label="Aadhaar / Registry Identifier"
+                    value={aadhaarNumber}
+                    onChangeText={setAadhaarNumber}
+                    maxLength={12}
+                    required
+                  />
+                  <Button type="submit" title="Request Verification OTP" isLoading={isConnecting} className="w-full py-3 font-bold" />
+                </form>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleVerifyOtp();
+                  }}
+                  className="space-y-4"
+                >
+                  <p className="text-xs font-bold font-mono text-blue-900 bg-blue-50 p-2 rounded border border-blue-200">
+                    Transaction ID: {txnId}
+                  </p>
+                  <Input
+                    label="6-Digit Verification OTP"
+                    value={otp}
+                    onChangeText={setOtp}
+                    maxLength={6}
+                    required
+                  />
+                  <Button type="submit" title="Verify & Link Account" isLoading={isConnecting} className="w-full py-3 font-bold" />
+                </form>
+              )}
+
+              <Button
+                type="button"
+                title="Cancel"
+                variant="outline"
+                onClick={() => setActiveModalService(null)}
+                className="w-full py-2"
+              />
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  header: { padding: theme.spacing.lg, paddingTop: 50, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  backLink: { marginBottom: theme.spacing.xs },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  title: { fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary },
-  subtitle: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, marginTop: 2 },
-  
-  summaryContainer: { flexDirection: 'row', justifyContent: 'space-between', padding: theme.spacing.md, backgroundColor: theme.colors.surface },
-  summaryCard: { width: '31%', alignItems: 'center', paddingVertical: theme.spacing.sm },
-  summaryNumber: { fontSize: theme.typography.sizes.xl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary },
-  summaryLabel: { fontSize: 10, color: theme.colors.textSecondary, marginTop: 2 },
-  
-  categoryContainer: { backgroundColor: theme.colors.surface, paddingVertical: theme.spacing.xs, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  categoryRow: { paddingHorizontal: theme.spacing.md },
-  categoryChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F1F5F9', marginRight: 8, borderWidth: 1, borderColor: theme.colors.border },
-  categoryChipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  categoryText: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary },
-  categoryTextActive: { color: '#FFFFFF', fontWeight: theme.typography.weights.bold },
-  
-  listPadding: { padding: theme.spacing.md, paddingBottom: 40 },
-  card: { marginBottom: theme.spacing.md },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  iconRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  serviceIcon: { fontSize: 24, marginRight: 8 },
-  nameContainer: { flex: 1 },
-  serviceName: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.textPrimary },
-  serviceCategory: { fontSize: 10, color: theme.colors.textSecondary, fontWeight: theme.typography.weights.bold },
-  serviceDesc: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, marginBottom: 8 },
-  
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTopWidth: 1, borderTopColor: theme.colors.divider, marginBottom: 12 },
-  healthText: { fontSize: 10, color: theme.colors.textSecondary },
-  healthOk: { color: theme.colors.success, fontWeight: theme.typography.weights.bold },
-  healthBad: { color: theme.colors.danger, fontWeight: theme.typography.weights.bold },
-  syncTime: { fontSize: 10, color: theme.colors.textMuted },
-  
-  actionsRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
-  connectBtn: { flex: 1 },
-  syncBtn: { width: '48%' },
-  disconnectBtn: { width: '48%', borderColor: theme.colors.danger },
-  
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: theme.spacing.lg },
-  modalContent: { backgroundColor: theme.colors.surface },
-  modalTitle: { fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: 4 },
-  modalSub: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, marginBottom: theme.spacing.md },
-  modalBtn: { marginTop: theme.spacing.md },
-  modalCancel: { marginTop: theme.spacing.xs },
-  otpNotice: { fontSize: theme.typography.sizes.xs, color: theme.colors.primary, fontWeight: theme.typography.weights.bold, marginBottom: 8 },
-});

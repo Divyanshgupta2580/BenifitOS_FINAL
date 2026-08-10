@@ -17,15 +17,17 @@ export class ApplicationRepositoryImpl implements IApplicationRepository {
       formData: data.formData as Record<string, any>,
       remarks: data.remarks,
       documentIds: data.documents ? data.documents.map((d: any) => d.documentId) : [],
-      history: data.history ? data.history.map((h: any) => ({
-        id: h.id,
-        applicationId: h.applicationId,
-        fromStatus: h.fromStatus as ApplicationStatus,
-        toStatus: h.toStatus as ApplicationStatus,
-        changedById: h.changedById,
-        note: h.note,
-        changedAt: h.changedAt,
-      })) : [],
+      history: data.history
+        ? data.history.map((h: any) => ({
+            id: h.id,
+            applicationId: h.applicationId,
+            fromStatus: h.fromStatus as ApplicationStatus,
+            toStatus: h.toStatus as ApplicationStatus,
+            changedById: h.changedById,
+            note: h.note,
+            changedAt: h.changedAt,
+          }))
+        : [],
       submittedAt: data.submittedAt,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
@@ -33,7 +35,7 @@ export class ApplicationRepositoryImpl implements IApplicationRepository {
   }
 
   async findById(id: string): Promise<ApplicationEntity | null> {
-    const record = await this.prisma.application.findUnique({
+    const record = await this.prisma.client.application.findUnique({
       where: { id },
       include: { documents: true, history: true },
     });
@@ -41,7 +43,7 @@ export class ApplicationRepositoryImpl implements IApplicationRepository {
   }
 
   async findByApplicationNo(applicationNo: string): Promise<ApplicationEntity | null> {
-    const record = await this.prisma.application.findUnique({
+    const record = await this.prisma.client.application.findUnique({
       where: { applicationNo },
       include: { documents: true, history: true },
     });
@@ -49,7 +51,7 @@ export class ApplicationRepositoryImpl implements IApplicationRepository {
   }
 
   async findByUserId(userId: string): Promise<ApplicationEntity[]> {
-    const records = await this.prisma.application.findMany({
+    const records = await this.prisma.client.application.findMany({
       where: { userId },
       include: { documents: true, history: true },
     });
@@ -57,7 +59,7 @@ export class ApplicationRepositoryImpl implements IApplicationRepository {
   }
 
   async findBySchemeId(schemeId: string): Promise<ApplicationEntity[]> {
-    const records = await this.prisma.application.findMany({
+    const records = await this.prisma.client.application.findMany({
       where: { schemeId },
       include: { documents: true, history: true },
     });
@@ -65,7 +67,7 @@ export class ApplicationRepositoryImpl implements IApplicationRepository {
   }
 
   async findByStatus(status: ApplicationStatus): Promise<ApplicationEntity[]> {
-    const records = await this.prisma.application.findMany({
+    const records = await this.prisma.client.application.findMany({
       where: { status },
       include: { documents: true, history: true },
     });
@@ -73,7 +75,7 @@ export class ApplicationRepositoryImpl implements IApplicationRepository {
   }
 
   async save(application: ApplicationEntity): Promise<ApplicationEntity> {
-    const record = await this.prisma.application.create({
+    const record = await this.prisma.client.application.create({
       data: {
         id: application.id,
         applicationNo: application.applicationNo,
@@ -90,7 +92,7 @@ export class ApplicationRepositoryImpl implements IApplicationRepository {
   }
 
   async update(application: ApplicationEntity): Promise<ApplicationEntity> {
-    const record = await this.prisma.application.update({
+    const record = await this.prisma.client.application.update({
       where: { id: application.id },
       data: {
         status: application.status,

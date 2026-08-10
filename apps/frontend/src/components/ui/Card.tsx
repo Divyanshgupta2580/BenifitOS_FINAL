@@ -1,27 +1,22 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
-import { theme } from '../../theme';
 
 interface CardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  className?: string;
+  style?: React.CSSProperties;
+  onClick?: () => void;
 }
 
-export const Card: React.FC<CardProps> = ({ children, style }) => {
-  return <View style={[styles.card, style]}>{children}</View>;
+export const Card: React.FC<CardProps> = ({ children, className = '', style, onClick }) => {
+  return (
+    <div
+      onClick={onClick}
+      style={style}
+      className={`bg-white rounded-xl p-5 border border-slate-200 shadow-sm transition-shadow ${
+        onClick ? 'cursor-pointer hover:shadow-md' : ''
+      } ${className}`}
+    >
+      {children}
+    </div>
+  );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.spacing.borderRadius.lg,
-    padding: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-});

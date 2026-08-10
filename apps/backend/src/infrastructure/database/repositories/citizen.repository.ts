@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { Prisma } from '@prisma/client';
 import { ICitizenRepository } from '../../../domain/citizen/citizen-repository.interface';
 import { CitizenEntity, Gender, SocialCategory, MaritalStatus, EmploymentStatus, DisabilityType } from '../../../domain/citizen/citizen.entity';
 
@@ -7,7 +8,7 @@ import { CitizenEntity, Gender, SocialCategory, MaritalStatus, EmploymentStatus,
 export class CitizenRepositoryImpl implements ICitizenRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapToEntity(data: any): CitizenEntity {
+  private mapToEntity(data: Prisma.CitizenProfileGetPayload<{ include: { address: true; householdMembers: true; landDetails: true } }>): CitizenEntity {
     return new CitizenEntity({
       id: data.id,
       userId: data.userId,
@@ -34,7 +35,7 @@ export class CitizenRepositoryImpl implements ICitizenRepository {
         pincode: data.address.pincode,
         isRural: data.address.isRural,
       } : null,
-      householdMembers: data.householdMembers ? data.householdMembers.map((m: any) => ({
+      householdMembers: data.householdMembers ? data.householdMembers.map((m: Prisma.HouseholdMemberGetPayload<{}>) => ({
         id: m.id,
         fullName: m.fullName,
         relation: m.relation,
@@ -43,7 +44,7 @@ export class CitizenRepositoryImpl implements ICitizenRepository {
         isDependent: m.isDependent,
         annualIncomeINR: m.annualIncomeINR,
       })) : [],
-      landDetails: data.landDetails ? data.landDetails.map((l: any) => ({
+      landDetails: data.landDetails ? data.landDetails.map((l: Prisma.LandDetailGetPayload<{}>) => ({
         id: l.id,
         landSizeAcres: l.landSizeAcres,
         landType: l.landType,
@@ -57,7 +58,7 @@ export class CitizenRepositoryImpl implements ICitizenRepository {
   }
 
   async findById(id: string): Promise<CitizenEntity | null> {
-    const record = await this.prisma.citizenProfile.findUnique({
+    const record = await this.prisma.client.citizenProfile.findUnique({
       where: { id },
       include: { address: true, householdMembers: true, landDetails: true },
     });
@@ -65,7 +66,7 @@ export class CitizenRepositoryImpl implements ICitizenRepository {
   }
 
   async findByUserId(userId: string): Promise<CitizenEntity | null> {
-    const record = await this.prisma.citizenProfile.findUnique({
+    const record = await this.prisma.client.citizenProfile.findUnique({
       where: { userId },
       include: { address: true, householdMembers: true, landDetails: true },
     });
@@ -73,7 +74,7 @@ export class CitizenRepositoryImpl implements ICitizenRepository {
   }
 
   async findByAadhaarHash(aadhaarHash: string): Promise<CitizenEntity | null> {
-    const record = await this.prisma.citizenProfile.findUnique({
+    const record = await this.prisma.client.citizenProfile.findUnique({
       where: { aadhaarHash },
       include: { address: true, householdMembers: true, landDetails: true },
     });
@@ -81,7 +82,7 @@ export class CitizenRepositoryImpl implements ICitizenRepository {
   }
 
   async save(citizen: CitizenEntity): Promise<CitizenEntity> {
-    const record = await this.prisma.citizenProfile.create({
+    const record = await this.prisma.client.citizenProfile.create({
       data: {
         id: citizen.id,
         userId: citizen.userId,
@@ -106,7 +107,7 @@ export class CitizenRepositoryImpl implements ICitizenRepository {
   }
 
   async update(citizen: CitizenEntity): Promise<CitizenEntity> {
-    const record = await this.prisma.citizenProfile.update({
+    const record = await this.prisma.client.citizenProfile.update({
       where: { id: citizen.id },
       data: {
         firstName: citizen.firstName,
@@ -128,6 +129,6 @@ export class CitizenRepositoryImpl implements ICitizenRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.citizenProfile.delete({ where: { id } });
+    await this.prisma.client.citizenProfile.delete({ where: { id } });
   }
 }

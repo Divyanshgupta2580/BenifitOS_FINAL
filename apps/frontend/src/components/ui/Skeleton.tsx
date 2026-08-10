@@ -1,27 +1,26 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
-import { theme } from '../../theme';
 
 interface SkeletonProps {
-  width?: number | `${number}%`;
-  height?: number;
-  borderRadius?: number;
-  style?: ViewStyle;
+  width?: string | number;
+  height?: string | number;
+  borderRadius?: string | number;
+  className?: string;
 }
 
 export const Skeleton: React.FC<SkeletonProps> = ({
   width = '100%',
   height = 20,
-  borderRadius = theme.spacing.borderRadius.sm,
-  style,
+  borderRadius = 4,
+  className = '',
 }) => {
-  return <View style={[styles.skeleton, { width, height, borderRadius }, style]} />;
+  return (
+    <div
+      className={`animate-pulse bg-slate-200 my-1 ${className}`}
+      style={{
+        width: typeof width === 'number' ? `${width}px` : width,
+        height: typeof height === 'number' ? `${height}px` : height,
+        borderRadius: typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius,
+      }}
+    />
+  );
 };
-
-const styles = StyleSheet.create({
-  skeleton: {
-    backgroundColor: theme.colors.border,
-    opacity: 0.6,
-    marginVertical: 4,
-  },
-});

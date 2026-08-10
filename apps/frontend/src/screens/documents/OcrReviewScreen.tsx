@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { theme } from '../../theme';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -22,8 +20,8 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
 
   const [editableFields, setEditableFields] = useState<Record<string, string>>({});
   const [hasInitializedFields, setHasInitializedFields] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Initialize editable fields when OCR result is available
   if (ocrResult?.extractedData && !hasInitializedFields) {
     const initial: Record<string, string> = {};
     Object.entries(ocrResult.extractedData).forEach(([key, val]) => {
@@ -34,12 +32,13 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
   }
 
   const handleRunOcr = async () => {
+    setStatusMessage(null);
     try {
       await processOcr(documentId);
       setHasInitializedFields(false);
       refetch();
     } catch (err: any) {
-      Alert.alert('OCR Failed', err.message || 'Vision OCR scan could not complete.');
+      setStatusMessage({ type: 'error', text: err.message || 'Vision OCR scan could not complete.' });
     }
   };
 
@@ -48,127 +47,113 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
   };
 
   const handleConfirmVerification = () => {
-    Alert.alert(
-      'Verification Confirmed',
-      'Extracted fields verified and linked to citizen document vault.',
-      [{ text: 'OK', onPress: onBack }]
-    );
+    setStatusMessage({ type: 'success', text: 'Extracted fields verified and saved to citizen document vault!' });
+    setTimeout(onBack, 1200);
   };
 
   const confidencePct = ocrResult ? (ocrResult.confidenceScore * 100).toFixed(1) : '0.0';
   const isHighConfidence = ocrResult && ocrResult.confidenceScore >= 0.85;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity onPress={onBack} style={styles.backLink}>
-        <Text style={styles.backText}>← Back to Vault</Text>
-      </TouchableOpacity>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+            ← Back to Vault
+          </button>
+          <h1 className="text-lg font-bold text-blue-900">AI Vision OCR & Document Verification</h1>
+        </div>
+      </header>
 
-      <Text style={styles.screenTitle}>Vision OCR & AI Extraction</Text>
-      <Text style={styles.screenSubtitle}>
-        Review and verify document attributes extracted by Google Gemini Vision.
-      </Text>
+      <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
+        {statusMessage && (
+          <div
+            className={`p-3.5 rounded-xl border text-xs font-semibold ${
+              statusMessage.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-rose-50 border-rose-200 text-rose-700'
+            }`}
+          >
+            {statusMessage.text}
+          </div>
+        )}
 
-      {/* Document Header Card */}
-      <Card style={styles.headerCard}>
-        <View style={styles.badgeRow}>
-          <Badge label={doc?.documentType || 'DOCUMENT'} variant="primary" />
-          <Badge label={doc?.verificationStatus || 'PENDING'} variant={doc?.verificationStatus === 'VERIFIED' ? 'success' : 'warning'} />
-        </View>
-        <Text style={styles.docName}>{doc?.fileName || `Document #${documentId.slice(0, 8)}`}</Text>
-        
-        <Button
-          title={isProcessing ? 'Processing Vision Scan...' : 'Run Vision OCR Scan'}
-          onPress={handleRunOcr}
-          isLoading={isProcessing}
-          variant="secondary"
-          style={styles.ocrBtn}
-        />
-      </Card>
+        {/* Document Header Card */}
+        <Card>
+          <div className="flex justify-between items-center mb-3">
+            <Badge label={doc?.documentType || 'DOCUMENT'} variant="primary" />
+            <Badge label={doc?.verificationStatus || 'PENDING'} variant={doc?.verificationStatus === 'VERIFIED' ? 'success' : 'warning'} />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mb-4">{doc?.fileName || `Document #${documentId.slice(0, 8)}`}</h2>
+          
+          <Button
+            title={isProcessing ? 'Processing Google Gemini Vision Scan...' : '🔍 Run Vision OCR Scan'}
+            onClick={handleRunOcr}
+            isLoading={isProcessing}
+            variant="secondary"
+            className="w-full py-2.5 font-bold"
+          />
+        </Card>
 
-      {/* Loading Spinner */}
-      {isLoading && <LoadingSpinner message="Fetching OCR Results..." />}
+        {isLoading && <LoadingSpinner message="Fetching OCR Results..." />}
 
-      {/* OCR Extraction Review Body */}
-      {ocrResult ? (
-        <>
-          {/* Confidence Indicator Gauge */}
-          <Card style={{ ...styles.confidenceCard, backgroundColor: isHighConfidence ? theme.colors.primary : theme.colors.primaryDark }}>
-            <Text style={styles.confidenceTitle}>Gemini Vision Confidence Score</Text>
-            <View style={styles.gaugeRow}>
-              <Text style={styles.confidenceScore}>{confidencePct}%</Text>
+        {ocrResult ? (
+          <>
+            {/* Confidence Badge */}
+            <div className="bg-blue-900 text-white rounded-2xl p-6 shadow-md border border-blue-800 flex justify-between items-center">
+              <div>
+                <span className="text-xs uppercase tracking-wider text-blue-200 font-medium block">Google Gemini Vision Score</span>
+                <span className="text-3xl font-black text-white">{confidencePct}%</span>
+              </div>
               <Badge
                 label={isHighConfidence ? 'HIGH CONFIDENCE' : 'MANUAL REVIEW REQUIRED'}
                 variant={isHighConfidence ? 'success' : 'warning'}
               />
-            </View>
-          </Card>
+            </div>
 
-          {/* Editable Extracted Fields List */}
-          <Card style={styles.card}>
-            <Text style={styles.sectionTitle}>Extracted Document Attributes</Text>
-            <Text style={styles.sectionSub}>Verify and edit any field before submitting to verification audit.</Text>
+            {/* Editable Extracted Fields */}
+            <Card>
+              <h3 className="text-base font-bold text-blue-900 mb-1">Extracted Document Attributes</h3>
+              <p className="text-xs text-slate-500 mb-4">Verify and edit any field before submitting to verification audit.</p>
 
-            {Object.keys(editableFields).length > 0 ? (
-              Object.entries(editableFields).map(([key, val]) => (
-                <Input
-                  key={key}
-                  label={key.toUpperCase().replace(/_/g, ' ')}
-                  value={val}
-                  onChangeText={(text) => handleFieldChange(key, text)}
-                />
-              ))
-            ) : (
-              <Text style={styles.emptyText}>No structured fields extracted from document image.</Text>
-            )}
-          </Card>
+              {Object.keys(editableFields).length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {Object.entries(editableFields).map(([key, val]) => (
+                    <Input
+                      key={key}
+                      label={key.toUpperCase().replace(/_/g, ' ')}
+                      value={val}
+                      onChangeText={(text: string) => handleFieldChange(key, text)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 italic">No structured fields extracted from document image.</p>
+              )}
+            </Card>
 
-          {/* Raw Text Viewer */}
-          <Card style={styles.card}>
-            <Text style={styles.sectionTitle}>Raw Extracted Text</Text>
-            <View style={styles.rawBox}>
-              <Text style={styles.rawText}>{ocrResult.rawText}</Text>
-            </View>
-          </Card>
+            {/* Raw Text Viewer */}
+            <Card>
+              <h3 className="text-base font-bold text-blue-900 mb-2">Raw Extracted OCR Text</h3>
+              <div className="bg-slate-100 p-4 rounded-xl border border-slate-200 font-mono text-xs text-slate-800 whitespace-pre-wrap">
+                {ocrResult.rawText}
+              </div>
+            </Card>
 
-          <Button title="Confirm & Verify Document" onPress={handleConfirmVerification} style={styles.confirmBtn} />
-        </>
-      ) : (
-        !isLoading && (
-          <Card style={styles.card}>
-            <Text style={styles.emptyText}>
-              No OCR extraction result available yet. Click "Run Vision OCR Scan" to initiate AI processing.
-            </Text>
-          </Card>
-        )
-      )}
+            <Button title="Confirm & Verify Document Attributes" onClick={handleConfirmVerification} className="w-full py-3 font-bold" />
+          </>
+        ) : (
+          !isLoading && (
+            <Card>
+              <p className="text-xs text-slate-500 italic">
+                No OCR extraction result available yet. Click "Run Vision OCR Scan" to initiate AI vision processing.
+              </p>
+            </Card>
+          )
+        )}
 
-      <Button title="Back to Vault" onPress={onBack} variant="outline" style={styles.backBtnMain} />
-    </ScrollView>
+        <Button title="Back to Vault" variant="outline" onClick={onBack} className="w-full py-2.5" />
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.lg, paddingTop: 50 },
-  backLink: { marginBottom: theme.spacing.md },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  screenTitle: { fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary },
-  screenSubtitle: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, marginTop: 2, marginBottom: theme.spacing.md },
-  headerCard: { marginBottom: theme.spacing.md },
-  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.xs },
-  docName: { fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: theme.spacing.sm },
-  ocrBtn: { marginTop: theme.spacing.xs },
-  confidenceCard: { marginBottom: theme.spacing.md, padding: theme.spacing.md },
-  confidenceTitle: { fontSize: theme.typography.sizes.xs, color: 'rgba(255, 255, 255, 0.8)', marginBottom: 4 },
-  gaugeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  confidenceScore: { fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.surface },
-  card: { marginBottom: theme.spacing.md },
-  sectionTitle: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: 2 },
-  sectionSub: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, marginBottom: theme.spacing.md },
-  rawBox: { backgroundColor: theme.colors.background, padding: theme.spacing.md, borderRadius: theme.spacing.borderRadius.md, borderWidth: 1, borderColor: theme.colors.border },
-  rawText: { fontSize: theme.typography.sizes.xs, color: theme.colors.textPrimary, fontFamily: 'monospace' },
-  emptyText: { fontSize: theme.typography.sizes.sm, color: theme.colors.textMuted, fontStyle: 'italic' },
-  confirmBtn: { marginTop: theme.spacing.xs },
-  backBtnMain: { marginTop: theme.spacing.xs, marginBottom: 40 },
-});

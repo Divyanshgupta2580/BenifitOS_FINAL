@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Switch } from 'react-native';
-import { theme } from '../../theme';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
@@ -24,10 +22,14 @@ export const DemographicsEditScreen: React.FC<Props> = ({ onBack }) => {
   const [disabilityPercent, setDisabilityPercent] = useState(profile?.disabilityPercent ? String(profile.disabilityPercent) : '0');
   const [isBpl, setIsBpl] = useState(profile?.isBplCardHolder || false);
   const [bplCardNumber, setBplCardNumber] = useState(profile?.bplCardNumber || '');
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setStatusMessage(null);
+
     if (!firstName || !lastName) {
-      Alert.alert('Validation Error', 'First and Last name are required.');
+      setStatusMessage({ type: 'error', text: 'First Name and Last Name are required.' });
       return;
     }
     try {
@@ -45,50 +47,159 @@ export const DemographicsEditScreen: React.FC<Props> = ({ onBack }) => {
         isBplCardHolder: isBpl,
         bplCardNumber: isBpl ? bplCardNumber : undefined,
       });
-      Alert.alert('Success', 'Profile demographics updated successfully!', [{ text: 'OK', onPress: onBack }]);
+      setStatusMessage({ type: 'success', text: 'Profile demographics updated successfully!' });
+      setTimeout(onBack, 1000);
     } catch (err: any) {
-      Alert.alert('Update Failed', err.message || 'Could not save profile changes.');
+      setStatusMessage({ type: 'error', text: err.message || 'Could not save profile changes.' });
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Edit Demographics</Text>
-      <Text style={styles.subtitle}>Update your demographic & income attributes for scheme eligibility calculation.</Text>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+            ← Back to Profile
+          </button>
+          <h1 className="text-lg font-bold text-blue-900">Edit Demographics & Income</h1>
+        </div>
+      </header>
 
-      <Input label="First Name" value={firstName} onChangeText={setFirstName} />
-      <Input label="Last Name" value={lastName} onChangeText={setLastName} />
-      <Input label="Date of Birth (YYYY-MM-DD)" value={dob} onChangeText={setDob} placeholder="1995-01-01" />
+      <main className="max-w-3xl mx-auto px-4 pt-6">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+          {statusMessage && (
+            <div
+              className={`mb-6 p-3.5 rounded-xl border text-xs font-semibold ${
+                statusMessage.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-rose-50 border-rose-200 text-rose-700'
+              }`}
+            >
+              {statusMessage.text}
+            </div>
+          )}
 
-      <Input label="Gender (MALE / FEMALE / TRANSGENDER / OTHER)" value={gender} onChangeText={setGender} />
-      <Input label="Marital Status (SINGLE / MARRIED / DIVORCED / WIDOWED)" value={maritalStatus} onChangeText={setMaritalStatus} />
-      <Input label="Social Category (GENERAL / OBC / SC / ST / EWS)" value={socialCategory} onChangeText={setSocialCategory} />
-      <Input label="Employment Status (EMPLOYED / UNEMPLOYED / FARMER / etc)" value={employmentStatus} onChangeText={setEmploymentStatus} />
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input label="First Name" value={firstName} onChangeText={setFirstName} required />
+              <Input label="Last Name" value={lastName} onChangeText={setLastName} required />
+            </div>
 
-      <Input label="Annual Income (INR)" value={income} onChangeText={setIncome} keyboardType="numeric" />
-      <Input label="Disability Type (NONE / VISUAL / HEARING / LOCOMOTOR)" value={disabilityType} onChangeText={setDisabilityType} />
-      <Input label="Disability Percentage (%)" value={disabilityPercent} onChangeText={setDisabilityPercent} keyboardType="numeric" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input label="Date of Birth" type="date" value={dob} onChangeText={setDob} required />
+              
+              <div className="flex flex-col">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Gender</label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-700"
+                >
+                  <option value="MALE">MALE</option>
+                  <option value="FEMALE">FEMALE</option>
+                  <option value="TRANSGENDER">TRANSGENDER</option>
+                  <option value="OTHER">OTHER</option>
+                </select>
+              </div>
+            </div>
 
-      <View style={styles.switchRow}>
-        <Text style={styles.switchLabel}>BPL Card Holder?</Text>
-        <Switch value={isBpl} onValueChange={setIsBpl} trackColor={{ true: theme.colors.primary }} />
-      </View>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex flex-col">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Marital Status</label>
+                <select
+                  value={maritalStatus}
+                  onChange={(e) => setMaritalStatus(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-700"
+                >
+                  <option value="SINGLE">SINGLE</option>
+                  <option value="MARRIED">MARRIED</option>
+                  <option value="DIVORCED">DIVORCED</option>
+                  <option value="WIDOWED">WIDOWED</option>
+                </select>
+              </div>
 
-      {isBpl && <Input label="BPL Card Number" value={bplCardNumber} onChangeText={setBplCardNumber} />}
+              <div className="flex flex-col">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Social Category</label>
+                <select
+                  value={socialCategory}
+                  onChange={(e) => setSocialCategory(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-700"
+                >
+                  <option value="GENERAL">GENERAL</option>
+                  <option value="OBC">OBC</option>
+                  <option value="SC">SC</option>
+                  <option value="ST">ST</option>
+                  <option value="EWS">EWS</option>
+                </select>
+              </div>
 
-      <Button title="Save Demographics" onPress={handleSave} isLoading={isUpdating} style={styles.button} />
-      <Button title="Cancel" onPress={onBack} variant="outline" style={styles.cancelBtn} />
-    </ScrollView>
+              <div className="flex flex-col">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Employment Status</label>
+                <select
+                  value={employmentStatus}
+                  onChange={(e) => setEmploymentStatus(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-700"
+                >
+                  <option value="EMPLOYED">EMPLOYED</option>
+                  <option value="UNEMPLOYED">UNEMPLOYED</option>
+                  <option value="SELF_EMPLOYED">SELF_EMPLOYED</option>
+                  <option value="STUDENT">STUDENT</option>
+                  <option value="RETIRED">RETIRED</option>
+                  <option value="FARMER">FARMER</option>
+                  <option value="DAILY_WAGE">DAILY_WAGE</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Input label="Annual Income (INR)" type="number" value={income} onChangeText={setIncome} required />
+              
+              <div className="flex flex-col">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Disability Type</label>
+                <select
+                  value={disabilityType}
+                  onChange={(e) => setDisabilityType(e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-700"
+                >
+                  <option value="NONE">NONE</option>
+                  <option value="VISUAL">VISUAL</option>
+                  <option value="HEARING">HEARING</option>
+                  <option value="LOCOMOTOR">LOCOMOTOR</option>
+                  <option value="INTELLECTUAL">INTELLECTUAL</option>
+                  <option value="MULTIPLE">MULTIPLE</option>
+                  <option value="OTHER">OTHER</option>
+                </select>
+              </div>
+
+              <Input label="Disability (%)" type="number" value={disabilityPercent} onChangeText={setDisabilityPercent} />
+            </div>
+
+            {/* BPL Toggle Checkbox */}
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+              <div>
+                <label htmlFor="bpl-toggle" className="text-xs font-bold text-slate-900 block cursor-pointer">
+                  Below Poverty Line (BPL) Card Holder?
+                </label>
+                <span className="text-[11px] text-slate-500">Enable if holding valid state/central BPL ration card.</span>
+              </div>
+              <input
+                id="bpl-toggle"
+                type="checkbox"
+                checked={isBpl}
+                onChange={(e) => setIsBpl(e.target.checked)}
+                className="w-5 h-5 text-blue-900 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+              />
+            </div>
+
+            {isBpl && <Input label="BPL Card Number" value={bplCardNumber} onChangeText={setBplCardNumber} />}
+
+            <div className="flex gap-3 pt-4 border-t border-slate-200">
+              <Button type="submit" title="Save Demographics" isLoading={isUpdating} className="flex-1 py-3" />
+              <Button type="button" title="Cancel" variant="outline" onClick={onBack} className="px-6" />
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.lg, paddingTop: 50 },
-  title: { fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: theme.spacing.xs },
-  subtitle: { fontSize: theme.typography.sizes.md, color: theme.colors.textSecondary, marginBottom: theme.spacing.xl },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md, paddingVertical: 8 },
-  switchLabel: { fontSize: theme.typography.sizes.sm, fontWeight: theme.typography.weights.medium, color: theme.colors.textPrimary },
-  button: { marginTop: theme.spacing.md },
-  cancelBtn: { marginTop: theme.spacing.sm },
-});

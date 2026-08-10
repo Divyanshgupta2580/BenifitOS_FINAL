@@ -1,6 +1,4 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { theme } from '../../theme';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -21,12 +19,14 @@ export const EligibilitySimulatorScreen: React.FC<Props> = ({ schemeId, onBack }
 
   if (isError || !eligibilityMatch) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>Eligibility Calculation Unavailable</Text>
-        <Text style={styles.errorText}>Complete your citizen profile to enable rule evaluation.</Text>
-        <Button title="Retry Evaluation" onPress={() => refetch()} style={styles.retryBtn} />
-        <Button title="Back to Scheme" onPress={onBack} variant="outline" style={styles.backBtn} />
-      </View>
+      <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6 text-center">
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 max-w-md w-full shadow-xs">
+          <h2 className="text-xl font-bold text-rose-600 mb-2">Eligibility Engine Unavailable</h2>
+          <p className="text-xs text-slate-600 mb-6">Complete your citizen profile to enable rule evaluation.</p>
+          <Button title="Retry Evaluation" onClick={() => refetch()} className="w-full mb-2 py-2.5" />
+          <Button title="Back to Scheme" variant="outline" onClick={onBack} className="w-full py-2.5" />
+        </div>
+      </main>
     );
   }
 
@@ -34,58 +34,49 @@ export const EligibilitySimulatorScreen: React.FC<Props> = ({ schemeId, onBack }
   const matchScore = eligibilityMatch.matchPercentage;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity onPress={onBack} style={styles.backLink}>
-        <Text style={styles.backText}>← Back to Scheme Detail</Text>
-      </TouchableOpacity>
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+            ← Back to Scheme Detail
+          </button>
+          <h1 className="text-lg font-bold text-blue-900">Eligibility Rule Simulator</h1>
+        </div>
+      </header>
 
-      {/* Backend Eligibility Gauge Score */}
-      <Card style={{ ...styles.scoreCard, backgroundColor: isEligible ? theme.colors.primary : theme.colors.primaryDark }}>
-        <Text style={styles.scoreTitle}>Backend Eligibility Result</Text>
-        <View style={styles.wheel}>
-          <Text style={styles.wheelText}>{matchScore}%</Text>
-          <Text style={styles.wheelSub}>Match</Text>
-        </View>
-        <Badge
-          label={isEligible ? 'ELIGIBLE' : 'ACTION REQUIRED'}
-          variant={isEligible ? 'success' : 'warning'}
-        />
-        <Text style={styles.benefitText}>
-          Estimated Benefit: ₹{eligibilityMatch.estimatedBenefit.toLocaleString('en-IN')} / Year
-        </Text>
-      </Card>
+      <main className="max-w-2xl mx-auto px-4 pt-6 space-y-6">
+        {/* Match Score Card */}
+        <div className="bg-blue-900 text-white rounded-2xl p-8 shadow-md border border-blue-800 flex flex-col items-center text-center">
+          <span className="text-xs font-semibold uppercase tracking-wider text-blue-200 mb-4">
+            Backend Rules Result
+          </span>
 
-      {/* Rules Evaluation Note */}
-      <Card style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Deterministic Boolean Rules Evaluation</Text>
-        <Text style={styles.noteText}>
-          Eligibility is computed 100% deterministically by BenefitOS backend rules engine. AI is never used to calculate welfare scores.
-        </Text>
-      </Card>
+          <div className="w-32 h-32 rounded-full border-8 border-amber-400 flex flex-col items-center justify-center bg-blue-950/60 mb-4 shadow-inner">
+            <span className="text-3xl font-black text-white">{matchScore}%</span>
+            <span className="text-[10px] text-blue-200 font-bold uppercase">Match</span>
+          </div>
 
-      <Button title="Back to Scheme" onPress={onBack} style={styles.backBtnMain} />
-    </ScrollView>
+          <Badge
+            label={isEligible ? 'ELIGIBLE CITIZEN' : 'ACTION REQUIRED'}
+            variant={isEligible ? 'success' : 'warning'}
+            className="mb-4 text-xs py-1 px-3"
+          />
+
+          <p className="text-lg font-extrabold text-amber-400">
+            Estimated Benefit: ₹{eligibilityMatch.estimatedBenefit.toLocaleString('en-IN')} / Year
+          </p>
+        </div>
+
+        {/* Deterministic Evaluation Note */}
+        <Card>
+          <h2 className="text-base font-bold text-blue-900 mb-2">Deterministic Rule Engine Security</h2>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Eligibility is computed 100% deterministically by the BenefitOS backend rules evaluator using strict boolean logic operators. AI LLMs are never permitted to generate or alter eligibility scores.
+          </p>
+        </Card>
+
+        <Button title="Back to Scheme" onClick={onBack} className="w-full py-3 font-bold" />
+      </main>
+    </div>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.lg, paddingTop: 50 },
-  backLink: { marginBottom: theme.spacing.md },
-  backText: { fontSize: theme.typography.sizes.sm, color: theme.colors.primary, fontWeight: theme.typography.weights.medium },
-  errorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.spacing.lg },
-  errorTitle: { fontSize: theme.typography.sizes.lg, fontWeight: theme.typography.weights.bold, color: theme.colors.danger },
-  errorText: { fontSize: theme.typography.sizes.sm, color: theme.colors.textSecondary, marginVertical: theme.spacing.md, textAlign: 'center' },
-  retryBtn: { marginBottom: theme.spacing.sm },
-  scoreCard: { alignItems: 'center', padding: theme.spacing.xl, marginBottom: theme.spacing.md },
-  scoreTitle: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.surface, marginBottom: theme.spacing.md },
-  wheel: { width: 100, height: 100, borderRadius: 50, borderWidth: 6, borderColor: theme.colors.saffron, alignItems: 'center', justifyContent: 'center', marginBottom: theme.spacing.md },
-  wheelText: { fontSize: theme.typography.sizes.xxl, fontWeight: theme.typography.weights.bold, color: theme.colors.surface },
-  wheelSub: { fontSize: 10, color: 'rgba(255, 255, 255, 0.8)' },
-  benefitText: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.saffronLight, marginTop: theme.spacing.md },
-  sectionCard: { marginBottom: theme.spacing.md },
-  sectionTitle: { fontSize: theme.typography.sizes.md, fontWeight: theme.typography.weights.bold, color: theme.colors.primary, marginBottom: theme.spacing.xs },
-  noteText: { fontSize: theme.typography.sizes.xs, color: theme.colors.textSecondary, lineHeight: 18 },
-  backBtnMain: { marginTop: theme.spacing.sm },
-  backBtn: { marginTop: theme.spacing.xs },
-});

@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { theme } from '../../theme';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { apiClient } from '../../services/api-client';
@@ -15,11 +13,15 @@ export const LoginScreen: React.FC<Props> = ({ onNavigateToRegister, onNavigateT
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { setAuth } = useAuthStore();
 
-  const handleLogin = async () => {
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setErrorMessage(null);
+
     if (!email || !password) {
-      Alert.alert('Validation Error', 'Please enter email and password.');
+      setErrorMessage('Please enter both email address and password.');
       return;
     }
     setIsLoading(true);
@@ -27,96 +29,76 @@ export const LoginScreen: React.FC<Props> = ({ onNavigateToRegister, onNavigateT
       const response: any = await apiClient.post('/auth/login', { email, password });
       await setAuth(response.user, response.tokens.accessToken, response.tokens.refreshToken);
     } catch (err: any) {
-      Alert.alert('Login Failed', err.message || 'Invalid credentials.');
+      setErrorMessage(err.message || 'Invalid email or password.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome Back</Text>
-      <Text style={styles.subtitle}>Sign in to manage your welfare scheme applications.</Text>
+    <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6">
+      <div className="w-full max-w-md bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+        <div className="mb-6 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 text-white text-xl font-bold mb-3 shadow-sm">
+            🏛️
+          </div>
+          <h1 className="text-2xl font-bold text-blue-900 mb-1">Welcome to BenefitOS</h1>
+          <p className="text-sm text-slate-600">Sign in to manage your welfare scheme applications.</p>
+        </div>
 
-      <View style={styles.form}>
-        <Input
-          label="Email Address"
-          placeholder="citizen@example.com"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        {errorMessage && (
+          <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">
+            {errorMessage}
+          </div>
+        )}
 
-        <Input
-          label="Password"
-          placeholder="••••••••"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <form onSubmit={handleLogin} className="space-y-4">
+          <Input
+            label="Email Address"
+            type="email"
+            placeholder="citizen@example.com"
+            value={email}
+            onChangeText={setEmail}
+            required
+            autoComplete="email"
+          />
 
-        <TouchableOpacity onPress={onNavigateToForgotPassword} style={styles.forgotPassLink}>
-          <Text style={styles.forgotPassText}>Forgot Password?</Text>
-        </TouchableOpacity>
+          <Input
+            label="Password"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChangeText={setPassword}
+            required
+            autoComplete="current-password"
+          />
 
-        <Button title="Sign In" onPress={handleLogin} isLoading={isLoading} style={styles.button} />
-      </View>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={onNavigateToForgotPassword}
+              className="text-xs font-semibold text-blue-900 hover:underline focus:outline-none"
+            >
+              Forgot Password?
+            </button>
+          </div>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Don't have an account? </Text>
-        <TouchableOpacity onPress={onNavigateToRegister}>
-          <Text style={styles.registerLink}>Register</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          <Button type="submit" title="Sign In" isLoading={isLoading} className="w-full py-3 mt-2" />
+        </form>
+
+        <div className="mt-6 pt-6 border-t border-slate-200 text-center">
+          <p className="text-xs text-slate-600">
+            Don't have an account?{' '}
+            <button
+              type="button"
+              onClick={onNavigateToRegister}
+              className="font-bold text-blue-900 hover:underline focus:outline-none ml-1"
+            >
+              Register Citizen Profile
+            </button>
+          </p>
+        </div>
+      </div>
+    </main>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    padding: theme.spacing.lg,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: theme.typography.sizes.xxl,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.primary,
-    marginBottom: theme.spacing.xs,
-  },
-  subtitle: {
-    fontSize: theme.typography.sizes.md,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xl,
-  },
-  form: {
-    marginBottom: theme.spacing.xl,
-  },
-  forgotPassLink: {
-    alignSelf: 'flex-end',
-    marginBottom: theme.spacing.lg,
-  },
-  forgotPassText: {
-    fontSize: theme.typography.sizes.sm,
-    color: theme.colors.primary,
-    fontWeight: theme.typography.weights.medium,
-  },
-  button: {
-    marginTop: theme.spacing.sm,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  footerText: {
-    fontSize: theme.typography.sizes.md,
-    color: theme.colors.textSecondary,
-  },
-  registerLink: {
-    fontSize: theme.typography.sizes.md,
-    color: theme.colors.primary,
-    fontWeight: theme.typography.weights.bold,
-  },
-});

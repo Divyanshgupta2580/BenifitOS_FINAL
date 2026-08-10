@@ -6,7 +6,8 @@
     "build": "pnpm --filter backend build",
     "start": "pnpm --filter backend start",
     "start:dev": "pnpm --filter backend start:dev",
-    "lint": "pnpm --filter backend lint"
+    "lint": "pnpm --filter backend lint",
+    "test:db": "docker-compose -f docker-compose.test.yml up -d && pnpm test && docker-compose -f docker-compose.test.yml down"
   },
   "devDependencies": {
     "typescript": "^5.7.2"
