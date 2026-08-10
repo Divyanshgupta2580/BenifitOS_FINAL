@@ -42,28 +42,28 @@ let DocumentRepositoryImpl = class DocumentRepositoryImpl {
         });
     }
     async findById(id) {
-        const record = await this.prisma.document.findUnique({
+        const record = await this.prisma.client.document.findUnique({
             where: { id },
             include: { ocrResult: true },
         });
         return record ? this.mapToEntity(record) : null;
     }
     async findByUserId(userId) {
-        const records = await this.prisma.document.findMany({
+        const records = await this.prisma.client.document.findMany({
             where: { userId },
             include: { ocrResult: true },
         });
         return records.map((r) => this.mapToEntity(r));
     }
     async findByUserAndType(userId, documentType) {
-        const records = await this.prisma.document.findMany({
+        const records = await this.prisma.client.document.findMany({
             where: { userId, documentType },
             include: { ocrResult: true },
         });
         return records.map((r) => this.mapToEntity(r));
     }
     async save(document) {
-        const record = await this.prisma.document.create({
+        const record = await this.prisma.client.document.create({
             data: {
                 id: document.id,
                 userId: document.userId,
@@ -80,7 +80,7 @@ let DocumentRepositoryImpl = class DocumentRepositoryImpl {
         return this.mapToEntity(record);
     }
     async update(document) {
-        const record = await this.prisma.document.update({
+        const record = await this.prisma.client.document.update({
             where: { id: document.id },
             data: {
                 verificationStatus: document.verificationStatus,
@@ -90,7 +90,7 @@ let DocumentRepositoryImpl = class DocumentRepositoryImpl {
         return this.mapToEntity(record);
     }
     async delete(id) {
-        await this.prisma.document.delete({ where: { id } });
+        await this.prisma.client.document.delete({ where: { id } });
     }
 };
 exports.DocumentRepositoryImpl = DocumentRepositoryImpl;

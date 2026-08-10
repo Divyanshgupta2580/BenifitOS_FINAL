@@ -28,14 +28,14 @@ let OutboxRelayWorker = OutboxRelayWorker_1 = class OutboxRelayWorker {
     }
     async processPendingOutboxEvents() {
         try {
-            const pendingEvents = await this.prisma.outboxEvent.findMany({
+            const pendingEvents = await this.prisma.client.outboxEvent.findMany({
                 where: { status: 'PENDING' },
                 take: 20,
             });
             for (const event of pendingEvents) {
                 this.logger.log(`Relaying outbox event: ${event.eventType} (${event.id})`);
                 await this.redis.publish(`events:${event.aggregateType}`, JSON.stringify(event.payload));
-                await this.prisma.outboxEvent.update({
+                await this.prisma.client.outboxEvent.update({
                     where: { id: event.id },
                     data: { status: 'PUBLISHED', processedAt: new Date() },
                 });

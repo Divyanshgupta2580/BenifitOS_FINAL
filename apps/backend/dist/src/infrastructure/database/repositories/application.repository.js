@@ -28,57 +28,59 @@ let ApplicationRepositoryImpl = class ApplicationRepositoryImpl {
             formData: data.formData,
             remarks: data.remarks,
             documentIds: data.documents ? data.documents.map((d) => d.documentId) : [],
-            history: data.history ? data.history.map((h) => ({
-                id: h.id,
-                applicationId: h.applicationId,
-                fromStatus: h.fromStatus,
-                toStatus: h.toStatus,
-                changedById: h.changedById,
-                note: h.note,
-                changedAt: h.changedAt,
-            })) : [],
+            history: data.history
+                ? data.history.map((h) => ({
+                    id: h.id,
+                    applicationId: h.applicationId,
+                    fromStatus: h.fromStatus,
+                    toStatus: h.toStatus,
+                    changedById: h.changedById,
+                    note: h.note,
+                    changedAt: h.changedAt,
+                }))
+                : [],
             submittedAt: data.submittedAt,
             createdAt: data.createdAt,
             updatedAt: data.updatedAt,
         });
     }
     async findById(id) {
-        const record = await this.prisma.application.findUnique({
+        const record = await this.prisma.client.application.findUnique({
             where: { id },
             include: { documents: true, history: true },
         });
         return record ? this.mapToEntity(record) : null;
     }
     async findByApplicationNo(applicationNo) {
-        const record = await this.prisma.application.findUnique({
+        const record = await this.prisma.client.application.findUnique({
             where: { applicationNo },
             include: { documents: true, history: true },
         });
         return record ? this.mapToEntity(record) : null;
     }
     async findByUserId(userId) {
-        const records = await this.prisma.application.findMany({
+        const records = await this.prisma.client.application.findMany({
             where: { userId },
             include: { documents: true, history: true },
         });
         return records.map((r) => this.mapToEntity(r));
     }
     async findBySchemeId(schemeId) {
-        const records = await this.prisma.application.findMany({
+        const records = await this.prisma.client.application.findMany({
             where: { schemeId },
             include: { documents: true, history: true },
         });
         return records.map((r) => this.mapToEntity(r));
     }
     async findByStatus(status) {
-        const records = await this.prisma.application.findMany({
+        const records = await this.prisma.client.application.findMany({
             where: { status },
             include: { documents: true, history: true },
         });
         return records.map((r) => this.mapToEntity(r));
     }
     async save(application) {
-        const record = await this.prisma.application.create({
+        const record = await this.prisma.client.application.create({
             data: {
                 id: application.id,
                 applicationNo: application.applicationNo,
@@ -94,7 +96,7 @@ let ApplicationRepositoryImpl = class ApplicationRepositoryImpl {
         return this.mapToEntity(record);
     }
     async update(application) {
-        const record = await this.prisma.application.update({
+        const record = await this.prisma.client.application.update({
             where: { id: application.id },
             data: {
                 status: application.status,

@@ -36,23 +36,23 @@ let UserRepositoryImpl = class UserRepositoryImpl {
         });
     }
     async findById(id) {
-        const record = await this.prisma.user.findUnique({ where: { id } });
+        const record = await this.prisma.client.user.findUnique({ where: { id } });
         return record ? this.mapToEntity(record) : null;
     }
     async findByEmail(email) {
-        const record = await this.prisma.user.findUnique({ where: { email } });
+        const record = await this.prisma.client.user.findUnique({ where: { email } });
         return record ? this.mapToEntity(record) : null;
     }
     async findByPhone(phone) {
-        const record = await this.prisma.user.findUnique({ where: { phone } });
+        const record = await this.prisma.client.user.findUnique({ where: { phone } });
         return record ? this.mapToEntity(record) : null;
     }
     async findByGoogleId(googleId) {
-        const record = await this.prisma.user.findUnique({ where: { googleId } });
+        const record = await this.prisma.client.user.findUnique({ where: { googleId } });
         return record ? this.mapToEntity(record) : null;
     }
     async save(user) {
-        const record = await this.prisma.user.create({
+        const record = await this.prisma.client.user.create({
             data: {
                 id: user.id,
                 email: user.email,
@@ -69,7 +69,7 @@ let UserRepositoryImpl = class UserRepositoryImpl {
         return this.mapToEntity(record);
     }
     async update(user) {
-        const record = await this.prisma.user.update({
+        const record = await this.prisma.client.user.update({
             where: { id: user.id },
             data: {
                 email: user.email,
@@ -86,7 +86,7 @@ let UserRepositoryImpl = class UserRepositoryImpl {
         return this.mapToEntity(record);
     }
     async delete(id) {
-        await this.prisma.user.delete({ where: { id } });
+        await this.prisma.client.user.delete({ where: { id } });
     }
 };
 exports.UserRepositoryImpl = UserRepositoryImpl;

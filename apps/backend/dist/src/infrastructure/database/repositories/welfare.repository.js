@@ -46,14 +46,14 @@ let WelfareSchemeRepositoryImpl = class WelfareSchemeRepositoryImpl {
         });
     }
     async findById(id) {
-        const record = await this.prisma.welfareScheme.findUnique({
+        const record = await this.prisma.client.welfareScheme.findUnique({
             where: { id },
             include: { eligibilityRules: true, requiredDocuments: true },
         });
         return record ? this.mapToEntity(record) : null;
     }
     async findByCode(code) {
-        const record = await this.prisma.welfareScheme.findUnique({
+        const record = await this.prisma.client.welfareScheme.findUnique({
             where: { code },
             include: { eligibilityRules: true, requiredDocuments: true },
         });
@@ -65,14 +65,14 @@ let WelfareSchemeRepositoryImpl = class WelfareSchemeRepositoryImpl {
             where.category = category;
         if (state)
             where.OR = [{ state }, { isCentralScheme: true }];
-        const records = await this.prisma.welfareScheme.findMany({
+        const records = await this.prisma.client.welfareScheme.findMany({
             where,
             include: { eligibilityRules: true, requiredDocuments: true },
         });
         return records.map((r) => this.mapToEntity(r));
     }
     async save(scheme) {
-        const record = await this.prisma.welfareScheme.create({
+        const record = await this.prisma.client.welfareScheme.create({
             data: {
                 id: scheme.id,
                 code: scheme.code,
@@ -90,7 +90,7 @@ let WelfareSchemeRepositoryImpl = class WelfareSchemeRepositoryImpl {
         return this.mapToEntity(record);
     }
     async update(scheme) {
-        const record = await this.prisma.welfareScheme.update({
+        const record = await this.prisma.client.welfareScheme.update({
             where: { id: scheme.id },
             data: {
                 title: scheme.title,
@@ -130,20 +130,20 @@ let SchemeRecommendationRepositoryImpl = class SchemeRecommendationRepositoryImp
         });
     }
     async findByCitizenId(citizenProfileId) {
-        const records = await this.prisma.schemeRecommendation.findMany({
+        const records = await this.prisma.client.schemeRecommendation.findMany({
             where: { citizenProfileId },
         });
         return records.map((r) => this.mapToEntity(r));
     }
     async findByCitizenAndScheme(citizenProfileId, schemeId) {
-        const record = await this.prisma.schemeRecommendation.findUnique({
+        const record = await this.prisma.client.schemeRecommendation.findUnique({
             where: { citizenProfileId_schemeId: { citizenProfileId, schemeId } },
         });
         return record ? this.mapToEntity(record) : null;
     }
     async saveMany(recommendations) {
         for (const rec of recommendations) {
-            await this.prisma.schemeRecommendation.upsert({
+            await this.prisma.client.schemeRecommendation.upsert({
                 where: { citizenProfileId_schemeId: { citizenProfileId: rec.citizenProfileId, schemeId: rec.schemeId } },
                 create: {
                     id: rec.id,
@@ -168,7 +168,7 @@ let SchemeRecommendationRepositoryImpl = class SchemeRecommendationRepositoryImp
         }
     }
     async deleteForCitizen(citizenProfileId) {
-        await this.prisma.schemeRecommendation.deleteMany({ where: { citizenProfileId } });
+        await this.prisma.client.schemeRecommendation.deleteMany({ where: { citizenProfileId } });
     }
 };
 exports.SchemeRecommendationRepositoryImpl = SchemeRecommendationRepositoryImpl;

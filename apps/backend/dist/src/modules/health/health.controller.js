@@ -17,19 +17,20 @@ const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 let HealthController = class HealthController {
     health;
     http;
-    prismaHealth;
     memory;
     prisma;
-    constructor(health, http, prismaHealth, memory, prisma) {
+    constructor(health, http, memory, prisma) {
         this.health = health;
         this.http = http;
-        this.prismaHealth = prismaHealth;
         this.memory = memory;
         this.prisma = prisma;
     }
-    check() {
+    async check() {
         return this.health.check([
-            () => this.prismaHealth.pingCheck('database', this.prisma),
+            async () => {
+                await this.prisma.queryRaw `SELECT 1`;
+                return { database: { status: 'up' } };
+            },
             () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024),
         ]);
     }
@@ -47,7 +48,7 @@ __decorate([
     (0, terminus_1.HealthCheck)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], HealthController.prototype, "check", null);
 __decorate([
     (0, roles_decorator_1.Public)(),
@@ -67,7 +68,6 @@ exports.HealthController = HealthController = __decorate([
     (0, common_1.Controller)('health'),
     __metadata("design:paramtypes", [terminus_1.HealthCheckService,
         terminus_1.HttpHealthIndicator,
-        terminus_1.PrismaHealthIndicator,
         terminus_1.MemoryHealthIndicator,
         prisma_service_1.PrismaService])
 ], HealthController);

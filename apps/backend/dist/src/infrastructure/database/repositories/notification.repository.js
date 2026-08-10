@@ -30,18 +30,18 @@ let NotificationRepositoryImpl = class NotificationRepositoryImpl {
         };
     }
     async findById(id) {
-        const record = await this.prisma.notification.findUnique({ where: { id } });
+        const record = await this.prisma.client.notification.findUnique({ where: { id } });
         return record ? this.mapToEntity(record) : null;
     }
     async findByUserId(userId) {
-        const records = await this.prisma.notification.findMany({
+        const records = await this.prisma.client.notification.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' },
         });
         return records.map((r) => this.mapToEntity(r));
     }
     async save(notification) {
-        const record = await this.prisma.notification.create({
+        const record = await this.prisma.client.notification.create({
             data: {
                 id: notification.id,
                 userId: notification.userId,
@@ -55,13 +55,13 @@ let NotificationRepositoryImpl = class NotificationRepositoryImpl {
         return this.mapToEntity(record);
     }
     async markAsRead(id) {
-        await this.prisma.notification.update({
+        await this.prisma.client.notification.update({
             where: { id },
             data: { isRead: true },
         });
     }
     async markAllAsRead(userId) {
-        await this.prisma.notification.updateMany({
+        await this.prisma.client.notification.updateMany({
             where: { userId, isRead: false },
             data: { isRead: true },
         });

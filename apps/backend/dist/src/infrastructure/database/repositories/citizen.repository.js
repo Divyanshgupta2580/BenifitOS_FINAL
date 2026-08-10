@@ -67,28 +67,28 @@ let CitizenRepositoryImpl = class CitizenRepositoryImpl {
         });
     }
     async findById(id) {
-        const record = await this.prisma.citizenProfile.findUnique({
+        const record = await this.prisma.client.citizenProfile.findUnique({
             where: { id },
             include: { address: true, householdMembers: true, landDetails: true },
         });
         return record ? this.mapToEntity(record) : null;
     }
     async findByUserId(userId) {
-        const record = await this.prisma.citizenProfile.findUnique({
+        const record = await this.prisma.client.citizenProfile.findUnique({
             where: { userId },
             include: { address: true, householdMembers: true, landDetails: true },
         });
         return record ? this.mapToEntity(record) : null;
     }
     async findByAadhaarHash(aadhaarHash) {
-        const record = await this.prisma.citizenProfile.findUnique({
+        const record = await this.prisma.client.citizenProfile.findUnique({
             where: { aadhaarHash },
             include: { address: true, householdMembers: true, landDetails: true },
         });
         return record ? this.mapToEntity(record) : null;
     }
     async save(citizen) {
-        const record = await this.prisma.citizenProfile.create({
+        const record = await this.prisma.client.citizenProfile.create({
             data: {
                 id: citizen.id,
                 userId: citizen.userId,
@@ -112,7 +112,7 @@ let CitizenRepositoryImpl = class CitizenRepositoryImpl {
         return this.mapToEntity(record);
     }
     async update(citizen) {
-        const record = await this.prisma.citizenProfile.update({
+        const record = await this.prisma.client.citizenProfile.update({
             where: { id: citizen.id },
             data: {
                 firstName: citizen.firstName,
@@ -133,7 +133,7 @@ let CitizenRepositoryImpl = class CitizenRepositoryImpl {
         return this.mapToEntity(record);
     }
     async delete(id) {
-        await this.prisma.citizenProfile.delete({ where: { id } });
+        await this.prisma.client.citizenProfile.delete({ where: { id } });
     }
 };
 exports.CitizenRepositoryImpl = CitizenRepositoryImpl;
