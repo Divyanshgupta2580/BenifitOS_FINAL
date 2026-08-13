@@ -78,6 +78,11 @@ export class ApplicationEntity extends BaseDomainEntity<ApplicationProps> {
     this._updatedAt = new Date();
   }
 
+  public updateFormData(newData: Record<string, any>): void {
+    this._formData = { ...this._formData, ...newData };
+    this._updatedAt = new Date();
+  }
+
   public transitionTo(newStatus: ApplicationStatus, changedById: string, note?: string): void {
     const oldStatus = this._status;
     this._status = newStatus;

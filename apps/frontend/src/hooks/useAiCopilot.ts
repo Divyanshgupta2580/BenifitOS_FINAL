@@ -20,7 +20,7 @@ const INITIAL_MESSAGES: CopilotMessage[] = [
     text: 'Namaste! I am your BenefitOS AI Citizen Copilot. I have loaded your verified citizen profile, uploaded documents, OCR records, and government service links. How can I assist your welfare journey today?',
     timestamp: '10:00 AM',
     sources: ['Government Database', 'Citizen Profile'],
-    provider: 'Gemini 1.5 Pro',
+    provider: 'BenefitOS AI',
   },
 ];
 
@@ -45,7 +45,7 @@ export const useAiCopilot = () => {
         text: data.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         sources: data.sources || ['Government Database', 'Recommendation Engine'],
-        provider: data.provider || 'Gemini 1.5 Pro',
+        provider: data.provider || 'BenefitOS AI',
       };
       setMessages((prev) => [...prev, assistantMsg]);
     },
@@ -99,7 +99,7 @@ export const useAiCopilot = () => {
           text: res.explanation,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           sources: res.sources || ['Recommendation Engine', 'Government Database'],
-          provider: 'Gemini 1.5 Pro',
+          provider: 'BenefitOS AI',
         };
         setMessages((prev) => [...prev, assistantMsg]);
       } catch {

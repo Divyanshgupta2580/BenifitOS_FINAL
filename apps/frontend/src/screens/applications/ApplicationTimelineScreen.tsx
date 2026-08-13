@@ -3,6 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { CheckIcon, XIcon } from '../../components/ui/Icons';
 import { useApplication } from '../../hooks/useApplication';
 
 interface Props {
@@ -99,7 +100,13 @@ export const ApplicationTimelineScreen: React.FC<Props> = ({
                         : 'bg-slate-100 text-slate-500 border border-slate-300'
                     }`}
                   >
-                    {state === 'COMPLETED' ? '✓' : state === 'REJECTED' ? '✕' : idx + 1}
+                    {state === 'COMPLETED' ? (
+                      <CheckIcon className="w-4 h-4 text-white" />
+                    ) : state === 'REJECTED' ? (
+                      <XIcon className="w-4 h-4 text-white" />
+                    ) : (
+                      idx + 1
+                    )}
                   </div>
 
                   <div>

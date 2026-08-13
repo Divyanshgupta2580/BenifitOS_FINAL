@@ -4,5 +4,5 @@ export declare class NotificationService {
     constructor(notificationRepo: INotificationRepository);
     sendNotification(userId: string, title: string, body: string, channel?: ChannelType): Promise<NotificationProps>;
     getUserNotifications(userId: string): Promise<NotificationProps[]>;
-    markAsRead(id: string): Promise<void>;
+    markAsRead(userId: string, id: string): Promise<void>;
 }

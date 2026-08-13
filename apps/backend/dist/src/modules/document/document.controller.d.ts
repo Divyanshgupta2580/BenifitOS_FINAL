@@ -8,30 +8,37 @@ export declare class DocumentController {
         document: {
             id: string;
             documentType: DocumentType;
+            displayName: string;
             fileName: string;
             fileSize: number;
             verificationStatus: import("../../domain/document/document.entity").VerificationStatus;
         };
+        classification: any;
     }>;
     getDocuments(userId: string): Promise<{
         count: number;
         documents: {
             id: string;
             documentType: DocumentType;
+            displayName: string;
             fileName: string;
             fileSize: number;
             verificationStatus: import("../../domain/document/document.entity").VerificationStatus;
             uploadedAt: Date;
         }[];
     }>;
-    getDocumentById(id: string): Promise<{
+    getDocumentById(userId: string, id: string): Promise<{
         document: {
             id: string;
             documentType: DocumentType;
+            displayName: string;
             fileName: string;
             fileSize: number;
             verificationStatus: import("../../domain/document/document.entity").VerificationStatus;
             ocrResult: import("../../domain/document/document.entity").OcrResultProps | null | undefined;
         };
+    }>;
+    deleteDocument(userId: string, id: string): Promise<{
+        message: string;
     }>;
 }

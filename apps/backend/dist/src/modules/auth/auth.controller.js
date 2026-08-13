@@ -17,10 +17,17 @@ const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const auth_dto_1 = require("./dto/auth.dto");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const throttler_1 = require("@nestjs/throttler");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
         this.authService = authService;
+    }
+    async forgotPassword(dto) {
+        return await this.authService.forgotPassword(dto.email);
+    }
+    async resetPassword(dto) {
+        return await this.authService.resetPassword(dto);
     }
     setRefreshCookie(res, refreshToken) {
         const isProduction = process.env.NODE_ENV === 'production';
@@ -97,6 +104,27 @@ let AuthController = class AuthController {
 exports.AuthController = AuthController;
 __decorate([
     (0, roles_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ default: { limit: 15, ttl: 60000 } }),
+    (0, common_1.Post)('forgot-password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.ForgotPasswordDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, roles_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ default: { limit: 10, ttl: 60000 } }),
+    (0, common_1.Post)('reset-password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.ResetPasswordDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
+__decorate([
+    (0, roles_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ default: { limit: 15, ttl: 60000 } }),
     (0, common_1.Post)('register'),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     __param(0, (0, common_1.Body)()),
@@ -107,6 +135,7 @@ __decorate([
 ], AuthController.prototype, "register", null);
 __decorate([
     (0, roles_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ default: { limit: 15, ttl: 60000 } }),
     (0, common_1.Post)('login'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Body)()),
@@ -117,6 +146,7 @@ __decorate([
 ], AuthController.prototype, "login", null);
 __decorate([
     (0, roles_decorator_1.Public)(),
+    (0, throttler_1.Throttle)({ default: { limit: 15, ttl: 60000 } }),
     (0, common_1.Post)('refresh'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     __param(0, (0, common_1.Req)()),

@@ -3,6 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { DocumentTextIcon } from '../../components/ui/Icons';
 import { useApplication } from '../../hooks/useApplication';
 
 interface Props {
@@ -87,7 +88,10 @@ export const ApplicationDetailScreen: React.FC<Props> = ({ applicationId, onBack
             <div className="space-y-2">
               {app.attachedDocumentIds.map((docId) => (
                 <div key={docId} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
-                  <span className="font-semibold text-slate-800">📄 Linked Vault Document #{docId.slice(0, 8)}</span>
+                  <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                    <DocumentTextIcon className="w-4 h-4 text-slate-600" />
+                    <span>Linked Vault Document #{docId.slice(0, 8)}</span>
+                  </span>
                   <Badge label="LINKED" variant="primary" />
                 </div>
               ))}

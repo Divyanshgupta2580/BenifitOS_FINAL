@@ -87,7 +87,7 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
           <h2 className="text-xl font-bold text-slate-900 mb-4">{doc?.fileName || `Document #${documentId.slice(0, 8)}`}</h2>
           
           <Button
-            title={isProcessing ? 'Processing Google Gemini Vision Scan...' : '🔍 Run Vision OCR Scan'}
+            title={isProcessing ? 'Processing Google Gemini Vision Scan...' : 'Run Vision OCR Scan'}
             onClick={handleRunOcr}
             isLoading={isProcessing}
             variant="secondary"

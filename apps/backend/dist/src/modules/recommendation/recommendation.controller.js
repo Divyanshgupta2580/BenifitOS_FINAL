@@ -22,19 +22,10 @@ let RecommendationController = class RecommendationController {
         this.recommendationService = recommendationService;
     }
     async getRecommendations(userId) {
-        const recommendations = await this.recommendationService.getRecommendations(userId);
+        const recommendations = await this.recommendationService.getEnrichedRecommendations(userId);
         return {
             count: recommendations.length,
-            recommendations: recommendations.map((r) => ({
-                id: r.id,
-                schemeId: r.schemeId,
-                matchPercentage: r.matchPercentage,
-                estimatedBenefit: r.estimatedBenefit,
-                isEligible: r.isEligible,
-                criteriaMet: r.criteriaMet,
-                missingCriteria: r.missingCriteria,
-                missingDocuments: r.missingDocuments,
-            })),
+            recommendations,
         };
     }
     async recalculateRecommendations(userId) {

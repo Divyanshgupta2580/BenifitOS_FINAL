@@ -14,17 +14,24 @@ export enum SchemeCategory {
 }
 
 export enum DocumentType {
-  AADHAAR = 'AADHAAR',
-  INCOME_CERTIFICATE = 'INCOME_CERTIFICATE',
-  RATION_CARD = 'RATION_CARD',
-  CASTE_CERTIFICATE = 'CASTE_CERTIFICATE',
+  BIRTH_CERTIFICATE = 'BIRTH_CERTIFICATE',
+  EDUCATIONAL_CERTIFICATE = 'EDUCATIONAL_CERTIFICATE',
   DISABILITY_CERTIFICATE = 'DISABILITY_CERTIFICATE',
-  LAND_RECORD = 'LAND_RECORD',
-  BANK_PASSBOOK = 'BANK_PASSBOOK',
+  CASTE_CERTIFICATE = 'CASTE_CERTIFICATE',
+  AADHAAR = 'AADHAAR',
+  DRIVING_LICENSE = 'DRIVING_LICENSE',
   VOTER_ID = 'VOTER_ID',
-  PAN_CARD = 'PAN_CARD',
-  OTHER = 'OTHER',
 }
+
+export const DOCUMENT_TYPE_DISPLAY_NAMES: Record<DocumentType, string> = {
+  [DocumentType.BIRTH_CERTIFICATE]: 'Birth Certificate',
+  [DocumentType.EDUCATIONAL_CERTIFICATE]: 'Educational Certificate/Marksheet',
+  [DocumentType.DISABILITY_CERTIFICATE]: 'Disability Certificate',
+  [DocumentType.CASTE_CERTIFICATE]: 'Caste Certificate',
+  [DocumentType.AADHAAR]: 'Aadhaar Card',
+  [DocumentType.DRIVING_LICENSE]: 'Driving Licence',
+  [DocumentType.VOTER_ID]: 'Voter ID',
+};
 
 export interface EligibilityRule {
   id: string;

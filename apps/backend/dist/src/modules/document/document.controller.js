@@ -30,16 +30,19 @@ let DocumentController = class DocumentController {
         if (!documentType) {
             throw new common_1.BadRequestException('Document type is required.');
         }
-        const doc = await this.documentService.uploadDocument(userId, documentType, file);
+        const result = await this.documentService.uploadDocument(userId, documentType, file);
+        const doc = result.document;
         return {
-            message: 'Document uploaded successfully.',
+            message: 'Document verified and stored successfully.',
             document: {
                 id: doc.id,
                 documentType: doc.documentType,
+                displayName: scheme_entity_1.DOCUMENT_TYPE_DISPLAY_NAMES[doc.documentType] || doc.documentType,
                 fileName: doc.fileName,
                 fileSize: doc.fileSize,
                 verificationStatus: doc.verificationStatus,
             },
+            classification: result.classification,
         };
     }
     async getDocuments(userId) {
@@ -49,6 +52,7 @@ let DocumentController = class DocumentController {
             documents: documents.map((d) => ({
                 id: d.id,
                 documentType: d.documentType,
+                displayName: scheme_entity_1.DOCUMENT_TYPE_DISPLAY_NAMES[d.documentType] || d.documentType,
                 fileName: d.fileName,
                 fileSize: d.fileSize,
                 verificationStatus: d.verificationStatus,
@@ -56,12 +60,13 @@ let DocumentController = class DocumentController {
             })),
         };
     }
-    async getDocumentById(id) {
-        const doc = await this.documentService.getDocumentById(id);
+    async getDocumentById(userId, id) {
+        const doc = await this.documentService.getDocumentById(userId, id);
         return {
             document: {
                 id: doc.id,
                 documentType: doc.documentType,
+                displayName: scheme_entity_1.DOCUMENT_TYPE_DISPLAY_NAMES[doc.documentType] || doc.documentType,
                 fileName: doc.fileName,
                 fileSize: doc.fileSize,
                 verificationStatus: doc.verificationStatus,
@@ -69,11 +74,26 @@ let DocumentController = class DocumentController {
             },
         };
     }
+    async deleteDocument(userId, id) {
+        await this.documentService.deleteDocument(userId, id);
+        return {
+            message: 'Document deleted successfully.',
+        };
+    }
 };
 exports.DocumentController = DocumentController;
 __decorate([
     (0, common_1.Post)('upload'),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
+        limits: { fileSize: 10 * 1024 * 1024 },
+        fileFilter: (_req, file, callback) => {
+            const allowedMimetypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedMimetypes.includes(file.mimetype?.toLowerCase())) {
+                return callback(new common_1.BadRequestException('Invalid file format. Only PDF, JPEG, PNG, and WEBP documents are allowed.'), false);
+            }
+            callback(null, true);
+        },
+    })),
     __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
     __param(1, (0, common_1.Body)('documentType')),
     __param(2, (0, common_1.UploadedFile)()),
@@ -90,11 +110,20 @@ __decorate([
 ], DocumentController.prototype, "getDocuments", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], DocumentController.prototype, "getDocumentById", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], DocumentController.prototype, "deleteDocument", null);
 exports.DocumentController = DocumentController = __decorate([
     (0, common_1.Controller)('documents'),
     __metadata("design:paramtypes", [document_service_1.DocumentService])

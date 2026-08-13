@@ -36,7 +36,11 @@ let NotificationService = class NotificationService {
     async getUserNotifications(userId) {
         return await this.notificationRepo.findByUserId(userId);
     }
-    async markAsRead(id) {
+    async markAsRead(userId, id) {
+        const notification = await this.notificationRepo.findById(id);
+        if (!notification || notification.userId !== userId) {
+            return;
+        }
         await this.notificationRepo.markAsRead(id);
     }
 };

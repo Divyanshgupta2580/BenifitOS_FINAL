@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WelfareSchemeEntity = exports.DocumentType = exports.SchemeCategory = void 0;
+exports.WelfareSchemeEntity = exports.DOCUMENT_TYPE_DISPLAY_NAMES = exports.DocumentType = exports.SchemeCategory = void 0;
 const domain_entity_base_1 = require("../common/domain-entity.base");
 var SchemeCategory;
 (function (SchemeCategory) {
@@ -17,17 +17,23 @@ var SchemeCategory;
 })(SchemeCategory || (exports.SchemeCategory = SchemeCategory = {}));
 var DocumentType;
 (function (DocumentType) {
-    DocumentType["AADHAAR"] = "AADHAAR";
-    DocumentType["INCOME_CERTIFICATE"] = "INCOME_CERTIFICATE";
-    DocumentType["RATION_CARD"] = "RATION_CARD";
-    DocumentType["CASTE_CERTIFICATE"] = "CASTE_CERTIFICATE";
+    DocumentType["BIRTH_CERTIFICATE"] = "BIRTH_CERTIFICATE";
+    DocumentType["EDUCATIONAL_CERTIFICATE"] = "EDUCATIONAL_CERTIFICATE";
     DocumentType["DISABILITY_CERTIFICATE"] = "DISABILITY_CERTIFICATE";
-    DocumentType["LAND_RECORD"] = "LAND_RECORD";
-    DocumentType["BANK_PASSBOOK"] = "BANK_PASSBOOK";
+    DocumentType["CASTE_CERTIFICATE"] = "CASTE_CERTIFICATE";
+    DocumentType["AADHAAR"] = "AADHAAR";
+    DocumentType["DRIVING_LICENSE"] = "DRIVING_LICENSE";
     DocumentType["VOTER_ID"] = "VOTER_ID";
-    DocumentType["PAN_CARD"] = "PAN_CARD";
-    DocumentType["OTHER"] = "OTHER";
 })(DocumentType || (exports.DocumentType = DocumentType = {}));
+exports.DOCUMENT_TYPE_DISPLAY_NAMES = {
+    [DocumentType.BIRTH_CERTIFICATE]: 'Birth Certificate',
+    [DocumentType.EDUCATIONAL_CERTIFICATE]: 'Educational Certificate/Marksheet',
+    [DocumentType.DISABILITY_CERTIFICATE]: 'Disability Certificate',
+    [DocumentType.CASTE_CERTIFICATE]: 'Caste Certificate',
+    [DocumentType.AADHAAR]: 'Aadhaar Card',
+    [DocumentType.DRIVING_LICENSE]: 'Driving Licence',
+    [DocumentType.VOTER_ID]: 'Voter ID',
+};
 class WelfareSchemeEntity extends domain_entity_base_1.BaseDomainEntity {
     _code;
     _title;

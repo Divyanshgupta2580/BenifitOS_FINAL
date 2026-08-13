@@ -25,6 +25,15 @@ class UpdateCitizenProfileDto {
     disabilityPercent;
     isBplCardHolder;
     bplCardNumber;
+    state;
+    district;
+    city;
+    streetAddress;
+    pincode;
+    isRural;
+    educationLevel;
+    course;
+    academicPercentage;
 }
 exports.UpdateCitizenProfileDto = UpdateCitizenProfileDto;
 __decorate([
@@ -79,4 +88,51 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateCitizenProfileDto.prototype, "bplCardNumber", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCitizenProfileDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCitizenProfileDto.prototype, "district", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCitizenProfileDto.prototype, "city", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCitizenProfileDto.prototype, "streetAddress", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCitizenProfileDto.prototype, "pincode", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdateCitizenProfileDto.prototype, "isRural", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCitizenProfileDto.prototype, "educationLevel", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCitizenProfileDto.prototype, "course", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(100),
+    __metadata("design:type", Number)
+], UpdateCitizenProfileDto.prototype, "academicPercentage", void 0);
 //# sourceMappingURL=citizen.dto.js.map

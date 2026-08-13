@@ -28,8 +28,15 @@ let HealthController = class HealthController {
     async check() {
         return this.health.check([
             async () => {
-                await this.prisma.queryRaw `SELECT 1`;
-                return { database: { status: 'up' } };
+                try {
+                    await this.prisma.queryRaw `SELECT 1`;
+                    return { database: { status: 'up' } };
+                }
+                catch (err) {
+                    throw new terminus_1.HealthCheckError('Database connection check failed', {
+                        database: { status: 'down', error: err.message },
+                    });
+                }
             },
             () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024),
         ]);
@@ -37,8 +44,14 @@ let HealthController = class HealthController {
     liveness() {
         return { status: 'UP', timestamp: new Date().toISOString() };
     }
-    readiness() {
-        return { status: 'READY', timestamp: new Date().toISOString() };
+    async readiness() {
+        try {
+            await this.prisma.queryRaw `SELECT 1`;
+            return { status: 'READY', database: 'CONNECTED', timestamp: new Date().toISOString() };
+        }
+        catch (err) {
+            return { status: 'NOT_READY', database: 'DISCONNECTED', timestamp: new Date().toISOString() };
+        }
     }
 };
 exports.HealthController = HealthController;
@@ -62,7 +75,7 @@ __decorate([
     (0, common_1.Get)('readiness'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], HealthController.prototype, "readiness", null);
 exports.HealthController = HealthController = __decorate([
     (0, common_1.Controller)('health'),

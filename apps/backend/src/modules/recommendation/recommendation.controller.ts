@@ -8,19 +8,10 @@ export class RecommendationController {
 
   @Get()
   async getRecommendations(@CurrentUser('sub') userId: string) {
-    const recommendations = await this.recommendationService.getRecommendations(userId);
+    const recommendations = await this.recommendationService.getEnrichedRecommendations(userId);
     return {
       count: recommendations.length,
-      recommendations: recommendations.map((r) => ({
-        id: r.id,
-        schemeId: r.schemeId,
-        matchPercentage: r.matchPercentage,
-        estimatedBenefit: r.estimatedBenefit,
-        isEligible: r.isEligible,
-        criteriaMet: r.criteriaMet,
-        missingCriteria: r.missingCriteria,
-        missingDocuments: r.missingDocuments,
-      })),
+      recommendations,
     };
   }
 

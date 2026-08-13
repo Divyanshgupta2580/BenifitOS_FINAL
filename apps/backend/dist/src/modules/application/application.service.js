@@ -33,21 +33,31 @@ let ApplicationService = class ApplicationService {
         });
         return await this.applicationRepo.save(app);
     }
-    async submitApplication(id) {
+    async submitApplication(userId, id) {
         const app = await this.applicationRepo.findById(id);
-        if (!app) {
-            throw new common_1.NotFoundException(`Application with ID '${id}' not found.`);
+        if (!app || app.userId !== userId) {
+            throw new common_1.NotFoundException(`Application with ID '${id}' not found or access denied.`);
         }
         app.submit();
+        return await this.applicationRepo.update(app);
+    }
+    async updateApplication(userId, id, data) {
+        const app = await this.applicationRepo.findById(id);
+        if (!app || app.userId !== userId) {
+            throw new common_1.NotFoundException(`Application with ID '${id}' not found or access denied.`);
+        }
+        if (data.formData) {
+            app.updateFormData(data.formData);
+        }
         return await this.applicationRepo.update(app);
     }
     async getUserApplications(userId) {
         return await this.applicationRepo.findByUserId(userId);
     }
-    async getApplicationById(id) {
+    async getApplicationById(userId, id) {
         const app = await this.applicationRepo.findById(id);
-        if (!app) {
-            throw new common_1.NotFoundException(`Application with ID '${id}' not found.`);
+        if (!app || app.userId !== userId) {
+            throw new common_1.NotFoundException(`Application with ID '${id}' not found or access denied.`);
         }
         return app;
     }

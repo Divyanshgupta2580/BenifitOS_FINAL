@@ -14,39 +14,59 @@ exports.LocalStorageAdapter = void 0;
 const common_1 = require("@nestjs/common");
 const fs = require("fs");
 const path = require("path");
+const crypto_1 = require("crypto");
 let LocalStorageAdapter = LocalStorageAdapter_1 = class LocalStorageAdapter {
     providerName = 'local';
     logger = new common_1.Logger(LocalStorageAdapter_1.name);
-    uploadDir = path.join(process.cwd(), 'uploads');
+    uploadDir = path.resolve(process.cwd(), 'uploads');
     constructor() {
         if (!fs.existsSync(this.uploadDir)) {
             fs.mkdirSync(this.uploadDir, { recursive: true });
         }
     }
+    sanitizeFilename(rawName) {
+        if (!rawName)
+            return `file_${Date.now()}`;
+        const base = path.basename(rawName);
+        const safeName = base.replace(/[\0\r\n\t]/g, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+        return safeName || `file_${Date.now()}`;
+    }
+    validatePathSafety(targetPath) {
+        const resolvedPath = path.resolve(targetPath);
+        if (!resolvedPath.startsWith(this.uploadDir)) {
+            throw new Error('Access denied: Invalid storage path traversal attempt.');
+        }
+        return resolvedPath;
+    }
     async uploadFile(options) {
-        const folder = options.folder || 'documents';
-        const targetFolder = path.join(this.uploadDir, folder);
+        const safeFolder = path.basename(options.folder || 'documents');
+        const safeFileName = this.sanitizeFilename(options.fileName);
+        const targetFolder = this.validatePathSafety(path.join(this.uploadDir, safeFolder));
         if (!fs.existsSync(targetFolder)) {
             fs.mkdirSync(targetFolder, { recursive: true });
         }
-        const storagePath = path.join(targetFolder, `${Date.now()}_${options.fileName}`);
+        const uniqueName = `${Date.now()}_${(0, crypto_1.randomUUID)().slice(0, 8)}_${safeFileName}`;
+        const storagePath = this.validatePathSafety(path.join(targetFolder, uniqueName));
         await fs.promises.writeFile(storagePath, options.fileBuffer);
-        this.logger.log(`Uploaded file locally to ${storagePath}`);
+        this.logger.log(`Uploaded file safely to ${storagePath}`);
         return {
             storagePath,
-            publicUrl: `/uploads/${folder}/${path.basename(storagePath)}`,
+            publicUrl: `/uploads/${safeFolder}/${path.basename(storagePath)}`,
             fileSize: options.fileBuffer.length,
         };
     }
     async downloadFile(storagePath) {
-        return await fs.promises.readFile(storagePath);
+        const safePath = this.validatePathSafety(storagePath);
+        return await fs.promises.readFile(safePath);
     }
     async getPresignedUrl(storagePath) {
-        return `file://${storagePath}`;
+        const safePath = this.validatePathSafety(storagePath);
+        return `file://${safePath}`;
     }
     async deleteFile(storagePath) {
-        if (fs.existsSync(storagePath)) {
-            await fs.promises.unlink(storagePath);
+        const safePath = this.validatePathSafety(storagePath);
+        if (fs.existsSync(safePath)) {
+            await fs.promises.unlink(safePath);
         }
     }
 };

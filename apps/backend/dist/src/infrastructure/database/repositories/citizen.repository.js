@@ -24,7 +24,7 @@ let CitizenRepositoryImpl = class CitizenRepositoryImpl {
             userId: data.userId,
             firstName: data.firstName,
             lastName: data.lastName,
-            dateOfBirth: data.dateOfBirth,
+            dateOfBirth: new Date(data.dateOfBirth),
             gender: data.gender,
             maritalStatus: data.maritalStatus,
             socialCategory: data.socialCategory,
@@ -106,6 +106,18 @@ let CitizenRepositoryImpl = class CitizenRepositoryImpl {
                 bplCardNumber: citizen.bplCardNumber,
                 aadhaarHash: citizen.aadhaarHash,
                 panHash: citizen.panHash,
+                address: citizen.address
+                    ? {
+                        create: {
+                            streetAddress: citizen.address.streetAddress,
+                            city: citizen.address.city,
+                            district: citizen.address.district,
+                            state: citizen.address.state,
+                            pincode: citizen.address.pincode,
+                            isRural: citizen.address.isRural,
+                        },
+                    }
+                    : undefined,
             },
             include: { address: true, householdMembers: true, landDetails: true },
         });
@@ -127,6 +139,28 @@ let CitizenRepositoryImpl = class CitizenRepositoryImpl {
                 disabilityPercent: citizen.disabilityPercent,
                 isBplCardHolder: citizen.isBplCardHolder,
                 bplCardNumber: citizen.bplCardNumber,
+                address: citizen.address
+                    ? {
+                        upsert: {
+                            create: {
+                                streetAddress: citizen.address.streetAddress,
+                                city: citizen.address.city,
+                                district: citizen.address.district,
+                                state: citizen.address.state,
+                                pincode: citizen.address.pincode,
+                                isRural: citizen.address.isRural,
+                            },
+                            update: {
+                                streetAddress: citizen.address.streetAddress,
+                                city: citizen.address.city,
+                                district: citizen.address.district,
+                                state: citizen.address.state,
+                                pincode: citizen.address.pincode,
+                                isRural: citizen.address.isRural,
+                            },
+                        },
+                    }
+                    : undefined,
             },
             include: { address: true, householdMembers: true, landDetails: true },
         });

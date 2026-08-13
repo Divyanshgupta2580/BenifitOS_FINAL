@@ -12,6 +12,7 @@ const citizen_controller_1 = require("./citizen.controller");
 const citizen_service_1 = require("./citizen.service");
 const citizen_repository_1 = require("../../infrastructure/database/repositories/citizen.repository");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
+const welfare_repository_1 = require("../../infrastructure/database/repositories/welfare.repository");
 let CitizenModule = class CitizenModule {
 };
 exports.CitizenModule = CitizenModule;
@@ -24,6 +25,10 @@ exports.CitizenModule = CitizenModule = __decorate([
             {
                 provide: 'ICitizenRepository',
                 useClass: citizen_repository_1.CitizenRepositoryImpl,
+            },
+            {
+                provide: 'ISchemeRecommendationRepository',
+                useClass: welfare_repository_1.SchemeRecommendationRepositoryImpl,
             },
         ],
         exports: [citizen_service_1.CitizenService, 'ICitizenRepository'],

@@ -4,16 +4,7 @@ export declare class RecommendationController {
     constructor(recommendationService: RecommendationEngineService);
     getRecommendations(userId: string): Promise<{
         count: number;
-        recommendations: {
-            id: string;
-            schemeId: string;
-            matchPercentage: number;
-            estimatedBenefit: number;
-            isEligible: boolean;
-            criteriaMet: string[];
-            missingCriteria: string[];
-            missingDocuments: import("../../domain/welfare/scheme.entity").DocumentType[];
-        }[];
+        recommendations: any[];
     }>;
     recalculateRecommendations(userId: string): Promise<{
         message: string;

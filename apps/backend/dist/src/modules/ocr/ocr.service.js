@@ -28,10 +28,10 @@ let OcrPipelineService = class OcrPipelineService {
         this.storageAdapter = storageAdapter;
         this.prisma = prisma;
     }
-    async processDocumentOcr(documentId) {
+    async processDocumentOcr(userId, documentId) {
         const doc = await this.documentRepo.findById(documentId);
-        if (!doc) {
-            throw new common_1.NotFoundException(`Document with ID '${documentId}' not found.`);
+        if (!doc || doc.userId !== userId) {
+            throw new common_1.NotFoundException(`Document with ID '${documentId}' not found or access denied.`);
         }
         const fileBuffer = await this.storageAdapter.downloadFile(doc.storagePath);
         const ocrResult = await this.geminiAdapter.extractDocumentData(fileBuffer, doc.mimeType, doc.documentType);

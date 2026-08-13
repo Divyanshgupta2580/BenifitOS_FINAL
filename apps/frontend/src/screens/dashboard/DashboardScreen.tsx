@@ -3,13 +3,23 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
+import {
+  BuildingIcon,
+  RefreshIcon,
+  BotIcon,
+  TargetIcon,
+  DocumentTextIcon,
+  ClipboardListIcon,
+  FolderIcon,
+} from '../../components/ui/Icons';
 import { useAuthStore } from '../../store/auth.store';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
 import { useRecommendations } from '../../hooks/useRecommendations';
 import { useDocuments } from '../../hooks/useDocuments';
 import { useApplications } from '../../hooks/useApplications';
 import { useNotifications } from '../../hooks/useNotifications';
-import { wsService } from '../../services/websocket-client';
+import { wsService, WsConnectionStatus } from '../../services/websocket-client';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 
 interface Props {
   onNavigateToProfile: () => void;
@@ -40,17 +50,16 @@ export const DashboardScreen: React.FC<Props> = ({
   const { notifications, isLoading: isNotifsLoading, refetch: refetchNotifs } = useNotifications();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [isWsConnected, setIsWsConnected] = useState(false);
+  const [wsStatus, setWsStatus] = useState<WsConnectionStatus>(wsService.getStatus());
 
   useEffect(() => {
-    wsService.connect().then((socket) => {
-      setIsWsConnected(socket.connected);
-      socket.on('connect', () => setIsWsConnected(true));
-      socket.on('disconnect', () => setIsWsConnected(false));
+    const unsubscribe = wsService.subscribeStatus((status) => {
+      setWsStatus(status);
     });
+    wsService.connect();
 
     return () => {
-      wsService.disconnect();
+      unsubscribe();
     };
   }, []);
 
@@ -76,8 +85,8 @@ export const DashboardScreen: React.FC<Props> = ({
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-900 text-white flex items-center justify-center text-xl font-bold shadow-xs">
-              🏛️
+            <div className="w-10 h-10 rounded-xl bg-blue-900 text-white flex items-center justify-center shadow-xs">
+              <BuildingIcon className="w-6 h-6 text-white" />
             </div>
             <div>
               <span className="text-xs text-slate-500 block font-medium">National Welfare Gateway</span>
@@ -86,6 +95,7 @@ export const DashboardScreen: React.FC<Props> = ({
           </div>
 
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <button
               onClick={onNavigateToProfile}
               className="flex items-center gap-2 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
@@ -111,20 +121,52 @@ export const DashboardScreen: React.FC<Props> = ({
         {/* Sync & Realtime Status Bar */}
         <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${isWsConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                wsStatus === 'CONNECTED'
+                  ? 'bg-emerald-500 animate-pulse'
+                  : wsStatus === 'CONNECTING'
+                  ? 'bg-amber-500 animate-pulse'
+                  : wsStatus === 'ERROR'
+                  ? 'bg-rose-500'
+                  : 'bg-slate-400'
+              }`}
+            />
             <span className="text-xs font-medium text-slate-600">
-              {isWsConnected ? 'Realtime Gateway Operational (/ws)' : 'Connecting to Realtime Gateway...'}
+              {wsStatus === 'CONNECTED'
+                ? 'Realtime Gateway Operational (/ws)'
+                : wsStatus === 'CONNECTING'
+                ? 'Connecting to Realtime Gateway...'
+                : wsStatus === 'ERROR'
+                ? 'Realtime Gateway Unavailable'
+                : 'Realtime Gateway Offline'}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={onRefresh}
               disabled={refreshing}
-              className="text-xs text-blue-900 hover:underline font-medium mr-2"
+              className="text-xs text-blue-900 hover:underline font-medium mr-2 flex items-center gap-1"
             >
-              {refreshing ? 'Refreshing...' : '🔄 Refresh Data'}
+              <RefreshIcon className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              <span>{refreshing ? 'Refreshing...' : 'Refresh Data'}</span>
             </button>
-            <Badge label={isWsConnected ? 'LIVE SYNC' : 'OFFLINE'} variant={isWsConnected ? 'success' : 'warning'} />
+            <Badge
+              label={
+                wsStatus === 'CONNECTED'
+                  ? 'LIVE SYNC'
+                  : wsStatus === 'CONNECTING'
+                  ? 'CONNECTING'
+                  : 'OFFLINE'
+              }
+              variant={
+                wsStatus === 'CONNECTED'
+                  ? 'success'
+                  : wsStatus === 'CONNECTING'
+                  ? 'primary'
+                  : 'warning'
+              }
+            />
           </div>
         </div>
 
@@ -143,7 +185,7 @@ export const DashboardScreen: React.FC<Props> = ({
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">🤖</span>
+                  <BotIcon className="w-6 h-6 text-amber-400" />
                   <h2 className="text-xl font-bold tracking-tight">AI Citizen Copilot</h2>
                   <Badge label="COPILOT v5.3" variant="warning" className="ml-2" />
                 </div>
@@ -158,6 +200,7 @@ export const DashboardScreen: React.FC<Props> = ({
                 onClick={(e) => {
                   e?.stopPropagation();
                   if (onNavigateToAiCopilot) onNavigateToAiCopilot();
+                  else if (onNavigateToAi) onNavigateToAi();
                 }}
               />
             </div>
@@ -166,7 +209,7 @@ export const DashboardScreen: React.FC<Props> = ({
             <Card onClick={onNavigateToRecommendations} className="cursor-pointer">
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">🎯</span>
+                  <TargetIcon className="w-5 h-5 text-blue-900" />
                   <h2 className="text-base font-bold text-blue-900">Top Recommended Scheme</h2>
                 </div>
                 <span className="text-xs font-bold text-amber-700 hover:underline">View All Matches →</span>
@@ -198,7 +241,9 @@ export const DashboardScreen: React.FC<Props> = ({
                 onClick={onNavigateToGovernmentServices}
                 className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-700 transition-all text-center flex flex-col items-center gap-2 group"
               >
-                <span className="text-2xl group-hover:scale-110 transition-transform">🏛️</span>
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <BuildingIcon className="w-5 h-5 text-blue-900" />
+                </div>
                 <span className="text-xs font-bold text-slate-800">Govt Hub</span>
               </button>
 
@@ -206,7 +251,9 @@ export const DashboardScreen: React.FC<Props> = ({
                 onClick={onNavigateToVault}
                 className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-700 transition-all text-center flex flex-col items-center gap-2 group"
               >
-                <span className="text-2xl group-hover:scale-110 transition-transform">📜</span>
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <DocumentTextIcon className="w-5 h-5 text-blue-900" />
+                </div>
                 <span className="text-xs font-bold text-slate-800">Doc Vault</span>
               </button>
 
@@ -214,7 +261,9 @@ export const DashboardScreen: React.FC<Props> = ({
                 onClick={onNavigateToSchemes}
                 className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-700 transition-all text-center flex flex-col items-center gap-2 group"
               >
-                <span className="text-2xl group-hover:scale-110 transition-transform">🎯</span>
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <TargetIcon className="w-5 h-5 text-blue-900" />
+                </div>
                 <span className="text-xs font-bold text-slate-800">All Schemes</span>
               </button>
 
@@ -222,7 +271,9 @@ export const DashboardScreen: React.FC<Props> = ({
                 onClick={onNavigateToApplications}
                 className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-700 transition-all text-center flex flex-col items-center gap-2 group"
               >
-                <span className="text-2xl group-hover:scale-110 transition-transform">📋</span>
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ClipboardListIcon className="w-5 h-5 text-blue-900" />
+                </div>
                 <span className="text-xs font-bold text-slate-800">Applications</span>
               </button>
             </div>
@@ -236,7 +287,9 @@ export const DashboardScreen: React.FC<Props> = ({
                     <p className="text-3xl font-extrabold text-blue-900 mt-1">{documents.length}</p>
                     <p className="text-xs text-slate-500 mt-1">Uploaded & OCR Verified Files</p>
                   </div>
-                  <span className="text-2xl">📂</span>
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                    <FolderIcon className="w-6 h-6 text-slate-600" />
+                  </div>
                 </div>
               </Card>
 
@@ -247,7 +300,9 @@ export const DashboardScreen: React.FC<Props> = ({
                     <p className="text-3xl font-extrabold text-blue-900 mt-1">{applications.length}</p>
                     <p className="text-xs text-slate-500 mt-1">Submitted Welfare Benefits</p>
                   </div>
-                  <span className="text-2xl">📝</span>
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                    <DocumentTextIcon className="w-6 h-6 text-slate-600" />
+                  </div>
                 </div>
               </Card>
             </div>

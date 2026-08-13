@@ -3,6 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { DocumentTextIcon } from '../../components/ui/Icons';
 import { useDocument } from '../../hooks/useDocument';
 
 interface Props {
@@ -72,7 +73,7 @@ export const DocumentViewerModal: React.FC<Props> = ({ documentId, onBack, onRun
               <iframe src={doc.storagePath} title={doc.fileName} className="w-full h-[500px] rounded-lg border-0" />
             ) : (
               <div className="text-center p-8">
-                <span className="text-4xl mb-3 block">📄</span>
+                <DocumentTextIcon className="w-12 h-12 text-slate-500 mb-3 mx-auto" />
                 <p className="text-sm font-bold text-slate-800">Secure Web Presigned Preview Ready</p>
                 <p className="text-xs text-slate-500 mt-1">Ref: {doc.storagePath}</p>
               </div>
@@ -83,7 +84,7 @@ export const DocumentViewerModal: React.FC<Props> = ({ documentId, onBack, onRun
             <Button title="Download File" onClick={handleDownload} variant="secondary" className="flex-1 py-2.5 font-bold" />
             {onRunOcr && (
               <Button
-                title="🔍 Run AI Vision OCR Extraction"
+                title="Run AI Vision OCR Extraction"
                 onClick={() => onRunOcr(doc.id)}
                 variant="outline"
                 className="flex-1 py-2.5 font-bold"

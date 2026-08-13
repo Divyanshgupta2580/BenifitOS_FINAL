@@ -25,7 +25,11 @@ export class NotificationService {
     return await this.notificationRepo.findByUserId(userId);
   }
 
-  async markAsRead(id: string): Promise<void> {
+  async markAsRead(userId: string, id: string): Promise<void> {
+    const notification = await this.notificationRepo.findById(id);
+    if (!notification || notification.userId !== userId) {
+      return; // Do not leak or modify other users' notifications
+    }
     await this.notificationRepo.markAsRead(id);
   }
 }

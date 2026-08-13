@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useAiChat, ChatMessage } from '../../hooks/useAiChat';
+import { LightbulbIcon, BotIcon, RefreshIcon } from '../../components/ui/Icons';
 
 interface Props {
   onBack?: () => void;
@@ -45,7 +46,7 @@ export const AiAssistantScreen: React.FC<Props> = ({ onBack }) => {
             )}
             <div>
               <h1 className="text-base font-bold text-blue-900 leading-tight">Citizen AI Assistant</h1>
-              <span className="text-[10px] text-slate-500 block font-medium">Powered by Google Gemini Vision</span>
+              <span className="text-[10px] text-slate-500 block font-medium">BenefitOS Intelligent Welfare Gateway</span>
             </div>
           </div>
           <button
@@ -71,9 +72,10 @@ export const AiAssistantScreen: React.FC<Props> = ({ onBack }) => {
                 type="button"
                 onClick={() => handlePromptSelect(p)}
                 disabled={isLoading}
-                className="px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-900 whitespace-nowrap transition-colors"
+                className="px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-900 whitespace-nowrap transition-colors flex items-center gap-1.5"
               >
-                💡 {p}
+                <LightbulbIcon className="w-3.5 h-3.5 text-amber-500" />
+                <span>{p}</span>
               </button>
             ))}
           </div>
@@ -96,7 +98,7 @@ export const AiAssistantScreen: React.FC<Props> = ({ onBack }) => {
                 >
                   {!isUser && (
                     <div className="flex items-center gap-1.5 mb-1 text-xs font-bold text-blue-900">
-                      <span>🤖</span>
+                      <BotIcon className="w-4 h-4 text-blue-900" />
                       <span>{item.provider || 'BenefitOS AI'}</span>
                     </div>
                   )}
@@ -110,9 +112,10 @@ export const AiAssistantScreen: React.FC<Props> = ({ onBack }) => {
                   {item.isError && (
                     <button
                       onClick={retryLastMessage}
-                      className="mt-2 text-xs font-bold text-rose-700 underline block"
+                      className="mt-2 text-xs font-bold text-rose-700 underline flex items-center gap-1"
                     >
-                      🔄 Retry Request
+                      <RefreshIcon className="w-3.5 h-3.5" />
+                      <span>Retry Request</span>
                     </button>
                   )}
                 </div>

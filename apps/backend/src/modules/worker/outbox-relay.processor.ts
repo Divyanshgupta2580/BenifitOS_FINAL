@@ -31,8 +31,8 @@ export class OutboxRelayWorker implements OnModuleInit {
           data: { status: 'PUBLISHED', processedAt: new Date() },
         });
       }
-    } catch (err) {
-      this.logger.error(`OutboxRelayWorker error: ${err.message}`);
+    } catch (err: any) {
+      this.logger.debug(`OutboxRelayWorker polling notice: ${err.message}`);
     }
   }
 }

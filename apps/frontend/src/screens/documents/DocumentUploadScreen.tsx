@@ -1,19 +1,16 @@
 import React, { useState } from 'react';
-import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { DocumentTextIcon } from '../../components/ui/Icons';
 import { useUploadDocument } from '../../hooks/useUploadDocument';
 
 const TYPES = [
-  'AADHAAR',
-  'INCOME_CERTIFICATE',
-  'RATION_CARD',
-  'CASTE_CERTIFICATE',
-  'DISABILITY_CERTIFICATE',
-  'LAND_RECORD',
-  'BANK_PASSBOOK',
-  'VOTER_ID',
-  'PAN_CARD',
-  'OTHER',
+  { id: 'BIRTH_CERTIFICATE', label: 'Birth Certificate' },
+  { id: 'EDUCATIONAL_CERTIFICATE', label: 'Educational Certificate/Marksheet' },
+  { id: 'DISABILITY_CERTIFICATE', label: 'Disability Certificate' },
+  { id: 'CASTE_CERTIFICATE', label: 'Caste Certificate' },
+  { id: 'AADHAAR', label: 'Aadhaar Card' },
+  { id: 'DRIVING_LICENSE', label: 'Driving Licence' },
+  { id: 'VOTER_ID', label: 'Voter ID' },
 ];
 
 interface Props {
@@ -24,7 +21,13 @@ export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
   const { uploadDocument, isUploading } = useUploadDocument();
   const [docType, setDocType] = useState('AADHAAR');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+    uploadedName?: string;
+    detectedName?: string;
+    status?: string;
+  } | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setStatusMessage(null);
@@ -54,11 +57,28 @@ export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
       formData.append('documentType', docType);
       formData.append('file', selectedFile);
 
-      await uploadDocument(formData);
-      setStatusMessage({ type: 'success', text: `${selectedFile.name} uploaded successfully!` });
-      setTimeout(onBack, 1200);
+      const res: any = await uploadDocument(formData);
+      const selectedTypeLabel = TYPES.find((t) => t.id === docType)?.label || docType;
+      const detectedLabel = res?.classification?.displayName || selectedTypeLabel;
+
+      setStatusMessage({
+        type: 'success',
+        text: 'Document verified',
+        uploadedName: selectedTypeLabel,
+        detectedName: detectedLabel,
+        status: 'Verified',
+      });
+      setTimeout(onBack, 1500);
     } catch (err: any) {
-      setStatusMessage({ type: 'error', text: err.message || 'Could not upload document.' });
+      const selectedTypeLabel = TYPES.find((t) => t.id === docType)?.label || docType;
+      let errMsg = err.message || `Incorrect document. Please upload your ${selectedTypeLabel}.`;
+      if (typeof err?.response?.data?.message === 'string') {
+        errMsg = err.response.data.message;
+      }
+      setStatusMessage({
+        type: 'error',
+        text: errMsg,
+      });
     }
   };
 
@@ -77,13 +97,20 @@ export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
           {statusMessage && (
             <div
-              className={`mb-6 p-3.5 rounded-xl border text-xs font-semibold ${
+              className={`mb-6 p-4 rounded-xl border text-xs ${
                 statusMessage.type === 'success'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                  : 'bg-rose-50 border-rose-200 text-rose-700'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
               }`}
             >
-              {statusMessage.text}
+              <p className="font-bold text-sm mb-1">{statusMessage.text}</p>
+              {statusMessage.type === 'success' && (
+                <div className="mt-2 space-y-0.5 text-xs text-emerald-800">
+                  <p><span className="font-semibold">Uploaded:</span> {statusMessage.uploadedName}</p>
+                  <p><span className="font-semibold">Detected:</span> {statusMessage.detectedName}</p>
+                  <p><span className="font-semibold">Status:</span> {statusMessage.status}</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -95,19 +122,19 @@ export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {TYPES.map((t) => {
-                  const isSelected = docType === t;
+                  const isSelected = docType === t.id;
                   return (
                     <button
-                      key={t}
+                      key={t.id}
                       type="button"
-                      onClick={() => setDocType(t)}
+                      onClick={() => setDocType(t.id)}
                       className={`p-3 rounded-xl border text-xs font-semibold text-center transition-all ${
                         isSelected
                           ? 'border-blue-900 bg-blue-50/70 text-blue-900 shadow-xs'
                           : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
                       }`}
                     >
-                      {t}
+                      {t.label}
                     </button>
                   );
                 })}
@@ -127,7 +154,7 @@ export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-3xl">📄</span>
+                  <DocumentTextIcon className="w-10 h-10 text-blue-900" />
                   {selectedFile ? (
                     <div>
                       <p className="text-sm font-bold text-blue-900">{selectedFile.name}</p>

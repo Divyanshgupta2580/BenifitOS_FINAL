@@ -17,7 +17,7 @@ exports.RealtimeModule = RealtimeModule = __decorate([
     (0, common_1.Module)({
         imports: [
             jwt_1.JwtModule.register({
-                secret: process.env.JWT_SECRET || 'super_secret_jwt_key_benefit_os_production_change_me_32_bytes',
+                secret: process.env.JWT_SECRET,
             }),
         ],
         providers: [realtime_gateway_1.RealtimeGateway],

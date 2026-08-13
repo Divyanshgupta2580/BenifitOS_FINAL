@@ -10,6 +10,8 @@ exports.DocumentModule = void 0;
 const common_1 = require("@nestjs/common");
 const document_controller_1 = require("./document.controller");
 const document_service_1 = require("./document.service");
+const document_classification_service_1 = require("./document-classification.service");
+const gemini_ai_adapter_1 = require("../../infrastructure/ai/gemini-ai.adapter");
 const document_repository_1 = require("../../infrastructure/database/repositories/document.repository");
 const local_storage_adapter_1 = require("../../infrastructure/storage/local-storage.adapter");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
@@ -21,11 +23,13 @@ exports.DocumentModule = DocumentModule = __decorate([
         controllers: [document_controller_1.DocumentController],
         providers: [
             document_service_1.DocumentService,
+            document_classification_service_1.DocumentClassificationService,
+            gemini_ai_adapter_1.GeminiAiAdapter,
             local_storage_adapter_1.LocalStorageAdapter,
             prisma_service_1.PrismaService,
             { provide: 'IDocumentRepository', useClass: document_repository_1.DocumentRepositoryImpl },
         ],
-        exports: [document_service_1.DocumentService, local_storage_adapter_1.LocalStorageAdapter, 'IDocumentRepository'],
+        exports: [document_service_1.DocumentService, document_classification_service_1.DocumentClassificationService, local_storage_adapter_1.LocalStorageAdapter, 'IDocumentRepository'],
     })
 ], DocumentModule);
 //# sourceMappingURL=document.module.js.map

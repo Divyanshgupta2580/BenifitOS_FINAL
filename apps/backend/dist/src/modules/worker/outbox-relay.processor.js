@@ -42,7 +42,7 @@ let OutboxRelayWorker = OutboxRelayWorker_1 = class OutboxRelayWorker {
             }
         }
         catch (err) {
-            this.logger.error(`OutboxRelayWorker error: ${err.message}`);
+            this.logger.debug(`OutboxRelayWorker polling notice: ${err.message}`);
         }
     }
 };

@@ -38,7 +38,7 @@ export const useAiChat = () => {
         sender: 'assistant',
         text: data.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        provider: data.provider || 'Gemini Vision AI',
+        provider: data.provider || 'BenefitOS AI',
       };
       setMessages((prev) => [...prev, assistantMessage]);
     },

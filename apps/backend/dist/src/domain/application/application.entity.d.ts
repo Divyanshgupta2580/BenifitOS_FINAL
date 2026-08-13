@@ -52,5 +52,6 @@ export declare class ApplicationEntity extends BaseDomainEntity<ApplicationProps
     get history(): ApplicationStatusHistoryProps[];
     get submittedAt(): Date | null | undefined;
     submit(): void;
+    updateFormData(newData: Record<string, any>): void;
     transitionTo(newStatus: ApplicationStatus, changedById: string, note?: string): void;
 }

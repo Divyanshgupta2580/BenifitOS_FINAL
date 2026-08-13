@@ -2,7 +2,7 @@ import { OcrPipelineService } from './ocr.service';
 export declare class OcrController {
     private readonly ocrService;
     constructor(ocrService: OcrPipelineService);
-    processOcr(documentId: string): Promise<{
+    processOcr(userId: string, documentId: string): Promise<{
         message: string;
         result: {
             documentId: string;

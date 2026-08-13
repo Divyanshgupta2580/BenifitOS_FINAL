@@ -28,8 +28,8 @@ let NotificationController = class NotificationController {
             notifications,
         };
     }
-    async markAsRead(id) {
-        await this.notificationService.markAsRead(id);
+    async markAsRead(userId, id) {
+        await this.notificationService.markAsRead(userId, id);
         return { message: 'Notification marked as read.' };
     }
 };
@@ -43,9 +43,10 @@ __decorate([
 ], NotificationController.prototype, "getNotifications", null);
 __decorate([
     (0, common_1.Patch)(':id/read'),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], NotificationController.prototype, "markAsRead", null);
 exports.NotificationController = NotificationController = __decorate([

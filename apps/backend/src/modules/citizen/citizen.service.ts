@@ -4,10 +4,13 @@ import { CitizenEntity } from '../../domain/citizen/citizen.entity';
 import { UpdateCitizenProfileDto } from './dto/citizen.dto';
 import { randomUUID } from 'crypto';
 
+import { ISchemeRecommendationRepository } from '../../domain/welfare/welfare-repository.interface';
+
 @Injectable()
 export class CitizenService {
   constructor(
     @Inject('ICitizenRepository') private readonly citizenRepo: ICitizenRepository,
+    @Inject('ISchemeRecommendationRepository') private readonly recommendationRepo?: ISchemeRecommendationRepository,
   ) {}
 
   async getProfileByUserId(userId: string): Promise<CitizenEntity> {
@@ -39,13 +42,34 @@ export class CitizenService {
         isBplCardHolder: dto.isBplCardHolder,
         bplCardNumber: dto.bplCardNumber,
       });
-      return await this.citizenRepo.save(profile);
+      const saved = await this.citizenRepo.save(profile);
+      if (this.recommendationRepo) {
+        await this.recommendationRepo.deleteForCitizen(saved.id);
+      }
+      return saved;
     }
+
+    const addressProps = (dto.state || dto.district || dto.city || dto.streetAddress)
+      ? {
+          id: randomUUID(),
+          streetAddress: dto.streetAddress || profile.address?.streetAddress || 'Default Address',
+          city: dto.city || profile.address?.city || 'City',
+          district: dto.district || profile.address?.district || 'District',
+          state: dto.state || profile.address?.state || 'National',
+          pincode: dto.pincode || profile.address?.pincode || '110001',
+          isRural: dto.isRural !== undefined ? dto.isRural : profile.address?.isRural || false,
+        }
+      : undefined;
 
     profile.updateDemographics({
       ...dto,
       dateOfBirth: dob,
+      address: addressProps,
     });
-    return await this.citizenRepo.update(profile);
+    const updated = await this.citizenRepo.update(profile);
+    if (this.recommendationRepo) {
+      await this.recommendationRepo.deleteForCitizen(updated.id);
+    }
+    return updated;
   }
 }

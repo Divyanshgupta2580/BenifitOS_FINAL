@@ -51,6 +51,10 @@ class ApplicationEntity extends domain_entity_base_1.BaseDomainEntity {
         this._submittedAt = new Date();
         this._updatedAt = new Date();
     }
+    updateFormData(newData) {
+        this._formData = { ...this._formData, ...newData };
+        this._updatedAt = new Date();
+    }
     transitionTo(newStatus, changedById, note) {
         const oldStatus = this._status;
         this._status = newStatus;

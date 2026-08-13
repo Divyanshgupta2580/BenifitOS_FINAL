@@ -35,11 +35,17 @@ let RealtimeGateway = RealtimeGateway_1 = class RealtimeGateway {
             const token = typeof rawToken === 'string' && rawToken.startsWith('Bearer ')
                 ? rawToken.slice(7)
                 : String(rawToken);
+            const jwtSecret = process.env.JWT_SECRET;
+            if (!jwtSecret) {
+                throw new common_1.UnauthorizedException('Server JWT configuration missing.');
+            }
             const payload = this.jwtService.verify(token, {
-                secret: process.env.JWT_SECRET || 'super_secret_jwt_key_benefit_os_production_change_me_32_bytes',
+                secret: jwtSecret,
             });
             client.data.user = payload;
             this.logger.log(`Authenticated WebSocket client connected: ${client.id} (user: ${payload.sub})`);
+            client.join(`user:${payload.sub}`);
+            this.logger.log(`Socket ${client.id} automatically joined private room user:${payload.sub}`);
             client.emit('connection_ack', {
                 status: 'CONNECTED',
                 connectionId: client.id,
@@ -98,7 +104,13 @@ exports.RealtimeGateway = RealtimeGateway = RealtimeGateway_1 = __decorate([
     (0, websockets_1.WebSocketGateway)({
         namespace: 'ws',
         cors: {
-            origin: '*',
+            origin: [
+                'http://localhost:3000',
+                'http://localhost:5173',
+                'http://127.0.0.1:3000',
+                'http://127.0.0.1:5173',
+            ],
+            credentials: true,
         },
     }),
     __metadata("design:paramtypes", [jwt_1.JwtService])

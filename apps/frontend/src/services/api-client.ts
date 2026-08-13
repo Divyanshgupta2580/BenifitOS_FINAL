@@ -5,6 +5,13 @@ const getApiBaseUrl = (): string => {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
+  if (typeof window !== 'undefined' && window.location) {
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isLocal) {
+      return 'http://localhost:4000/api/v1';
+    }
+    return `${window.location.origin}/api/v1`;
+  }
   return 'http://localhost:4000/api/v1';
 };
 
@@ -108,7 +115,24 @@ apiClient.interceptors.response.use(
       }
     }
 
-    const message = error.response?.data?.error?.message || error.message || 'An unexpected error occurred.';
-    return Promise.reject(new Error(message));
+    const errorData = error.response?.data?.error;
+    let message = 'An unexpected error occurred.';
+    if (errorData) {
+      if (Array.isArray(errorData.details) && errorData.details.length > 0) {
+        message = errorData.details.join(', ');
+      } else if (errorData.message) {
+        message = errorData.message;
+      }
+    } else if (error.response?.data?.message) {
+      const respMsg = error.response.data.message;
+      message = Array.isArray(respMsg) ? respMsg.join(', ') : respMsg;
+    } else if (error.message) {
+      message = error.message;
+    }
+    const enhancedError: any = new Error(message);
+    enhancedError.status = error.response?.status;
+    enhancedError.response = error.response;
+    enhancedError.code = error.code;
+    return Promise.reject(enhancedError);
   },
 );

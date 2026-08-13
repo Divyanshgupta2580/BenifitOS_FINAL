@@ -7,12 +7,12 @@ import { useSchemes } from '../../hooks/useSchemes';
 
 const CATEGORIES = [
   { id: 'ALL', label: 'All Schemes' },
-  { id: 'AGRICULTURE', label: '🌾 Agriculture' },
-  { id: 'HOUSING', label: '🏠 Housing' },
-  { id: 'HEALTHCARE', label: '🏥 Healthcare' },
-  { id: 'EDUCATION', label: '🎓 Education' },
-  { id: 'FINANCIAL_INCLUSION', label: '💳 Financial' },
-  { id: 'WOMEN_CHILD_DEVELOPMENT', label: '👩 Women & Child' },
+  { id: 'AGRICULTURE', label: 'Agriculture' },
+  { id: 'HOUSING', label: 'Housing' },
+  { id: 'HEALTHCARE', label: 'Healthcare' },
+  { id: 'EDUCATION', label: 'Education' },
+  { id: 'FINANCIAL_INCLUSION', label: 'Financial Inclusion' },
+  { id: 'WOMEN_CHILD_DEVELOPMENT', label: 'Women & Child' },
 ];
 
 interface Props {

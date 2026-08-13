@@ -24,8 +24,13 @@ exports.envSchema = zod_1.z.object({
     STORAGE_BUCKET_NAME: zod_1.z.string().default('benefitos-documents'),
     DIGILOCKER_CLIENT_ID: zod_1.z.string().optional(),
     DIGILOCKER_CLIENT_SECRET: zod_1.z.string().optional(),
-    DIGILOCKER_REDIRECT_URI: zod_1.z.string().optional(),
-    AADHAAR_MOCK_MODE: zod_1.z.string().default('true').transform((v) => v === 'true'),
+    SECURITY_STATE_MODE: zod_1.z.enum(['local', 'distributed']).default('local'),
+    SMTP_HOST: zod_1.z.string().optional(),
+    SMTP_PORT: zod_1.z.string().optional(),
+    SMTP_USER: zod_1.z.string().optional(),
+    SMTP_PASS: zod_1.z.string().optional(),
+    SMTP_FROM: zod_1.z.string().optional(),
+    SMTP_SECURE: zod_1.z.string().optional(),
 });
 function validateEnv() {
     const result = exports.envSchema.safeParse(process.env);

@@ -3,6 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
+import { ClipboardListIcon } from '../../components/ui/Icons';
 import { useApplications } from '../../hooks/useApplications';
 import { ApplicationItem } from '../../services/application.service';
 
@@ -109,7 +110,7 @@ export const ApplicationsListScreen: React.FC<Props> = ({
           </div>
         ) : filteredApps.length === 0 ? (
           <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center flex flex-col items-center">
-            <span className="text-3xl mb-2">📋</span>
+            <ClipboardListIcon className="w-10 h-10 text-slate-400 mb-2" />
             <p className="text-sm text-slate-500 italic mb-4">No welfare applications match the selected filter.</p>
             <Button title="Start First Application" onClick={onStartNewApplication} />
           </div>

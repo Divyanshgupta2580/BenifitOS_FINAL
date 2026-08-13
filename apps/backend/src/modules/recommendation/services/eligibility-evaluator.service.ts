@@ -10,8 +10,27 @@ export class EligibilityEvaluatorService {
     const rules = scheme.eligibilityRules || [];
     const criteriaMet: string[] = [];
     const missingCriteria: string[] = [];
+    const additionalInfoRequired: string[] = [];
+
+    // State / Domicile validation
+    if (!scheme.isCentralScheme && scheme.state) {
+      const citizenState = (citizen.address?.state || '').trim().toUpperCase();
+      const schemeState = scheme.state.trim().toUpperCase();
+      if (citizenState && (citizenState === schemeState || schemeState === 'ALL' || schemeState === 'NATIONAL')) {
+        criteriaMet.push(`Resident of ${scheme.state}`);
+      } else {
+        missingCriteria.push(`Scheme is restricted to residents of ${scheme.state} (Your state: ${citizen.address?.state || 'Not specified'})`);
+      }
+    }
 
     for (const rule of rules) {
+      const val = this.getCitizenAttributeValue(citizen, rule.attributeKey);
+      if (val === null || val === undefined || val === '') {
+        additionalInfoRequired.push(`Additional information required: ${rule.description || rule.attributeKey}`);
+        missingCriteria.push(`Missing profile data: ${rule.description || rule.attributeKey}`);
+        continue;
+      }
+
       const isMet = this.evaluateSingleRule(citizen, rule);
       if (isMet) {
         criteriaMet.push(rule.description || `${rule.attributeKey} ${rule.operator} ${rule.targetValue}`);
@@ -20,7 +39,7 @@ export class EligibilityEvaluatorService {
       }
     }
 
-    const totalRules = rules.length;
+    const totalRules = rules.length + (!scheme.isCentralScheme && scheme.state ? 1 : 0);
     const metCount = criteriaMet.length;
     const matchPercentage = totalRules > 0 ? Math.round((metCount / totalRules) * 100) : 100;
     const isEligible = missingCriteria.length === 0;

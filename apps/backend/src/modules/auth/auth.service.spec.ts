@@ -17,6 +17,11 @@ describe('AuthService Specification', () => {
       save: jest.fn((user) => Promise.resolve(user)),
     };
 
+    const mockCitizenRepo = {
+      save: jest.fn((c) => Promise.resolve(c)),
+      findByUserId: jest.fn(),
+    };
+
     mockJwtService = {
       sign: jest.fn().mockReturnValue('mocked_jwt_token'),
       verify: jest.fn(),
@@ -31,6 +36,7 @@ describe('AuthService Specification', () => {
       providers: [
         AuthService,
         { provide: 'IUserRepository', useValue: mockUserRepo },
+        { provide: 'ICitizenRepository', useValue: mockCitizenRepo },
         { provide: JwtService, useValue: mockJwtService },
         { provide: 'RedisService', useValue: mockRedisService },
       ],
@@ -49,9 +55,14 @@ describe('AuthService Specification', () => {
 
       await expect(
         service.register({
+          name: 'Citizen User',
+          age: 28,
+          category: 'GENERAL' as any,
+          profession: 'EMPLOYED' as any,
+          annualIncome: 350000,
+          state: 'Uttar Pradesh',
           email: 'test@example.com',
           password: 'Password123!',
-          role: UserRole.CITIZEN,
         }),
       ).rejects.toThrow(ConflictException);
     });

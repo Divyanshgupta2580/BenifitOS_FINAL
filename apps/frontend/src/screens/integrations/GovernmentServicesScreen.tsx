@@ -4,8 +4,56 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Skeleton } from '../../components/ui/Skeleton';
+import {
+  IdCardIcon,
+  FolderIcon,
+  HeartPulseIcon,
+  SproutIcon,
+  BriefcaseIcon,
+  GlobeIcon,
+  CreditCardIcon,
+  CarIcon,
+  DocumentTextIcon,
+  BuildingIcon,
+  HomeIcon,
+  UserIcon,
+} from '../../components/ui/Icons';
 import { useGovernmentServices } from '../../hooks/useGovernmentServices';
 import { GovernmentServiceItem, ServiceStatus } from '../../services/government.service';
+
+const renderServiceIcon = (iconType: string) => {
+  switch (iconType) {
+    case 'id-card':
+    case 'voter':
+    case 'passport':
+      return <IdCardIcon className="w-6 h-6 text-blue-900" />;
+    case 'folder':
+      return <FolderIcon className="w-6 h-6 text-blue-900" />;
+    case 'health':
+      return <HeartPulseIcon className="w-6 h-6 text-rose-700" />;
+    case 'agriculture':
+      return <SproutIcon className="w-6 h-6 text-emerald-700" />;
+    case 'labour':
+      return <BriefcaseIcon className="w-6 h-6 text-amber-700" />;
+    case 'mobile':
+      return <GlobeIcon className="w-6 h-6 text-blue-900" />;
+    case 'card':
+      return <CreditCardIcon className="w-6 h-6 text-indigo-700" />;
+    case 'vehicle':
+      return <CarIcon className="w-6 h-6 text-cyan-700" />;
+    case 'document':
+    case 'registry':
+      return <DocumentTextIcon className="w-6 h-6 text-slate-700" />;
+    case 'building':
+      return <BuildingIcon className="w-6 h-6 text-blue-900" />;
+    case 'home':
+      return <HomeIcon className="w-6 h-6 text-blue-900" />;
+    case 'child':
+      return <UserIcon className="w-6 h-6 text-purple-700" />;
+    default:
+      return <BuildingIcon className="w-6 h-6 text-blue-900" />;
+  }
+};
 
 interface Props {
   onBack: () => void;
@@ -115,8 +163,10 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
       case 'VERIFIED':
         return 'success';
       case 'CONNECTED':
+      case 'MOCKED':
         return 'primary';
       case 'PENDING':
+      case 'NOT_CONFIGURED':
         return 'warning';
       case 'EXPIRED':
       case 'NOT_CONNECTED':
@@ -200,7 +250,9 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
                 <div>
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl">{item.icon}</span>
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                        {renderServiceIcon(item.icon)}
+                      </div>
                       <div>
                         <h3 className="text-base font-bold text-slate-900">{item.name}</h3>
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.category} REGISTRY</span>

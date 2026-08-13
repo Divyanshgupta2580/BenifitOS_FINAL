@@ -3,6 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { CheckCircleIcon, AlertTriangleIcon } from '../../components/ui/Icons';
 import { useRecommendation } from '../../hooks/useRecommendation';
 
 interface Props {
@@ -69,7 +70,7 @@ export const RecommendationDetailScreen: React.FC<Props> = ({
             <div className="space-y-2">
               {recommendation.criteriaMet.map((c, idx) => (
                 <div key={idx} className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200 flex items-center gap-3">
-                  <span className="text-emerald-700 font-bold text-base">✓</span>
+                  <CheckCircleIcon className="w-5 h-5 text-emerald-600 shrink-0" />
                   <span className="text-xs font-semibold text-slate-800">{c}</span>
                 </div>
               ))}
@@ -88,7 +89,7 @@ export const RecommendationDetailScreen: React.FC<Props> = ({
             <div className="space-y-2">
               {recommendation.missingCriteria.map((m, idx) => (
                 <div key={idx} className="p-3 bg-amber-50/50 rounded-xl border border-amber-200 flex items-center gap-3">
-                  <span className="text-amber-700 font-bold text-base">⚠️</span>
+                  <AlertTriangleIcon className="w-5 h-5 text-amber-600 shrink-0" />
                   <span className="text-xs font-semibold text-slate-800">{m}</span>
                 </div>
               ))}

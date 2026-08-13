@@ -18,8 +18,10 @@ const citizen_entity_1 = require("../../domain/citizen/citizen.entity");
 const crypto_1 = require("crypto");
 let CitizenService = class CitizenService {
     citizenRepo;
-    constructor(citizenRepo) {
+    recommendationRepo;
+    constructor(citizenRepo, recommendationRepo) {
         this.citizenRepo = citizenRepo;
+        this.recommendationRepo = recommendationRepo;
     }
     async getProfileByUserId(userId) {
         const profile = await this.citizenRepo.findByUserId(userId);
@@ -48,19 +50,40 @@ let CitizenService = class CitizenService {
                 isBplCardHolder: dto.isBplCardHolder,
                 bplCardNumber: dto.bplCardNumber,
             });
-            return await this.citizenRepo.save(profile);
+            const saved = await this.citizenRepo.save(profile);
+            if (this.recommendationRepo) {
+                await this.recommendationRepo.deleteForCitizen(saved.id);
+            }
+            return saved;
         }
+        const addressProps = (dto.state || dto.district || dto.city || dto.streetAddress)
+            ? {
+                id: (0, crypto_1.randomUUID)(),
+                streetAddress: dto.streetAddress || profile.address?.streetAddress || 'Default Address',
+                city: dto.city || profile.address?.city || 'City',
+                district: dto.district || profile.address?.district || 'District',
+                state: dto.state || profile.address?.state || 'National',
+                pincode: dto.pincode || profile.address?.pincode || '110001',
+                isRural: dto.isRural !== undefined ? dto.isRural : profile.address?.isRural || false,
+            }
+            : undefined;
         profile.updateDemographics({
             ...dto,
             dateOfBirth: dob,
+            address: addressProps,
         });
-        return await this.citizenRepo.update(profile);
+        const updated = await this.citizenRepo.update(profile);
+        if (this.recommendationRepo) {
+            await this.recommendationRepo.deleteForCitizen(updated.id);
+        }
+        return updated;
     }
 };
 exports.CitizenService = CitizenService;
 exports.CitizenService = CitizenService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('ICitizenRepository')),
-    __metadata("design:paramtypes", [Object])
+    __param(1, (0, common_1.Inject)('ISchemeRecommendationRepository')),
+    __metadata("design:paramtypes", [Object, Object])
 ], CitizenService);
 //# sourceMappingURL=citizen.service.js.map

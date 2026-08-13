@@ -19,6 +19,7 @@ const class_validator_1 = require("class-validator");
 class AiChatDto {
     prompt;
     context;
+    language;
 }
 exports.AiChatDto = AiChatDto;
 __decorate([
@@ -30,11 +31,17 @@ __decorate([
     (0, class_validator_1.IsObject)(),
     __metadata("design:type", Object)
 ], AiChatDto.prototype, "context", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], AiChatDto.prototype, "language", void 0);
 class ExplainRecommendationDto {
     schemeTitle;
     matchPercentage;
     criteriaMet;
     missingCriteria;
+    language;
 }
 exports.ExplainRecommendationDto = ExplainRecommendationDto;
 __decorate([
@@ -53,6 +60,11 @@ __decorate([
     (0, class_validator_1.IsArray)(),
     __metadata("design:type", Array)
 ], ExplainRecommendationDto.prototype, "missingCriteria", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ExplainRecommendationDto.prototype, "language", void 0);
 let AiController = class AiController {
     aiService;
     constructor(aiService) {

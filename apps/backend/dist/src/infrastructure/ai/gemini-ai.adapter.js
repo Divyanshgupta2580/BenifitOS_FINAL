@@ -19,7 +19,7 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
     aiClient = null;
     constructor() {
         const apiKey = process.env.GEMINI_API_KEY;
-        if (apiKey) {
+        if (apiKey && !apiKey.includes('temp') && !apiKey.includes('your-')) {
             this.aiClient = new genai_1.GoogleGenAI({ apiKey });
             this.logger.log('Google Gemini AI Client initialized successfully.');
         }
@@ -30,10 +30,10 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
     async generateText(options) {
         if (!this.aiClient) {
             return {
-                content: `[Fallback Response] Unable to contact Gemini API (Missing Key). Query: ${options.prompt.substring(0, 50)}...`,
-                tokensUsed: 10,
-                provider: this.providerName,
-                model: 'gemini-1.5-flash-fallback',
+                content: 'BenefitOS AI is currently unavailable (Unconfigured API key). Please try again later.',
+                tokensUsed: 0,
+                provider: 'gemini-unconfigured',
+                model: 'gemini-1.5-flash',
             };
         }
         try {
@@ -56,7 +56,12 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
         }
         catch (err) {
             this.logger.error(`Gemini generateText error: ${err.message}`);
-            throw err;
+            return {
+                content: '[BenefitOS AI Notice] Live AI inference is currently unavailable due to network or service connectivity. Please verify internet access and GEMINI_API_KEY configuration.',
+                tokensUsed: 0,
+                provider: 'gemini-offline',
+                model: 'gemini-1.5-flash-fallback',
+            };
         }
     }
     async generateStream(options, onChunk) {
@@ -66,8 +71,12 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
     }
     async extractDocumentData(fileBuffer, mimeType, expectedDocType) {
         if (!this.aiClient) {
+            const bufferText = fileBuffer ? fileBuffer.toString('utf-8') : '';
+            const rawText = bufferText.length > 5 && !bufferText.includes('\u0000')
+                ? bufferText
+                : `[Fallback OCR Raw Text for ${expectedDocType}]`;
             return {
-                rawText: `[Fallback OCR Raw Text for ${expectedDocType}]`,
+                rawText,
                 confidenceScore: 0.95,
                 extractedFields: { docType: expectedDocType, verifiedStatus: 'MOCK_SUCCESS' },
             };

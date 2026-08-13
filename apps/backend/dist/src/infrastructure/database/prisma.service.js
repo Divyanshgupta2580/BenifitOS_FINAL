@@ -13,19 +13,31 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PrismaService = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
-let PrismaService = PrismaService_1 = class PrismaService {
+let PrismaService = class PrismaService {
+    static { PrismaService_1 = this; }
     prisma;
     logger = new common_1.Logger(PrismaService_1.name);
+    static connectPromise = null;
     constructor() {
         this.prisma = new client_1.PrismaClient();
     }
     async onModuleInit() {
-        this.logger.log('Connecting to PostgreSQL database via Prisma...');
-        await this.prisma.$connect();
-        this.logger.log('Database connection established successfully.');
+        if (!PrismaService_1.connectPromise) {
+            this.logger.log('Connecting to PostgreSQL database via Prisma...');
+            PrismaService_1.connectPromise = this.prisma.$connect().then(() => {
+                this.logger.log('Database connection established successfully.');
+            }).catch((err) => {
+                this.logger.warn(`PostgreSQL connection failed during startup: ${err.message}. Connection will be retried on demand.`);
+                PrismaService_1.connectPromise = null;
+            });
+        }
+        try {
+            await PrismaService_1.connectPromise;
+        }
+        catch {
+        }
     }
     async onModuleDestroy() {
-        this.logger.log('Disconnecting database client...');
         await this.prisma.$disconnect();
     }
     async queryRaw(strings, ...values) {

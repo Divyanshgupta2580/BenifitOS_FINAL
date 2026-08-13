@@ -22,9 +22,22 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
+import { DatabaseModule } from './infrastructure/database/database.module';
+import { EmailModule } from './infrastructure/email/email.module';
+
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 120,
+      },
+    ]),
+    DatabaseModule,
+    EmailModule,
     AuthModule,
     CitizenModule,
     WelfareModule,
@@ -40,6 +53,10 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     HealthModule,
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,

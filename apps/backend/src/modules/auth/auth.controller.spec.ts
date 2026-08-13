@@ -39,10 +39,20 @@ describe('AuthController Specification', () => {
   });
 
   it('should register a new citizen successfully', async () => {
-    const dto = { email: 'citizen@example.com', password: 'Password123!', role: UserRole.CITIZEN };
+    const dto = {
+      name: 'Citizen User',
+      age: 28,
+      category: 'GENERAL' as any,
+      profession: 'EMPLOYED' as any,
+      annualIncome: 350000,
+      state: 'Uttar Pradesh',
+      email: 'citizen@example.com',
+      password: 'Password123!',
+      role: UserRole.CITIZEN,
+    };
     const result = await controller.register(dto, mockResponse);
     expect(mockAuthService.register).toHaveBeenCalledWith(dto);
-    expect(result).toHaveProperty('id', 'user-1');
+    expect(result).toHaveProperty('user');
   });
 
   it('should handle login and set HttpOnly refresh cookie', async () => {

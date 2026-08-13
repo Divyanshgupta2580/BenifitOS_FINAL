@@ -21,8 +21,13 @@ export const envSchema = z.object({
   STORAGE_BUCKET_NAME: z.string().default('benefitos-documents'),
   DIGILOCKER_CLIENT_ID: z.string().optional(),
   DIGILOCKER_CLIENT_SECRET: z.string().optional(),
-  DIGILOCKER_REDIRECT_URI: z.string().optional(),
-  AADHAAR_MOCK_MODE: z.string().default('true').transform((v) => v === 'true'),
+  SECURITY_STATE_MODE: z.enum(['local', 'distributed']).default('local'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
+  SMTP_SECURE: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

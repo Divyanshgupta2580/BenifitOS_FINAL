@@ -38,6 +38,7 @@ let RecommendationEngineService = class RecommendationEngineService {
             recommendations.push(rec);
         }
         recommendations.sort((a, b) => b.matchPercentage - a.matchPercentage);
+        await this.recommendationRepo.deleteForCitizen(citizen.id);
         await this.recommendationRepo.saveMany(recommendations);
         return recommendations;
     }
@@ -51,6 +52,39 @@ let RecommendationEngineService = class RecommendationEngineService {
             return await this.calculateRecommendationsForCitizen(userId);
         }
         return existing;
+    }
+    async getEnrichedRecommendations(userId) {
+        const recs = await this.getRecommendations(userId);
+        const enriched = await Promise.all(recs.map(async (r) => {
+            const scheme = await this.schemeRepo.findById(r.schemeId);
+            return {
+                id: r.id,
+                schemeId: r.schemeId,
+                title: scheme?.title || 'Welfare Scheme',
+                category: scheme?.category || 'WELFARE',
+                department: scheme?.department || 'Government Department',
+                description: scheme?.description || '',
+                financialBenefit: scheme?.financialBenefit || 0,
+                matchPercentage: r.matchPercentage,
+                estimatedBenefit: r.estimatedBenefit,
+                isEligible: r.isEligible,
+                criteriaMet: r.criteriaMet,
+                missingCriteria: r.missingCriteria,
+                missingDocuments: r.missingDocuments,
+                scheme: scheme
+                    ? {
+                        id: scheme.id,
+                        code: scheme.code,
+                        title: scheme.title,
+                        description: scheme.description,
+                        category: scheme.category,
+                        department: scheme.department,
+                        financialBenefit: scheme.financialBenefit,
+                    }
+                    : undefined,
+            };
+        }));
+        return enriched;
     }
 };
 exports.RecommendationEngineService = RecommendationEngineService;

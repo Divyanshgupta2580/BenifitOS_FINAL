@@ -26,6 +26,18 @@ export class CitizenController {
         disabilityType: profile.disabilityType,
         disabilityPercent: profile.disabilityPercent,
         isBplCardHolder: profile.isBplCardHolder,
+        state: profile.address?.state || 'National',
+        district: profile.address?.district || '',
+        address: profile.address
+          ? {
+              streetAddress: profile.address.streetAddress,
+              city: profile.address.city,
+              district: profile.address.district,
+              state: profile.address.state,
+              pincode: profile.address.pincode,
+              isRural: profile.address.isRural,
+            }
+          : null,
         completionPercentage: profile.calculateProfileCompletionPercentage(),
       },
     };

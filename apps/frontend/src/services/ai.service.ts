@@ -31,18 +31,18 @@ export const aiApiService = {
       const res: AiChatResponse = await apiClient.post('/ai/chat', dto);
       return {
         reply: res.reply,
-        provider: res.provider || 'Gemini 1.5 Pro',
+        provider: res.provider || 'BenefitOS AI',
         sources: ['Government Database', 'Recommendation Engine', 'Citizen Profile', 'OCR Vault'],
       };
-    } catch {
-      // Fallback structured response if backend endpoint unreachable
+    } catch (err: any) {
+      // Return honest error notice if backend endpoint is unreachable
       const isHindi = dto.language === 'hi';
       return {
         reply: isHindi
-          ? `[AI Citizen Copilot] ${dto.prompt} के संबंध में आधिकारिक जानकारी: आपकी प्रोफ़ाइल और दस्तावेज़ों के आधार पर आपकी सहायता की जा रही है।`
-          : `[AI Citizen Copilot] Regarding '${dto.prompt}': Based on your citizen profile and document vault, your eligibility matches national welfare standards.`,
-        provider: 'Gemini 1.5 Pro',
-        sources: ['Government Database', 'Citizen Profile'],
+          ? `[BenefitOS AI] सेवा अनुपलब्ध है (${err?.message || 'कनेक्शन त्रुटि'})। कृपया अपना नेटवर्क कनेक्शन जांचें।`
+          : `[BenefitOS AI Notice] Unable to communicate with the AI Gateway (${err?.message || 'Endpoint unreachable'}). Please verify your backend server connection.`,
+        provider: 'BenefitOS Gateway',
+        sources: ['System Notice'],
       };
     }
   },

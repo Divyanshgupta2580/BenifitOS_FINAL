@@ -9,6 +9,10 @@ export class AiChatDto {
   @IsOptional()
   @IsObject()
   context?: Record<string, any>;
+
+  @IsOptional()
+  @IsString()
+  language?: string;
 }
 
 export class ExplainRecommendationDto {
@@ -23,6 +27,10 @@ export class ExplainRecommendationDto {
 
   @IsArray()
   missingCriteria: string[];
+
+  @IsOptional()
+  @IsString()
+  language?: string;
 }
 
 @Controller('ai')

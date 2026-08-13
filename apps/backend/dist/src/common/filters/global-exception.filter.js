@@ -34,7 +34,7 @@ let GlobalExceptionFilter = GlobalExceptionFilter_1 = class GlobalExceptionFilte
                 message = resp.message || exception.message;
                 if (Array.isArray(resp.message)) {
                     details = resp.message;
-                    message = 'Request validation failed.';
+                    message = details.length > 0 ? details.join('; ') : 'Request validation failed.';
                 }
             }
             else {

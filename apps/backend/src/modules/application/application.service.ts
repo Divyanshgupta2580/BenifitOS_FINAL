@@ -22,12 +22,27 @@ export class ApplicationService {
     return await this.applicationRepo.save(app);
   }
 
-  async submitApplication(id: string): Promise<ApplicationEntity> {
+  async submitApplication(userId: string, id: string): Promise<ApplicationEntity> {
     const app = await this.applicationRepo.findById(id);
-    if (!app) {
-      throw new NotFoundException(`Application with ID '${id}' not found.`);
+    if (!app || app.userId !== userId) {
+      throw new NotFoundException(`Application with ID '${id}' not found or access denied.`);
     }
     app.submit();
+    return await this.applicationRepo.update(app);
+  }
+
+  async updateApplication(
+    userId: string,
+    id: string,
+    data: { status?: ApplicationStatus; formData?: Record<string, any> },
+  ): Promise<ApplicationEntity> {
+    const app = await this.applicationRepo.findById(id);
+    if (!app || app.userId !== userId) {
+      throw new NotFoundException(`Application with ID '${id}' not found or access denied.`);
+    }
+    if (data.formData) {
+      app.updateFormData(data.formData);
+    }
     return await this.applicationRepo.update(app);
   }
 
@@ -35,10 +50,10 @@ export class ApplicationService {
     return await this.applicationRepo.findByUserId(userId);
   }
 
-  async getApplicationById(id: string): Promise<ApplicationEntity> {
+  async getApplicationById(userId: string, id: string): Promise<ApplicationEntity> {
     const app = await this.applicationRepo.findById(id);
-    if (!app) {
-      throw new NotFoundException(`Application with ID '${id}' not found.`);
+    if (!app || app.userId !== userId) {
+      throw new NotFoundException(`Application with ID '${id}' not found or access denied.`);
     }
     return app;
   }

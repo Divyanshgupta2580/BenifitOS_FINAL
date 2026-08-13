@@ -8,7 +8,7 @@ export declare class OcrPipelineService {
     private readonly storageAdapter;
     private readonly prisma;
     constructor(documentRepo: IDocumentRepository, geminiAdapter: GeminiAiAdapter, storageAdapter: LocalStorageAdapter, prisma: PrismaService);
-    processDocumentOcr(documentId: string): Promise<{
+    processDocumentOcr(userId: string, documentId: string): Promise<{
         documentId: string;
         confidenceScore: number;
         extractedFields: Record<string, any>;

@@ -28,6 +28,9 @@ const transform_interceptor_1 = require("./common/interceptors/transform.interce
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
 const correlation_id_middleware_1 = require("./common/middleware/correlation-id.middleware");
+const database_module_1 = require("./infrastructure/database/database.module");
+const email_module_1 = require("./infrastructure/email/email.module");
+const throttler_1 = require("@nestjs/throttler");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer.apply(correlation_id_middleware_1.CorrelationIdMiddleware).forRoutes('*');
@@ -38,6 +41,14 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
+            throttler_1.ThrottlerModule.forRoot([
+                {
+                    ttl: 60000,
+                    limit: 120,
+                },
+            ]),
+            database_module_1.DatabaseModule,
+            email_module_1.EmailModule,
             auth_module_1.AuthModule,
             citizen_module_1.CitizenModule,
             welfare_module_1.WelfareModule,
@@ -53,6 +64,10 @@ exports.AppModule = AppModule = __decorate([
             health_module_1.HealthModule,
         ],
         providers: [
+            {
+                provide: core_1.APP_GUARD,
+                useClass: throttler_1.ThrottlerGuard,
+            },
             {
                 provide: core_1.APP_FILTER,
                 useClass: global_exception_filter_1.GlobalExceptionFilter,

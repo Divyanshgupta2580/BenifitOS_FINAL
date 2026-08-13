@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
 import { Button } from '../../components/ui/Button';
+import { BuildingIcon, CameraIcon, BotIcon } from '../../components/ui/Icons';
 
 const SLIDES = [
   {
-    icon: '🏛️',
+    Icon: BuildingIcon,
     title: 'Discover Welfare Schemes',
     description: 'Find official central and state government benefit schemes tailored specifically to your citizen profile.',
   },
   {
-    icon: '📸',
+    Icon: CameraIcon,
     title: 'Vision OCR Document Vault',
-    description: 'Scan Aadhaar, Income Certificates, and Ration Cards with AI Vision for automated document verification.',
+    description: 'Scan Aadhaar, Educational Certificates, and Caste Certificates with AI Vision for automated document verification.',
   },
   {
-    icon: '🤖',
+    Icon: BotIcon,
     title: 'AI Multi-Lingual Copilot',
     description: 'Chat and interact in your regional language to receive clear, accessible guidance on applications.',
   },
@@ -39,8 +40,8 @@ export const OnboardingScreen: React.FC<Props> = ({ onFinish }) => {
   return (
     <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6">
       <div className="w-full max-w-md bg-white rounded-2xl p-8 border border-slate-200 shadow-sm flex flex-col items-center text-center">
-        <div className="w-24 h-24 rounded-full bg-blue-900 text-white flex items-center justify-center text-4xl mb-6 shadow-md">
-          {slide.icon}
+        <div className="w-24 h-24 rounded-full bg-blue-900 text-white flex items-center justify-center mb-6 shadow-md">
+          <slide.Icon className="w-12 h-12 text-white" />
         </div>
 
         <h1 className="text-2xl font-bold text-blue-900 mb-3">{slide.title}</h1>

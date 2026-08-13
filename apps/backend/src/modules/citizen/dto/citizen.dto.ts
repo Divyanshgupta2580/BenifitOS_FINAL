@@ -41,4 +41,42 @@ export class UpdateCitizenProfileDto {
   @IsOptional()
   @IsString()
   bplCardNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  district?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  streetAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  pincode?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isRural?: boolean;
+
+  @IsOptional()
+  @IsString()
+  educationLevel?: string;
+
+  @IsOptional()
+  @IsString()
+  course?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  academicPercentage?: number;
 }

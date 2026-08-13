@@ -23,8 +23,9 @@ export declare class HealthController {
         status: string;
         timestamp: string;
     };
-    readiness(): {
+    readiness(): Promise<{
         status: string;
+        database: string;
         timestamp: string;
-    };
+    }>;
 }

@@ -6,7 +6,7 @@ export declare class NotificationController {
         count: number;
         notifications: import("../../domain/notification/notification-repository.interface").NotificationProps[];
     }>;
-    markAsRead(id: string): Promise<{
+    markAsRead(userId: string, id: string): Promise<{
         message: string;
     }>;
 }

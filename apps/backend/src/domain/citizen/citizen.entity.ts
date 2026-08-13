@@ -190,6 +190,17 @@ export class CitizenEntity extends BaseDomainEntity<CitizenProps> {
     if (data.disabilityPercent !== undefined) this._disabilityPercent = data.disabilityPercent;
     if (data.isBplCardHolder !== undefined) this._isBplCardHolder = data.isBplCardHolder;
     if (data.bplCardNumber !== undefined) this._bplCardNumber = data.bplCardNumber;
+    if (data.address) {
+      this._address = {
+        id: this._address?.id || data.address.id || 'addr-default',
+        streetAddress: data.address.streetAddress ?? this._address?.streetAddress ?? 'Address',
+        city: data.address.city ?? this._address?.city ?? 'City',
+        district: data.address.district ?? this._address?.district ?? 'District',
+        state: data.address.state ?? this._address?.state ?? 'National',
+        pincode: data.address.pincode ?? this._address?.pincode ?? '110001',
+        isRural: data.address.isRural ?? this._address?.isRural ?? false,
+      };
+    }
     this._updatedAt = new Date();
   }
 }

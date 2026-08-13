@@ -12,4 +12,13 @@ export declare class UpdateCitizenProfileDto {
     disabilityPercent: number;
     isBplCardHolder: boolean;
     bplCardNumber?: string;
+    state?: string;
+    district?: string;
+    city?: string;
+    streetAddress?: string;
+    pincode?: string;
+    isRural?: boolean;
+    educationLevel?: string;
+    course?: string;
+    academicPercentage?: number;
 }

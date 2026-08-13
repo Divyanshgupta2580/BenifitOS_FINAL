@@ -1,9 +1,19 @@
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, RefreshTokenDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
+    forgotPassword(dto: ForgotPasswordDto): Promise<{
+        success: boolean;
+        configured: boolean;
+        message: string;
+        resetToken?: string;
+    }>;
+    resetPassword(dto: ResetPasswordDto): Promise<{
+        success: boolean;
+        message: string;
+    }>;
     private setRefreshCookie;
     private clearRefreshCookie;
     register(dto: RegisterDto, res: Response): Promise<{

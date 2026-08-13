@@ -13,10 +13,10 @@ export class OcrPipelineService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async processDocumentOcr(documentId: string): Promise<{ documentId: string; confidenceScore: number; extractedFields: Record<string, any> }> {
+  async processDocumentOcr(userId: string, documentId: string): Promise<{ documentId: string; confidenceScore: number; extractedFields: Record<string, any> }> {
     const doc = await this.documentRepo.findById(documentId);
-    if (!doc) {
-      throw new NotFoundException(`Document with ID '${documentId}' not found.`);
+    if (!doc || doc.userId !== userId) {
+      throw new NotFoundException(`Document with ID '${documentId}' not found or access denied.`);
     }
 
     const fileBuffer = await this.storageAdapter.downloadFile(doc.storagePath);

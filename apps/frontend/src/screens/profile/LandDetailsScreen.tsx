@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { SproutIcon } from '../../components/ui/Icons';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
 
 interface Props {
@@ -91,8 +92,9 @@ export const LandDetailsScreen: React.FC<Props> = ({ onBack }) => {
                       Survey / Khasra No: {l.surveyNumber || 'N/A'} • {l.district}, {l.state}
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
-                    🌾 Farmer Record
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 flex items-center gap-1">
+                    <SproutIcon className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Farmer Record</span>
                   </span>
                 </div>
               ))}

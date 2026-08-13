@@ -4,6 +4,8 @@ export declare class LocalStorageAdapter implements IStorageProvider {
     private readonly logger;
     private readonly uploadDir;
     constructor();
+    sanitizeFilename(rawName: string): string;
+    private validatePathSafety;
     uploadFile(options: UploadFileOptions): Promise<UploadFileResult>;
     downloadFile(storagePath: string): Promise<Buffer>;
     getPresignedUrl(storagePath: string): Promise<string>;

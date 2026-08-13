@@ -29,7 +29,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         message = (resp as any).message || exception.message;
         if (Array.isArray((resp as any).message)) {
           details = (resp as any).message;
-          message = 'Request validation failed.';
+          message = details.length > 0 ? details.join('; ') : 'Request validation failed.';
         }
       } else {
         message = resp as string;

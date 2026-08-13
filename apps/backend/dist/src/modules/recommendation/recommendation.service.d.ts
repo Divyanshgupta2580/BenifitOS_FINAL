@@ -10,4 +10,5 @@ export declare class RecommendationEngineService {
     constructor(evaluator: EligibilityEvaluatorService, citizenRepo: ICitizenRepository, schemeRepo: IWelfareSchemeRepository, recommendationRepo: ISchemeRecommendationRepository);
     calculateRecommendationsForCitizen(userId: string): Promise<SchemeRecommendationEntity[]>;
     getRecommendations(userId: string): Promise<SchemeRecommendationEntity[]>;
+    getEnrichedRecommendations(userId: string): Promise<any[]>;
 }

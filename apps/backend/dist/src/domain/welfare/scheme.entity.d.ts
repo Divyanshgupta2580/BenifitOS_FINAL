@@ -12,17 +12,15 @@ export declare enum SchemeCategory {
     PENSION = "PENSION"
 }
 export declare enum DocumentType {
-    AADHAAR = "AADHAAR",
-    INCOME_CERTIFICATE = "INCOME_CERTIFICATE",
-    RATION_CARD = "RATION_CARD",
-    CASTE_CERTIFICATE = "CASTE_CERTIFICATE",
+    BIRTH_CERTIFICATE = "BIRTH_CERTIFICATE",
+    EDUCATIONAL_CERTIFICATE = "EDUCATIONAL_CERTIFICATE",
     DISABILITY_CERTIFICATE = "DISABILITY_CERTIFICATE",
-    LAND_RECORD = "LAND_RECORD",
-    BANK_PASSBOOK = "BANK_PASSBOOK",
-    VOTER_ID = "VOTER_ID",
-    PAN_CARD = "PAN_CARD",
-    OTHER = "OTHER"
+    CASTE_CERTIFICATE = "CASTE_CERTIFICATE",
+    AADHAAR = "AADHAAR",
+    DRIVING_LICENSE = "DRIVING_LICENSE",
+    VOTER_ID = "VOTER_ID"
 }
+export declare const DOCUMENT_TYPE_DISPLAY_NAMES: Record<DocumentType, string>;
 export interface EligibilityRule {
     id: string;
     attributeKey: string;

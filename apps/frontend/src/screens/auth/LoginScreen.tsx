@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { BuildingIcon } from '../../components/ui/Icons';
 import { apiClient } from '../../services/api-client';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -39,8 +40,8 @@ export const LoginScreen: React.FC<Props> = ({ onNavigateToRegister, onNavigateT
     <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6">
       <div className="w-full max-w-md bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
         <div className="mb-6 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 text-white text-xl font-bold mb-3 shadow-sm">
-            🏛️
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 text-white mb-3 shadow-sm">
+            <BuildingIcon className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-blue-900 mb-1">Welcome to BenefitOS</h1>
           <p className="text-sm text-slate-600">Sign in to manage your welfare scheme applications.</p>

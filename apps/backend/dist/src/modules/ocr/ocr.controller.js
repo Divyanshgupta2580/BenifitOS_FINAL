@@ -15,13 +15,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OcrController = void 0;
 const common_1 = require("@nestjs/common");
 const ocr_service_1 = require("./ocr.service");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 let OcrController = class OcrController {
     ocrService;
     constructor(ocrService) {
         this.ocrService = ocrService;
     }
-    async processOcr(documentId) {
-        const result = await this.ocrService.processDocumentOcr(documentId);
+    async processOcr(userId, documentId) {
+        const result = await this.ocrService.processDocumentOcr(userId, documentId);
         return {
             message: 'OCR extraction completed successfully.',
             result,
@@ -31,9 +32,10 @@ let OcrController = class OcrController {
 exports.OcrController = OcrController;
 __decorate([
     (0, common_1.Post)('process/:documentId'),
-    __param(0, (0, common_1.Param)('documentId')),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('documentId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], OcrController.prototype, "processOcr", null);
 exports.OcrController = OcrController = __decorate([

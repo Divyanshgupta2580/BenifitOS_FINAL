@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { HealthCheckService, HttpHealthIndicator, HealthCheck, MemoryHealthIndicator } from '@nestjs/terminus';
+import { HealthCheckService, HttpHealthIndicator, HealthCheck, MemoryHealthIndicator, HealthCheckError } from '@nestjs/terminus';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { Public } from '../../common/decorators/roles.decorator';
 
@@ -18,9 +18,14 @@ export class HealthController {
   async check() {
     return this.health.check([
       async () => {
-        await this.prisma.queryRaw`SELECT 1`;
-        // If query succeeds, consider database healthy
-        return { database: { status: 'up' } };
+        try {
+          await this.prisma.queryRaw`SELECT 1`;
+          return { database: { status: 'up' } };
+        } catch (err: any) {
+          throw new HealthCheckError('Database connection check failed', {
+            database: { status: 'down', error: err.message },
+          });
+        }
       },
       () => this.memory.checkHeap('memory_heap', 300 * 1024 * 1024),
     ]);
@@ -34,7 +39,12 @@ export class HealthController {
 
   @Public()
   @Get('readiness')
-  readiness() {
-    return { status: 'READY', timestamp: new Date().toISOString() };
+  async readiness() {
+    try {
+      await this.prisma.queryRaw`SELECT 1`;
+      return { status: 'READY', database: 'CONNECTED', timestamp: new Date().toISOString() };
+    } catch (err: any) {
+      return { status: 'NOT_READY', database: 'DISCONNECTED', timestamp: new Date().toISOString() };
+    }
   }
 }

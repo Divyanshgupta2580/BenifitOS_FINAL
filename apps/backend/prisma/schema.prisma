@@ -72,16 +72,13 @@ enum SchemeCategory {
 }
 
 enum DocumentType {
-  AADHAAR
-  INCOME_CERTIFICATE
-  RATION_CARD
-  CASTE_CERTIFICATE
+  BIRTH_CERTIFICATE
+  EDUCATIONAL_CERTIFICATE
   DISABILITY_CERTIFICATE
-  LAND_RECORD
-  BANK_PASSBOOK
+  CASTE_CERTIFICATE
+  AADHAAR
+  DRIVING_LICENSE
   VOTER_ID
-  PAN_CARD
-  OTHER
 }
 
 enum VerificationStatus {
@@ -328,6 +325,8 @@ model Document {
   verifications      DocumentVerification[]
   applicationDocs    ApplicationDocument[]
 
+  @@index([userId])
+  @@index([userId, documentType])
   @@map("documents")
 }
 
@@ -374,6 +373,8 @@ model Application {
   documents        ApplicationDocument[]
   history          ApplicationStatusHistory[]
 
+  @@index([userId])
+  @@index([userId, status])
   @@map("applications")
 }
 
@@ -442,6 +443,7 @@ model Notification {
 
   user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, isRead])
   @@map("notifications")
 }
 
@@ -487,5 +489,6 @@ model OutboxEvent {
   createdAt        DateTime     @default(now())
   processedAt      DateTime?
 
+  @@index([status])
   @@map("outbox_events")
 }

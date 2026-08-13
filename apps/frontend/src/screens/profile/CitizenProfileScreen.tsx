@@ -3,6 +3,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { UserIcon, HomeIcon } from '../../components/ui/Icons';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
 
 interface Props {
@@ -81,7 +82,7 @@ export const CitizenProfileScreen: React.FC<Props> = ({
         <Card>
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2">
-              <span className="text-lg">👤</span>
+              <UserIcon className="w-5 h-5 text-blue-900" />
               <h3 className="text-base font-bold text-blue-900">Demographics & Income</h3>
             </div>
             <button
@@ -121,7 +122,7 @@ export const CitizenProfileScreen: React.FC<Props> = ({
         <Card>
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2">
-              <span className="text-lg">🏡</span>
+              <HomeIcon className="w-5 h-5 text-blue-900" />
               <h3 className="text-base font-bold text-blue-900">Residential Address</h3>
             </div>
             <button

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { LockIcon } from '../../components/ui/Icons';
 import { apiClient } from '../../services/api-client';
 
 interface Props {
@@ -62,8 +63,8 @@ export const MfaSetupScreen: React.FC<Props> = ({ onComplete }) => {
     <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6">
       <div className="w-full max-w-md bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
         <div className="mb-6 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 text-white text-xl font-bold mb-3 shadow-sm">
-            🔐
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 text-white mb-3 shadow-sm">
+            <LockIcon className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-blue-900 mb-1">Two-Factor Auth (MFA)</h1>
           <p className="text-sm text-slate-600">Enter the 6-digit verification code sent to your registered device.</p>

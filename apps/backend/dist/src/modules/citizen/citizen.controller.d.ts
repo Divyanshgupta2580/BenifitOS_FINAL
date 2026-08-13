@@ -19,6 +19,16 @@ export declare class CitizenController {
             disabilityType: import("../../domain/citizen/citizen.entity").DisabilityType;
             disabilityPercent: number;
             isBplCardHolder: boolean;
+            state: string;
+            district: string;
+            address: {
+                streetAddress: string;
+                city: string;
+                district: string;
+                state: string;
+                pincode: string;
+                isRural: boolean;
+            } | null;
             completionPercentage: number;
         };
     }>;

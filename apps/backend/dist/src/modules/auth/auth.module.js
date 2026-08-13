@@ -14,8 +14,10 @@ const auth_controller_1 = require("./auth.controller");
 const auth_service_1 = require("./auth.service");
 const jwt_strategy_1 = require("./jwt.strategy");
 const user_repository_1 = require("../../infrastructure/database/repositories/user.repository");
+const citizen_repository_1 = require("../../infrastructure/database/repositories/citizen.repository");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
 const redis_service_1 = require("../../infrastructure/redis/redis.service");
+const email_service_1 = require("../../infrastructure/email/email.service");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -24,8 +26,8 @@ exports.AuthModule = AuthModule = __decorate([
         imports: [
             passport_1.PassportModule.register({ defaultStrategy: 'jwt' }),
             jwt_1.JwtModule.register({
-                secret: process.env.JWT_SECRET || 'super_secret_jwt_key_benefit_os_production_change_me_32_bytes',
-                signOptions: { expiresIn: '15m' },
+                secret: process.env.JWT_SECRET,
+                signOptions: { expiresIn: (process.env.JWT_EXPIRATION || '15m') },
             }),
         ],
         controllers: [auth_controller_1.AuthController],
@@ -34,12 +36,17 @@ exports.AuthModule = AuthModule = __decorate([
             jwt_strategy_1.JwtStrategy,
             prisma_service_1.PrismaService,
             redis_service_1.RedisService,
+            email_service_1.EmailService,
             {
                 provide: 'IUserRepository',
                 useClass: user_repository_1.UserRepositoryImpl,
             },
+            {
+                provide: 'ICitizenRepository',
+                useClass: citizen_repository_1.CitizenRepositoryImpl,
+            },
         ],
-        exports: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, passport_1.PassportModule, jwt_1.JwtModule, 'IUserRepository'],
+        exports: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, passport_1.PassportModule, jwt_1.JwtModule, 'IUserRepository', 'ICitizenRepository'],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

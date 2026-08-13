@@ -3,17 +3,20 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
+import { FolderIcon } from '../../components/ui/Icons';
 import { useDocuments } from '../../hooks/useDocuments';
 import { useDeleteDocument } from '../../hooks/useDeleteDocument';
 import { DocumentItem } from '../../services/document.service';
 
 const DOC_TYPES = [
   { id: 'ALL', label: 'All Vault Docs' },
-  { id: 'AADHAAR', label: '🪪 Aadhaar Card' },
-  { id: 'INCOME_CERTIFICATE', label: '📄 Income Cert' },
-  { id: 'RATION_CARD', label: '🌾 Ration Card' },
-  { id: 'CASTE_CERTIFICATE', label: '📋 Caste Cert' },
-  { id: 'LAND_RECORD', label: '🏞️ Land Record' },
+  { id: 'BIRTH_CERTIFICATE', label: 'Birth Certificate' },
+  { id: 'EDUCATIONAL_CERTIFICATE', label: 'Educational Certificate' },
+  { id: 'DISABILITY_CERTIFICATE', label: 'Disability Certificate' },
+  { id: 'CASTE_CERTIFICATE', label: 'Caste Certificate' },
+  { id: 'AADHAAR', label: 'Aadhaar Card' },
+  { id: 'DRIVING_LICENSE', label: 'Driving Licence' },
+  { id: 'VOTER_ID', label: 'Voter ID' },
 ];
 
 interface Props {
@@ -102,7 +105,7 @@ export const DocumentVaultScreen: React.FC<Props> = ({
           </div>
         ) : filteredDocs.length === 0 ? (
           <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center flex flex-col items-center">
-            <span className="text-3xl mb-2">📂</span>
+            <FolderIcon className="w-10 h-10 text-slate-400 mb-2" />
             <p className="text-sm text-slate-500 italic mb-4">No documents found in vault for selected filter.</p>
             <Button title="Upload First Document" onClick={onNavigateToUpload} />
           </div>
