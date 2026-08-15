@@ -1,24 +1,15 @@
 import { create } from 'zustand';
-import { storageService } from '../services/storage.service';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'system' | 'light' | 'dark';
 
 interface ThemeState {
   theme: ThemeMode;
   resolvedTheme: 'light' | 'dark';
-  setTheme: (theme: ThemeMode) => Promise<void>;
-  initTheme: () => Promise<void>;
+  setTheme: (theme: ThemeMode) => void;
+  initTheme: () => void;
 }
 
-const applyThemeToDom = (isDark: boolean) => {
-  if (typeof document !== 'undefined') {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }
-};
+const STORAGE_KEY = 'app_theme';
 
 const getSystemPreference = (): 'light' | 'dark' => {
   if (typeof window !== 'undefined' && window.matchMedia) {
@@ -27,28 +18,58 @@ const getSystemPreference = (): 'light' | 'dark' => {
   return 'light';
 };
 
+const applyThemeToDom = (isDark: boolean) => {
+  if (typeof document !== 'undefined') {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.style.colorScheme = 'light';
+    }
+  }
+};
+
+let mediaListenerAttached = false;
+let mediaQueryList: MediaQueryList | null = null;
+
 export const useThemeStore = create<ThemeState>((set, get) => ({
   theme: 'system',
-  resolvedTheme: 'light',
+  resolvedTheme: getSystemPreference(),
 
-  initTheme: async () => {
+  initTheme: () => {
     try {
-      const stored = await storageService.getItem('app_theme');
-      const theme: ThemeMode = (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'system';
-      const resolved = theme === 'system' ? getSystemPreference() : theme;
-      
-      applyThemeToDom(resolved === 'dark');
-      set({ theme, resolvedTheme: resolved });
+      let storedTheme: ThemeMode = 'system';
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const item = window.localStorage.getItem(STORAGE_KEY);
+        if (item === 'light' || item === 'dark' || item === 'system') {
+          storedTheme = item;
+        } else if (item !== null) {
+          // Reset invalid or corrupted values to 'system'
+          window.localStorage.setItem(STORAGE_KEY, 'system');
+        }
+      }
 
-      if (typeof window !== 'undefined' && window.matchMedia) {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        mediaQuery.addEventListener('change', (e) => {
+      const resolved = storedTheme === 'system' ? getSystemPreference() : storedTheme;
+      applyThemeToDom(resolved === 'dark');
+      set({ theme: storedTheme, resolvedTheme: resolved });
+
+      if (typeof window !== 'undefined' && window.matchMedia && !mediaListenerAttached) {
+        mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
+        const listener = (e: MediaQueryListEvent | MediaQueryList) => {
           if (get().theme === 'system') {
             const newResolved = e.matches ? 'dark' : 'light';
             applyThemeToDom(newResolved === 'dark');
             set({ resolvedTheme: newResolved });
           }
-        });
+        };
+
+        if (mediaQueryList.addEventListener) {
+          mediaQueryList.addEventListener('change', listener);
+        } else if ((mediaQueryList as any).addListener) {
+          (mediaQueryList as any).addListener(listener);
+        }
+        mediaListenerAttached = true;
       }
     } catch {
       const resolved = getSystemPreference();
@@ -57,10 +78,16 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     }
   },
 
-  setTheme: async (theme: ThemeMode) => {
-    await storageService.setItem('app_theme', theme);
-    const resolved = theme === 'system' ? getSystemPreference() : theme;
+  setTheme: (theme: ThemeMode) => {
+    const validTheme: ThemeMode = (theme === 'light' || theme === 'dark' || theme === 'system') ? theme : 'system';
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(STORAGE_KEY, validTheme);
+      }
+    } catch {}
+
+    const resolved = validTheme === 'system' ? getSystemPreference() : validTheme;
     applyThemeToDom(resolved === 'dark');
-    set({ theme, resolvedTheme: resolved });
+    set({ theme: validTheme, resolvedTheme: resolved });
   },
 }));

@@ -18,6 +18,7 @@ import {
   HomeIcon,
   UserIcon,
 } from '../../components/ui/Icons';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { useGovernmentServices } from '../../hooks/useGovernmentServices';
 import { GovernmentServiceItem, ServiceStatus } from '../../services/government.service';
 
@@ -26,32 +27,32 @@ const renderServiceIcon = (iconType: string) => {
     case 'id-card':
     case 'voter':
     case 'passport':
-      return <IdCardIcon className="w-6 h-6 text-blue-900" />;
+      return <IdCardIcon className="w-6 h-6 text-blue-900 dark:text-blue-400" />;
     case 'folder':
-      return <FolderIcon className="w-6 h-6 text-blue-900" />;
+      return <FolderIcon className="w-6 h-6 text-blue-900 dark:text-blue-400" />;
     case 'health':
-      return <HeartPulseIcon className="w-6 h-6 text-rose-700" />;
+      return <HeartPulseIcon className="w-6 h-6 text-rose-700 dark:text-rose-400" />;
     case 'agriculture':
-      return <SproutIcon className="w-6 h-6 text-emerald-700" />;
+      return <SproutIcon className="w-6 h-6 text-emerald-700 dark:text-emerald-400" />;
     case 'labour':
-      return <BriefcaseIcon className="w-6 h-6 text-amber-700" />;
+      return <BriefcaseIcon className="w-6 h-6 text-amber-700 dark:text-amber-400" />;
     case 'mobile':
-      return <GlobeIcon className="w-6 h-6 text-blue-900" />;
+      return <GlobeIcon className="w-6 h-6 text-blue-900 dark:text-blue-400" />;
     case 'card':
-      return <CreditCardIcon className="w-6 h-6 text-indigo-700" />;
+      return <CreditCardIcon className="w-6 h-6 text-indigo-700 dark:text-indigo-400" />;
     case 'vehicle':
-      return <CarIcon className="w-6 h-6 text-cyan-700" />;
+      return <CarIcon className="w-6 h-6 text-cyan-700 dark:text-cyan-400" />;
     case 'document':
     case 'registry':
-      return <DocumentTextIcon className="w-6 h-6 text-slate-700" />;
+      return <DocumentTextIcon className="w-6 h-6 text-slate-700 dark:text-slate-300" />;
     case 'building':
-      return <BuildingIcon className="w-6 h-6 text-blue-900" />;
+      return <BuildingIcon className="w-6 h-6 text-blue-900 dark:text-blue-400" />;
     case 'home':
-      return <HomeIcon className="w-6 h-6 text-blue-900" />;
+      return <HomeIcon className="w-6 h-6 text-blue-900 dark:text-blue-400" />;
     case 'child':
-      return <UserIcon className="w-6 h-6 text-purple-700" />;
+      return <UserIcon className="w-6 h-6 text-purple-700 dark:text-purple-400" />;
     default:
-      return <BuildingIcon className="w-6 h-6 text-blue-900" />;
+      return <BuildingIcon className="w-6 h-6 text-blue-900 dark:text-blue-400" />;
   }
 };
 
@@ -176,16 +177,19 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+            <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
               ← Back
             </button>
-            <h1 className="text-lg font-bold text-blue-900">Government Services Integration Hub</h1>
+            <h1 className="text-lg font-bold text-blue-900 dark:text-blue-400">Government Services Integration Hub</h1>
           </div>
-          <span className="text-xs font-medium text-slate-500">{connectedCount} Active Integrations</span>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 hidden sm:inline">{connectedCount} Active Integrations</span>
+          </div>
         </div>
       </header>
 
@@ -193,21 +197,21 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
         {/* Summary Widgets Row */}
         <div className="grid grid-cols-3 gap-4">
           <Card className="text-center py-4">
-            <span className="text-2xl font-black text-blue-900">{connectedCount}</span>
-            <span className="text-xs text-slate-500 block font-medium mt-0.5">Connected</span>
+            <span className="text-2xl font-black text-blue-900 dark:text-blue-400">{connectedCount}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium mt-0.5">Connected</span>
           </Card>
           <Card className="text-center py-4">
-            <span className="text-2xl font-black text-emerald-700">{verifiedCount}</span>
-            <span className="text-xs text-slate-500 block font-medium mt-0.5">Verified</span>
+            <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">{verifiedCount}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium mt-0.5">Verified</span>
           </Card>
           <Card className="text-center py-4">
-            <span className="text-2xl font-black text-amber-700">{pendingCount}</span>
-            <span className="text-xs text-slate-500 block font-medium mt-0.5">Pending</span>
+            <span className="text-2xl font-black text-amber-700 dark:text-amber-400">{pendingCount}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium mt-0.5">Pending</span>
           </Card>
         </div>
 
         {/* Category Chips Bar */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex gap-2 overflow-x-auto scrollbar-none">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex gap-2 overflow-x-auto scrollbar-none">
           {CATEGORIES.map((cat) => {
             const isSelected = selectedCategory === cat;
             return (
@@ -217,8 +221,8 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors border ${
                   isSelected
-                    ? 'bg-blue-900 border-blue-900 text-white shadow-xs'
-                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    ? 'bg-blue-900 dark:bg-blue-700 border-blue-900 dark:border-blue-700 text-white shadow-xs'
+                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
                 }`}
               >
                 {cat}
@@ -234,11 +238,11 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
             <Skeleton height={160} className="rounded-xl" />
           </div>
         ) : isError ? (
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center">
-            <p className="text-sm text-rose-600 font-semibold mb-4">Unable to load government integration services.</p>
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center">
+            <p className="text-sm text-rose-600 dark:text-rose-400 font-semibold mb-4">Unable to load government integration services.</p>
             <button
               onClick={() => refetch()}
-              className="px-4 py-2 bg-blue-900 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
+              className="px-4 py-2 bg-blue-900 dark:bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
             >
               Retry
             </button>
@@ -250,25 +254,25 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
                 <div>
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
                         {renderServiceIcon(item.icon)}
                       </div>
                       <div>
-                        <h3 className="text-base font-bold text-slate-900">{item.name}</h3>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.category} REGISTRY</span>
+                        <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{item.name}</h3>
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{item.category} REGISTRY</span>
                       </div>
                     </div>
                     <Badge label={item.status} variant={getBadgeVariant(item.status)} />
                   </div>
 
-                  <p className="text-xs text-slate-600 mb-4">{item.description}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-4">{item.description}</p>
                 </div>
 
                 <div>
-                  <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-[11px] text-slate-500 mb-4">
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[11px] text-slate-500 dark:text-slate-400 mb-4">
                     <span>
                       Gateway Status:{' '}
-                      <strong className={item.health === 'HEALTHY' ? 'text-emerald-700' : 'text-rose-600'}>
+                      <strong className={item.health === 'HEALTHY' ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
                         {item.health}
                       </strong>
                     </span>
@@ -297,7 +301,7 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
                           onClick={() => handleDisconnect(item)}
                           isLoading={isDisconnecting}
                           variant="outline"
-                          className="px-4 py-2 text-rose-600 border-rose-200 hover:bg-rose-50 font-semibold"
+                          className="px-4 py-2 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold"
                         />
                       </>
                     )}
@@ -311,16 +315,16 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
         {/* Modal for Aadhaar / Government Gateway OTP Link */}
         {activeModalService && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="bg-white rounded-2xl p-6 max-w-md w-full border border-slate-200 shadow-xl space-y-4">
-              <h2 className="text-lg font-bold text-blue-900">Connect {activeModalService.name}</h2>
-              <p className="text-xs text-slate-600">Enter your official 12-digit number to request e-KYC authentication OTP.</p>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+              <h2 className="text-lg font-bold text-blue-900 dark:text-blue-400">Connect {activeModalService.name}</h2>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Enter your official 12-digit number to request e-KYC authentication OTP.</p>
 
               {statusMessage && (
                 <div
                   className={`p-3 rounded-lg border text-xs font-semibold ${
                     statusMessage.type === 'success'
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                      : 'bg-rose-50 border-rose-200 text-rose-700'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                      : 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
                   }`}
                 >
                   {statusMessage.text}
@@ -352,7 +356,7 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
                   }}
                   className="space-y-4"
                 >
-                  <p className="text-xs font-bold font-mono text-blue-900 bg-blue-50 p-2 rounded border border-blue-200">
+                  <p className="text-xs font-bold font-mono text-blue-900 dark:text-blue-300 bg-blue-50 dark:bg-slate-800 p-2 rounded border border-blue-200 dark:border-slate-700">
                     Transaction ID: {txnId}
                   </p>
                   <Input

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
 import { useLanguageStore } from '../store/language.store';
+import { useThemeStore } from '../store/theme.store';
 import { LanguageSelectScreen } from '../screens/auth/LanguageSelectScreen';
 import { OnboardingScreen } from '../screens/auth/OnboardingScreen';
 import { LoginScreen } from '../screens/auth/LoginScreen';
@@ -164,15 +165,17 @@ const ApplicationDetailWrapper = () => {
 export const AppNavigator: React.FC = () => {
   const { isLoading, loadAuthFromStorage } = useAuthStore();
   const { loadLocale } = useLanguageStore();
+  const { initTheme } = useThemeStore();
 
   useEffect(() => {
+    initTheme();
     loadLocale();
     loadAuthFromStorage();
-  }, []);
+  }, [initTheme, loadLocale, loadAuthFromStorage]);
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
         <LoadingSpinner message="Initializing BenefitOS Web Platform..." />
       </div>
     );

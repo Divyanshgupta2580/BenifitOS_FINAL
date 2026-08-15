@@ -35,9 +35,9 @@ export declare const envSchema: z.ZodObject<{
     JWT_SECRET: string;
     JWT_EXPIRATION: string;
     JWT_REFRESH_EXPIRATION: string;
+    CORS_ORIGIN: string;
     PORT: number;
     API_PREFIX: string;
-    CORS_ORIGIN: string;
     DATABASE_URL: string;
     DEFAULT_AI_PROVIDER: "gemini" | "openai" | "claude" | "azure";
     STORAGE_PROVIDER: "local" | "supabase" | "s3";
@@ -72,9 +72,9 @@ export declare const envSchema: z.ZodObject<{
     JWT_EXPIRATION?: string | undefined;
     JWT_REFRESH_EXPIRATION?: string | undefined;
     DIGILOCKER_CLIENT_ID?: string | undefined;
+    CORS_ORIGIN?: string | undefined;
     PORT?: string | undefined;
     API_PREFIX?: string | undefined;
-    CORS_ORIGIN?: string | undefined;
     DEFAULT_AI_PROVIDER?: "gemini" | "openai" | "claude" | "azure" | undefined;
     OPENAI_API_KEY?: string | undefined;
     SARVAM_API_KEY?: string | undefined;

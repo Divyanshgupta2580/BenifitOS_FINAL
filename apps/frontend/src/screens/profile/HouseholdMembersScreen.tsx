@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
 
 interface Props {
@@ -66,51 +67,54 @@ export const HouseholdMembersScreen: React.FC<Props> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+          <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
             ← Back to Profile
           </button>
-          <h1 className="text-lg font-bold text-blue-900">Manage Household Members</h1>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <h1 className="text-lg font-bold text-blue-900 dark:text-blue-400">Manage Household Members</h1>
+          </div>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
         {/* Member List */}
         <Card>
-          <h2 className="text-base font-bold text-blue-900 mb-3">Registered Family Members</h2>
+          <h2 className="text-base font-bold text-blue-900 dark:text-blue-400 mb-3">Registered Family Members</h2>
           {members.length > 0 ? (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
               {members.map((m) => (
                 <div key={m.id} className="py-3 flex justify-between items-center">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">{m.fullName}</h3>
-                    <p className="text-xs text-slate-500">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{m.fullName}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       {m.relation} • Age {m.age} • {m.gender}
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                  <span className="text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-md border border-amber-200 dark:border-amber-800">
                     ₹{m.annualIncomeINR.toLocaleString('en-IN')} / Yr
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 italic">No family dependents added yet.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 italic">No family dependents added yet.</p>
           )}
         </Card>
 
         {/* Add Member Form */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-          <h2 className="text-base font-bold text-blue-900 mb-4">Add Dependent Member</h2>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <h2 className="text-base font-bold text-blue-900 dark:text-blue-400 mb-4">Add Dependent Member</h2>
 
           {statusMessage && (
             <div
               className={`mb-4 p-3 rounded-lg border text-xs font-semibold ${
                 statusMessage.type === 'success'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                  : 'bg-rose-50 border-rose-200 text-rose-700'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                  : 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
               }`}
             >
               {statusMessage.text}
@@ -122,11 +126,11 @@ export const HouseholdMembersScreen: React.FC<Props> = ({ onBack }) => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="flex flex-col">
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Relation</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Relation</label>
                 <select
                   value={relation}
                   onChange={(e) => setRelation(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-700"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50 focus:border-blue-700 dark:focus:border-blue-500"
                 >
                   <option value="SPOUSE">SPOUSE</option>
                   <option value="CHILD">CHILD</option>
@@ -139,11 +143,11 @@ export const HouseholdMembersScreen: React.FC<Props> = ({ onBack }) => {
               <Input label="Age" type="number" value={age} onChangeText={setAge} required />
 
               <div className="flex flex-col">
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Gender</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Gender</label>
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-700"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50 focus:border-blue-700 dark:focus:border-blue-500"
                 >
                   <option value="FEMALE">FEMALE</option>
                   <option value="MALE">MALE</option>

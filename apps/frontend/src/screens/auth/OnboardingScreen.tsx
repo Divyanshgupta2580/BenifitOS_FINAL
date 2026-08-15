@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../../components/ui/Button';
 import { BuildingIcon, CameraIcon, BotIcon } from '../../components/ui/Icons';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 
 const SLIDES = [
   {
@@ -38,14 +39,18 @@ export const OnboardingScreen: React.FC<Props> = ({ onFinish }) => {
   const slide = SLIDES[index];
 
   return (
-    <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6">
-      <div className="w-full max-w-md bg-white rounded-2xl p-8 border border-slate-200 shadow-sm flex flex-col items-center text-center">
-        <div className="w-24 h-24 rounded-full bg-blue-900 text-white flex items-center justify-center mb-6 shadow-md">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center p-6 relative transition-colors">
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
+
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
+        <div className="w-24 h-24 rounded-full bg-blue-900 dark:bg-blue-700 text-white flex items-center justify-center mb-6 shadow-md">
           <slide.Icon className="w-12 h-12 text-white" />
         </div>
 
-        <h1 className="text-2xl font-bold text-blue-900 mb-3">{slide.title}</h1>
-        <p className="text-sm text-slate-600 leading-relaxed mb-8">{slide.description}</p>
+        <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-400 mb-3">{slide.title}</h1>
+        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-8">{slide.description}</p>
 
         {/* Carousel Dots */}
         <div className="flex justify-center items-center gap-2 mb-8">
@@ -55,7 +60,7 @@ export const OnboardingScreen: React.FC<Props> = ({ onFinish }) => {
               type="button"
               onClick={() => setIndex(i)}
               className={`h-2 rounded-full transition-all ${
-                i === index ? 'w-8 bg-blue-900' : 'w-2 bg-slate-300 hover:bg-slate-400'
+                i === index ? 'w-8 bg-blue-900 dark:bg-blue-500' : 'w-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'
               }`}
               aria-label={`Go to slide ${i + 1}`}
             />

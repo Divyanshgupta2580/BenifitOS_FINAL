@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { KeyIcon, CheckCircleIcon } from '../../components/ui/Icons';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { apiClient } from '../../services/api-client';
 
 interface Props {
@@ -94,7 +95,10 @@ export const PasswordResetScreen: React.FC<Props> = ({ onBackToLogin }) => {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center p-6 transition-colors">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center p-6 relative transition-colors">
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="mb-6 text-center">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 dark:bg-blue-700 text-white mb-3 shadow-sm">

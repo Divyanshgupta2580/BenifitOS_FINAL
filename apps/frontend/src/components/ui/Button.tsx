@@ -32,15 +32,15 @@ export const Button: React.FC<ButtonProps> = ({
   const getVariantStyle = () => {
     switch (variant) {
       case 'primary':
-        return 'bg-blue-900 hover:bg-blue-800 text-white shadow-sm border border-transparent';
+        return 'bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 text-white shadow-sm border border-transparent';
       case 'secondary':
-        return 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm border border-transparent';
+        return 'bg-amber-600 dark:bg-amber-600 hover:bg-amber-700 dark:hover:bg-amber-500 text-white shadow-sm border border-transparent';
       case 'outline':
-        return 'bg-transparent hover:bg-blue-50 text-blue-900 border border-blue-900';
+        return 'bg-transparent hover:bg-blue-50 dark:hover:bg-slate-800 text-blue-900 dark:text-blue-400 border border-blue-900 dark:border-blue-700';
       case 'destructive':
-        return 'bg-rose-600 hover:bg-rose-700 text-white shadow-sm border border-transparent';
+        return 'bg-rose-600 dark:bg-rose-700 hover:bg-rose-700 dark:hover:bg-rose-600 text-white shadow-sm border border-transparent';
       default:
-        return 'bg-blue-900 hover:bg-blue-800 text-white';
+        return 'bg-blue-900 dark:bg-blue-700 hover:bg-blue-800 dark:hover:bg-blue-600 text-white';
     }
   };
 

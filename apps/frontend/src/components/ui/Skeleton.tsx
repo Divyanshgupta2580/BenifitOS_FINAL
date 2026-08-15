@@ -15,7 +15,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 }) => {
   return (
     <div
-      className={`animate-pulse bg-slate-200 my-1 ${className}`}
+      className={`animate-pulse bg-slate-200 dark:bg-slate-800 my-1 ${className}`}
       style={{
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height,

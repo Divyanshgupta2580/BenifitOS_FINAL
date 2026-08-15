@@ -18,6 +18,12 @@ const websockets_1 = require("@nestjs/websockets");
 const socket_io_1 = require("socket.io");
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
+const defaultWsOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+];
 let RealtimeGateway = RealtimeGateway_1 = class RealtimeGateway {
     jwtService;
     server;
@@ -104,12 +110,20 @@ exports.RealtimeGateway = RealtimeGateway = RealtimeGateway_1 = __decorate([
     (0, websockets_1.WebSocketGateway)({
         namespace: 'ws',
         cors: {
-            origin: [
-                'http://localhost:3000',
-                'http://localhost:5173',
-                'http://127.0.0.1:3000',
-                'http://127.0.0.1:5173',
-            ],
+            origin: (origin, callback) => {
+                if (!origin)
+                    return callback(null, true);
+                const configured = process.env.CORS_ORIGIN
+                    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
+                    : defaultWsOrigins;
+                const isAllowed = configured.includes(origin) || defaultWsOrigins.includes(origin);
+                if (isAllowed) {
+                    callback(null, true);
+                }
+                else {
+                    callback(new Error('Not allowed by WebSocket CORS'));
+                }
+            },
             credentials: true,
         },
     }),

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { BuildingIcon } from '../../components/ui/Icons';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { apiClient } from '../../services/api-client';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -37,18 +38,22 @@ export const LoginScreen: React.FC<Props> = ({ onNavigateToRegister, onNavigateT
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6">
-      <div className="w-full max-w-md bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center p-6 relative">
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
+
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="mb-6 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 text-white mb-3 shadow-sm">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 dark:bg-blue-700 text-white mb-3 shadow-sm">
             <BuildingIcon className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-blue-900 mb-1">Welcome to BenefitOS</h1>
-          <p className="text-sm text-slate-600">Sign in to manage your welfare scheme applications.</p>
+          <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-400 mb-1">Welcome to BenefitOS</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Sign in to manage your welfare scheme applications.</p>
         </div>
 
         {errorMessage && (
-          <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">
+          <div className="mb-4 p-3 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300">
             {errorMessage}
           </div>
         )}
@@ -78,7 +83,7 @@ export const LoginScreen: React.FC<Props> = ({ onNavigateToRegister, onNavigateT
             <button
               type="button"
               onClick={onNavigateToForgotPassword}
-              className="text-xs font-semibold text-blue-900 hover:underline focus:outline-none"
+              className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline focus:outline-none"
             >
               Forgot Password?
             </button>
@@ -87,13 +92,13 @@ export const LoginScreen: React.FC<Props> = ({ onNavigateToRegister, onNavigateT
           <Button type="submit" title="Sign In" isLoading={isLoading} className="w-full py-3 mt-2" />
         </form>
 
-        <div className="mt-6 pt-6 border-t border-slate-200 text-center">
-          <p className="text-xs text-slate-600">
+        <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 text-center">
+          <p className="text-xs text-slate-600 dark:text-slate-400">
             Don't have an account?{' '}
             <button
               type="button"
               onClick={onNavigateToRegister}
-              className="font-bold text-blue-900 hover:underline focus:outline-none ml-1"
+              className="font-bold text-blue-900 dark:text-blue-400 hover:underline focus:outline-none ml-1"
             >
               Register Citizen Profile
             </button>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { DocumentTextIcon } from '../../components/ui/Icons';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { apiClient } from '../../services/api-client';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -144,18 +145,22 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6 py-12">
-      <div className="w-full max-w-lg bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center p-6 py-12 relative">
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
+
+      <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="mb-6 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 text-white mb-3 shadow-sm">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 dark:bg-blue-700 text-white mb-3 shadow-sm">
             <DocumentTextIcon className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-blue-900 mb-1">Create Citizen Account</h1>
-          <p className="text-sm text-slate-600">Provide your profile details to unlock personalized scheme benefits.</p>
+          <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-400 mb-1">Create Citizen Account</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Provide your profile details to unlock personalized scheme benefits.</p>
         </div>
 
         {generalError && (
-          <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">
+          <div className="mb-4 p-3 rounded-lg bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300">
             {generalError}
           </div>
         )}
@@ -184,11 +189,11 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
             />
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Social Category</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Social Category</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-4 focus:border-blue-700 focus:ring-blue-100"
+                className="w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-4 focus:border-blue-700 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-950/50"
               >
                 <option value="GENERAL">General</option>
                 <option value="OBC">Other Backward Class (OBC)</option>
@@ -201,11 +206,11 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Profession / Status</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Profession / Status</label>
               <select
                 value={profession}
                 onChange={(e) => setProfession(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-4 focus:border-blue-700 focus:ring-blue-100"
+                className="w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-4 focus:border-blue-700 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-950/50"
               >
                 <option value="EMPLOYED">Salaried / Employed</option>
                 <option value="SELF_EMPLOYED">Self Employed / Business</option>
@@ -229,11 +234,11 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">State / UT of Residence</label>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">State / UT of Residence</label>
             <select
               value={state}
               onChange={(e) => setState(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-4 focus:border-blue-700 focus:ring-blue-100"
+              className="w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-4 focus:border-blue-700 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-950/50"
             >
               <option value="Uttar Pradesh">Uttar Pradesh</option>
               <option value="Maharashtra">Maharashtra</option>
@@ -313,13 +318,13 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
           <Button type="submit" title="Create Account & Discover Schemes" isLoading={isLoading} className="w-full py-3 mt-4" />
         </form>
 
-        <div className="mt-6 pt-6 border-t border-slate-200 text-center">
-          <p className="text-xs text-slate-600">
+        <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 text-center">
+          <p className="text-xs text-slate-600 dark:text-slate-400">
             Already have an account?{' '}
             <button
               type="button"
               onClick={onNavigateToLogin}
-              className="font-bold text-blue-900 hover:underline focus:outline-none ml-1"
+              className="font-bold text-blue-900 dark:text-blue-400 hover:underline focus:outline-none ml-1"
             >
               Sign In
             </button>

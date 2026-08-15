@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { LockIcon } from '../../components/ui/Icons';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { apiClient } from '../../services/api-client';
 
 interface Props {
@@ -60,27 +61,31 @@ export const MfaSetupScreen: React.FC<Props> = ({ onComplete }) => {
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-6">
-      <div className="w-full max-w-md bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center p-6 relative transition-colors">
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
+
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="mb-6 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 text-white mb-3 shadow-sm">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900 dark:bg-blue-700 text-white mb-3 shadow-sm">
             <LockIcon className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-blue-900 mb-1">Two-Factor Auth (MFA)</h1>
-          <p className="text-sm text-slate-600">Enter the 6-digit verification code sent to your registered device.</p>
+          <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-400 mb-1">Two-Factor Auth (MFA)</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Enter the 6-digit verification code sent to your registered device.</p>
         </div>
 
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center mb-6">
-          <p className="text-xs font-bold text-blue-900">[ Transaction ID: {txnId || 'Loading...'} ]</p>
-          <p className="text-xs text-slate-500 mt-1">{challengeText}</p>
+        <div className="bg-slate-50 dark:bg-slate-800/70 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-center mb-6">
+          <p className="text-xs font-bold text-blue-900 dark:text-blue-300 font-mono">[ Transaction ID: {txnId || 'Loading...'} ]</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{challengeText}</p>
         </div>
 
         {statusMessage && (
           <div
             className={`mb-4 p-3 rounded-lg border text-xs font-semibold ${
               statusMessage.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                : 'bg-rose-50 border-rose-200 text-rose-700'
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                : 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
             }`}
           >
             {statusMessage.text}

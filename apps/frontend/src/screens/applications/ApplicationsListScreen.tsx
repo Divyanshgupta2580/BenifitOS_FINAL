@@ -4,6 +4,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { ClipboardListIcon } from '../../components/ui/Icons';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { useApplications } from '../../hooks/useApplications';
 import { ApplicationItem } from '../../services/application.service';
 
@@ -45,27 +46,30 @@ export const ApplicationsListScreen: React.FC<Props> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-12">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-xs">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {onBack && (
-              <button onClick={onBack} className="text-xs font-semibold text-blue-900 hover:underline">
+              <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
                 ← Back
               </button>
             )}
-            <h1 className="text-lg font-bold text-blue-900">Applications Portal</h1>
+            <h1 className="text-lg font-bold text-blue-900 dark:text-blue-400">Applications Portal</h1>
           </div>
-          <Button title="+ Apply for Scheme" onClick={onStartNewApplication} size="sm" variant="secondary" />
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Button title="+ Apply for Scheme" onClick={onStartNewApplication} size="sm" variant="secondary" />
+          </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
         {/* Header & Filter Bar */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-base font-bold text-blue-900">Submitted Welfare Benefit Applications</h2>
-            <p className="text-xs text-slate-500">Track real-time workflow status and lifecycle timeline.</p>
+            <h2 className="text-base font-bold text-blue-900 dark:text-blue-400">Submitted Welfare Benefit Applications</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Track real-time workflow status and lifecycle timeline.</p>
           </div>
 
           <div className="flex gap-2">
@@ -76,8 +80,8 @@ export const ApplicationsListScreen: React.FC<Props> = ({
                 onClick={() => setFilter(tab)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
                   filter === tab
-                    ? 'bg-blue-900 border-blue-900 text-white shadow-xs'
-                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    ? 'bg-blue-900 dark:bg-blue-700 border-blue-900 dark:border-blue-700 text-white shadow-xs'
+                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
                 }`}
               >
                 {tab === 'ALL'
@@ -99,19 +103,19 @@ export const ApplicationsListScreen: React.FC<Props> = ({
             <Skeleton height={150} className="rounded-xl" />
           </div>
         ) : isError ? (
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center">
-            <p className="text-sm text-rose-600 font-semibold mb-4">Unable to load application records.</p>
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center">
+            <p className="text-sm text-rose-600 dark:text-rose-400 font-semibold mb-4">Unable to load application records.</p>
             <button
               onClick={() => refetch()}
-              className="px-4 py-2 bg-blue-900 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
+              className="px-4 py-2 bg-blue-900 dark:bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
             >
               Retry Connection
             </button>
           </div>
         ) : filteredApps.length === 0 ? (
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center flex flex-col items-center">
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center flex flex-col items-center">
             <ClipboardListIcon className="w-10 h-10 text-slate-400 mb-2" />
-            <p className="text-sm text-slate-500 italic mb-4">No welfare applications match the selected filter.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 italic mb-4">No welfare applications match the selected filter.</p>
             <Button title="Start First Application" onClick={onStartNewApplication} />
           </div>
         ) : (
@@ -124,7 +128,7 @@ export const ApplicationsListScreen: React.FC<Props> = ({
                 <Card key={item.id} className="flex flex-col justify-between">
                   <div>
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs font-mono font-bold text-amber-700">
+                      <span className="text-xs font-mono font-bold text-amber-700 dark:text-amber-400">
                         {item.applicationNumber || `APP-${item.id.slice(0, 6)}`}
                       </span>
                       <Badge label={item.status} variant={getStatusVariant(item.status)} />
@@ -132,19 +136,19 @@ export const ApplicationsListScreen: React.FC<Props> = ({
 
                     <h3
                       onClick={() => (onSelectApplicationTimeline ? onSelectApplicationTimeline(item.id) : onSelectApplication(item.id))}
-                      className="text-base font-bold text-slate-900 mb-2 hover:text-blue-900 cursor-pointer"
+                      className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2 hover:text-blue-900 dark:hover:text-blue-400 cursor-pointer"
                     >
                       {title}
                     </h3>
 
                     <div className="flex justify-between items-center mb-4">
                       <Badge label={category} variant="primary" />
-                      <span className="text-[11px] text-slate-500">Updated {new Date(item.updatedAt).toLocaleDateString()}</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Updated {new Date(item.updatedAt).toLocaleDateString()}</span>
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
-                    <span className="text-slate-500 font-medium">{item.attachedDocumentIds?.length || 0} Vault Docs Linked</span>
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">{item.attachedDocumentIds?.length || 0} Vault Docs Linked</span>
                     <Button
                       title="Track Timeline →"
                       onClick={() => (onSelectApplicationTimeline ? onSelectApplicationTimeline(item.id) : onSelectApplication(item.id))}
