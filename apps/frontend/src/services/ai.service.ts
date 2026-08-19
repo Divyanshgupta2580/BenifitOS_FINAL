@@ -28,7 +28,7 @@ export interface ExplainRecommendationResponse {
 export const aiApiService = {
   async sendChatMessage(dto: AiChatDto): Promise<AiChatResponse> {
     try {
-      const res: AiChatResponse = await apiClient.post('/ai/chat', dto);
+      const res: AiChatResponse = await apiClient.post('/ai/chat', dto, { timeout: 60000 });
       return {
         reply: res.reply,
         provider: res.provider || 'BenefitOS AI',
@@ -49,7 +49,7 @@ export const aiApiService = {
 
   async explainRecommendation(dto: ExplainRecommendationDto): Promise<ExplainRecommendationResponse> {
     try {
-      const res: ExplainRecommendationResponse = await apiClient.post('/ai/explain-recommendation', dto);
+      const res: ExplainRecommendationResponse = await apiClient.post('/ai/explain-recommendation', dto, { timeout: 60000 });
       return {
         explanation: res.explanation,
         sources: ['Recommendation Engine', 'Government Database'],
@@ -61,6 +61,7 @@ export const aiApiService = {
       };
     }
   },
+
 
   exportHistory(messages: { id: string; sender: string; text: string; timestamp: string }[]): string {
     return JSON.stringify(

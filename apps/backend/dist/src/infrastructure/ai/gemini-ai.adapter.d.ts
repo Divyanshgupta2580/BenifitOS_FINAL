@@ -4,6 +4,7 @@ export declare class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider 
     private readonly logger;
     private aiClient;
     constructor();
+    private getModelName;
     generateText(options: AiPromptOptions): Promise<AiResponse>;
     generateStream(options: AiPromptOptions, onChunk: (chunk: string) => void): Promise<AiResponse>;
     extractDocumentData(fileBuffer: Buffer, mimeType: string, expectedDocType: string): Promise<{

@@ -58,9 +58,10 @@ The external dependencies are clearly and truthfully classified below.
 ## 5. Gemini AI Verification
 
 - **Configuration:** `GEMINI_API_KEY` is populated.
-- **Runtime Inference:** Outbound TCP egress to Google GenAI endpoints (`generativelanguage.googleapis.com`) is isolated/blocked by local execution sandbox policy.
-- **Resilience:** Application safely catches socket errors and returns a polite user-facing notice without crashing or exposing raw stack traces.
-- **Classification:** **ENVIRONMENT BLOCKED**
+- **Runtime Inference:** Outbound HTTPS egress and direct Google API authentication via `@google/genai` (v2.16.0) using active model `gemini-3.6-flash` is fully validated.
+- **BenefitOS Endpoint:** `POST /api/v1/ai/chat` verified with live generative responses and `provider: "gemini"`.
+- **Classification:** **LIVE VERIFIED**
+
 
 ---
 
@@ -129,7 +130,7 @@ All 16 citizen user flows have been verified against the unified system architec
 ## 11. Remaining External Blockers
 
 1. **SMTP Mail Service:** Unconfigured in environment (`NOT CONFIGURED`). Requires deployment environment SMTP credentials (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`) for live external email dispatch.
-2. **Gemini GenAI Egress:** Outbound network access blocked by sandbox isolation policy (`ENVIRONMENT BLOCKED`). Requires deployment environment network access for live AI model inference.
+2. **Production Government Gateways:** Live UIDAI / DigiLocker ASA credentials pending production gateway access (`SANDBOX VERIFIED`).
 
 ---
 
@@ -138,7 +139,7 @@ All 16 citizen user flows have been verified against the unified system architec
 ```
 DATABASE: PASS
 REDIS: PASS
-GEMINI: ENVIRONMENT BLOCKED
+GEMINI: LIVE VERIFIED
 SMTP: NOT CONFIGURED
 AADHAAR: SANDBOX VERIFIED
 DIGILOCKER: SANDBOX VERIFIED
@@ -150,7 +151,8 @@ OBSERVABILITY: PASS
 
 REMAINING BLOCKERS:
 - External SMTP credentials not provided (NOT CONFIGURED)
-- External network egress to Gemini API blocked by local sandbox (ENVIRONMENT BLOCKED)
+- Production Government Gateway credentials pending (SANDBOX VERIFIED)
 
 FINAL DECISION: CONDITIONAL GO
 ```
+

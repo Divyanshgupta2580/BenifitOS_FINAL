@@ -18,18 +18,23 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
     }
   }
 
+  private getModelName(): string {
+    return process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+  }
+
   async generateText(options: AiPromptOptions): Promise<AiResponse> {
+    const model = this.getModelName();
     if (!this.aiClient) {
       return {
         content: 'BenefitOS AI is currently unavailable (Unconfigured API key). Please try again later.',
         tokensUsed: 0,
         provider: 'gemini-unconfigured',
-        model: 'gemini-1.5-flash',
+        model,
       };
     }
     try {
       const response = await this.aiClient.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model,
         contents: [options.prompt],
         config: {
           systemInstruction: options.systemInstruction,
@@ -42,7 +47,7 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
         content: text,
         tokensUsed: Math.ceil(text.length / 4),
         provider: this.providerName,
-        model: 'gemini-1.5-flash',
+        model,
       };
     } catch (err: any) {
       this.logger.error(`Gemini generateText error: ${err.message}`);
@@ -50,7 +55,7 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
         content: '[BenefitOS AI Notice] Live AI inference is currently unavailable due to network or service connectivity. Please verify internet access and GEMINI_API_KEY configuration.',
         tokensUsed: 0,
         provider: 'gemini-offline',
-        model: 'gemini-1.5-flash-fallback',
+        model: `${model}-fallback`,
       };
     }
   }
@@ -66,6 +71,7 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
     confidenceScore: number;
     extractedFields: Record<string, any>;
   }> {
+    const model = this.getModelName();
     if (!this.aiClient) {
       const bufferText = fileBuffer ? fileBuffer.toString('utf-8') : '';
       const rawText = bufferText.length > 5 && !bufferText.includes('\u0000')
@@ -80,7 +86,7 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
     try {
       const prompt = `Analyze this ${expectedDocType} document image. Extract raw text and return a JSON object with key fields such as documentNumber, fullName, dateOfBirth, address, issueDate.`;
       const response = await this.aiClient.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model,
         contents: [
           {
             inlineData: {
@@ -93,6 +99,7 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
       });
       const rawText = response.text || '';
       let extractedFields = {};
+
       try {
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
         if (jsonMatch) extractedFields = JSON.parse(jsonMatch[0]);

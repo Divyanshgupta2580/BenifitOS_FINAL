@@ -15,7 +15,9 @@
 | **HIGH DEFECTS** | **0** |
 | **MEDIUM DEFECTS** | **0** |
 | **LOW DEFECTS** | **0** |
-| **TOTAL CLOSED DEFECTS** | **10** |
+| **TOTAL CLOSED DEFECTS** | **12** |
+
+
 
 ---
 
@@ -180,3 +182,37 @@
 - **Required Fix:** Invalidate reset token upon successful password update and return uniform response.
 - **Verification Method:** Run `test-password-reset-flow.ts`.
 - **Status:** **CLOSED**
+
+---
+
+### DEF-011: Sunset Gemini Model Identifier Causing API 404
+- **Category:** `AI / INTEGRATION`
+- **Severity:** `MEDIUM`
+- **File:** `apps/backend/src/infrastructure/ai/gemini-ai.adapter.ts`
+- **Location:** `GeminiAiAdapter.generateText()` and `extractDocumentData()`
+- **Root Cause:** Hardcoded sunset model name `gemini-1.5-flash` caused Google GenAI API to reject requests with HTTP 404 (`models/gemini-2.5-flash / gemini-1.5-flash is no longer available. Please update your code to use models/gemini-3.6-flash`).
+- **Security Impact:** None (Triggered defensive offline fallback securely).
+- **User Impact:** Medium (Live AI assistant returned offline fallback notice).
+- **Expected Behavior:** Active model `gemini-3.6-flash` used for conversational inference and OCR vision.
+- **Actual Behavior:** Returned HTTP 404 from Google API, triggering fallback notice.
+- **Required Fix:** Update model identifier to `gemini-3.6-flash` with `process.env.GEMINI_MODEL || 'gemini-3.6-flash'` flexibility.
+- **Verification Method:** Execute live `POST /api/v1/ai/chat` request and verify real response.
+- **Status:** **CLOSED**
+
+---
+
+### DEF-012: AI Copilot Frontend Timeout Mismatch
+- **Category:** `FRONTEND / AI`
+- **Severity:** `HIGH`
+- **File:** `apps/frontend/src/services/ai.service.ts`
+- **Location:** `aiApiService.sendChatMessage()`, `explainRecommendation()`
+- **Root Cause:** Axios HTTP client global timeout of 15000ms caused AI Copilot requests to abort before live Google Gemini response generation completed (~30–40s).
+- **Security Impact:** None (Failed safely with network error boundary).
+- **User Impact:** High (Citizen Copilot UI rendered gateway timeout notice).
+- **Expected Behavior:** Copilot awaits live Gemini generative response without client-side timeout cancellation.
+- **Actual Behavior:** Axios aborted request at 15s and rendered timeout notice.
+- **Required Fix:** Override default Axios timeout with `{ timeout: 60000 }` on `aiApiService` POST calls.
+- **Verification Method:** Live Axios endpoint verification test (`test_ai_service_fix.js`) and full regression suite.
+- **Status:** **CLOSED**
+
+

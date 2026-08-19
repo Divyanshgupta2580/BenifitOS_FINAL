@@ -27,18 +27,22 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
             this.logger.warn('GEMINI_API_KEY not configured. Running in fallback mode.');
         }
     }
+    getModelName() {
+        return process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+    }
     async generateText(options) {
+        const model = this.getModelName();
         if (!this.aiClient) {
             return {
                 content: 'BenefitOS AI is currently unavailable (Unconfigured API key). Please try again later.',
                 tokensUsed: 0,
                 provider: 'gemini-unconfigured',
-                model: 'gemini-1.5-flash',
+                model,
             };
         }
         try {
             const response = await this.aiClient.models.generateContent({
-                model: 'gemini-1.5-flash',
+                model,
                 contents: [options.prompt],
                 config: {
                     systemInstruction: options.systemInstruction,
@@ -51,7 +55,7 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
                 content: text,
                 tokensUsed: Math.ceil(text.length / 4),
                 provider: this.providerName,
-                model: 'gemini-1.5-flash',
+                model,
             };
         }
         catch (err) {
@@ -60,7 +64,7 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
                 content: '[BenefitOS AI Notice] Live AI inference is currently unavailable due to network or service connectivity. Please verify internet access and GEMINI_API_KEY configuration.',
                 tokensUsed: 0,
                 provider: 'gemini-offline',
-                model: 'gemini-1.5-flash-fallback',
+                model: `${model}-fallback`,
             };
         }
     }
@@ -70,6 +74,7 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
         return res;
     }
     async extractDocumentData(fileBuffer, mimeType, expectedDocType) {
+        const model = this.getModelName();
         if (!this.aiClient) {
             const bufferText = fileBuffer ? fileBuffer.toString('utf-8') : '';
             const rawText = bufferText.length > 5 && !bufferText.includes('\u0000')
@@ -84,7 +89,7 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
         try {
             const prompt = `Analyze this ${expectedDocType} document image. Extract raw text and return a JSON object with key fields such as documentNumber, fullName, dateOfBirth, address, issueDate.`;
             const response = await this.aiClient.models.generateContent({
-                model: 'gemini-1.5-flash',
+                model,
                 contents: [
                     {
                         inlineData: {
