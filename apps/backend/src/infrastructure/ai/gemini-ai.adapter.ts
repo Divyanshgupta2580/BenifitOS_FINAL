@@ -46,7 +46,10 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
         config: {
           systemInstruction: options.systemInstruction,
           temperature: options.temperature || 0.3,
-          maxOutputTokens: options.maxTokens || 1000,
+          maxOutputTokens: options.maxTokens || 8192,
+          thinkingConfig: {
+            thinkingBudget: 512,
+          },
         },
       });
       const text = response.text || '';
@@ -103,6 +106,12 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
           },
           prompt,
         ],
+        config: {
+          maxOutputTokens: 4096,
+          thinkingConfig: {
+            thinkingBudget: 512,
+          },
+        },
       });
       const rawText = response.text || '';
       let extractedFields = {};
@@ -166,7 +175,10 @@ Format your response in clean, beautiful Markdown with clear section headings an
         config: {
           systemInstruction: 'You are BenefitOS Scheme Application Specialist. Provide complete, clear, step-by-step instructions from start to finish.',
           temperature: 0.2,
-          maxOutputTokens: 1500,
+          maxOutputTokens: 8192,
+          thinkingConfig: {
+            thinkingBudget: 512,
+          },
         },
       });
       return response.text || '';
