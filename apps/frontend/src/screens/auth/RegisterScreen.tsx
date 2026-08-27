@@ -135,7 +135,7 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
         }
         setGeneralError(message || 'Please check the highlighted fields and try again.');
       } else if (err.code === 'ERR_NETWORK' || message.includes('Network Error') || message.includes('connect')) {
-        setGeneralError('Unable to connect to the BenefitOS backend server. Please verify http://localhost:4000 is reachable.');
+        setGeneralError('Unable to connect to the BenefitOS backend service. Please verify your network connection or try again.');
       } else if (status >= 500) {
         setGeneralError('An unexpected server error occurred. Please try again later.');
       } else {

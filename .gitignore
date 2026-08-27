@@ -21,6 +21,7 @@ ios/Pods/
 .env.production.local
 .env.*
 !.env.example
+!apps/frontend/.env.production
 
 # Logs & Debugging
 *.log
