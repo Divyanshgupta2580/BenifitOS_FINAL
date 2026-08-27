@@ -19,7 +19,7 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
   onBack,
 }) => {
   const { recommendations, isLoading, isError, refetch } = useRecommendations();
-  const [filter, setFilter] = useState<'ALL' | 'ELIGIBLE' | 'ACTION_REQUIRED'>('ALL');
+  const [filter, setFilter] = useState<'ALL' | 'ELIGIBLE' | 'ACTION_REQUIRED'>('ELIGIBLE');
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
 
   const filteredRecs = recommendations.filter((r) => {

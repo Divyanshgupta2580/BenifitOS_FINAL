@@ -1,6 +1,6 @@
 import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsNumber, Min, Max } from 'class-validator';
 import { UserRole } from '../../../domain/user/user.entity';
-import { SocialCategory, EmploymentStatus } from '../../../domain/citizen/citizen.entity';
+import { Gender, SocialCategory, EmploymentStatus } from '../../../domain/citizen/citizen.entity';
 
 export class RegisterDto {
   @IsString({ message: 'Full name is required' })
@@ -11,6 +11,10 @@ export class RegisterDto {
   @Min(18, { message: 'Citizen must be at least 18 years old' })
   @Max(120, { message: 'Age must be less than 120' })
   age: number;
+
+  @IsOptional()
+  @IsEnum(Gender, { message: 'Gender must be MALE, FEMALE, TRANSGENDER, or OTHER' })
+  gender?: Gender;
 
   @IsEnum(SocialCategory, { message: 'Category must be one of GENERAL, OBC, SC, ST, EWS' })
   category: SocialCategory;

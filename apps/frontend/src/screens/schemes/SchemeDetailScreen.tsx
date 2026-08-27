@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { useScheme } from '../../hooks/useScheme';
+import { SchemeInstructionsSection } from '../../components/ui/SchemeInstructionsSection';
 
 interface Props {
   schemeId: string;
@@ -113,8 +114,11 @@ export const SchemeDetailScreen: React.FC<Props> = ({ schemeId, onBack, onSimula
           title="Simulate My Eligibility Match →"
           variant="secondary"
           onClick={() => onSimulateEligibility(scheme.id)}
-          className="w-full py-3.5 text-base font-bold shadow-md"
+          className="w-full py-3.5 text-base font-bold shadow-md mb-6"
         />
+
+        {/* Complete AI Step-by-Step Instructions & Official Apply Link Button */}
+        <SchemeInstructionsSection schemeTitle={scheme.title} schemeId={scheme.id} />
       </main>
     </div>
   );

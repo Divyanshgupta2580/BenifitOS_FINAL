@@ -1,6 +1,7 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { IsString, IsOptional, IsObject, IsArray, IsNumber } from 'class-validator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 export class AiChatDto {
   @IsString()
@@ -33,13 +34,22 @@ export class ExplainRecommendationDto {
   language?: string;
 }
 
+export class SchemeInstructionsDto {
+  @IsString()
+  schemeTitle: string;
+
+  @IsOptional()
+  @IsString()
+  schemeId?: string;
+}
+
 @Controller('ai')
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
   @Post('chat')
-  async chat(@Body() dto: AiChatDto) {
-    const res = await this.aiService.chat(dto.prompt, dto.context);
+  async chat(@Body() dto: AiChatDto, @CurrentUser('sub') userId?: string) {
+    const res = await this.aiService.chat(dto.prompt, dto.context, userId);
     return {
       reply: res.content,
       provider: res.provider,
@@ -55,5 +65,10 @@ export class AiController {
       dto.missingCriteria,
     );
     return { explanation };
+  }
+
+  @Post('scheme-instructions')
+  async getSchemeInstructions(@Body() dto: SchemeInstructionsDto) {
+    return await this.aiService.getSchemeInstructions(dto.schemeTitle, dto.schemeId);
   }
 }

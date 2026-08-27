@@ -1,15 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { governmentApiService, GovernmentServiceItem } from '../services/government.service';
+import { useAuthStore } from '../store/auth.store';
 
-export const GOVERNMENT_SERVICES_QUERY_KEY = ['governmentServices'];
+export const GOVERNMENT_SERVICES_QUERY_KEY = ['government-services'];
 
 export const useGovernmentServices = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
 
   const { data: services = [], isLoading, isError, refetch } = useQuery<GovernmentServiceItem[]>({
-    queryKey: GOVERNMENT_SERVICES_QUERY_KEY,
+    queryKey: ['government-services', user?.id],
     queryFn: () => governmentApiService.getIntegrationStatus(),
-    staleTime: 5 * 60 * 1000,
+    enabled: !!user?.id,
   });
 
   const connectMutation = useMutation({

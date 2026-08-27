@@ -62,6 +62,18 @@ export const aiApiService = {
     }
   },
 
+  async getSchemeInstructions(dto: { schemeTitle: string; schemeId?: string }): Promise<{ instructions: string; applicationUrl: string; schemeTitle: string }> {
+    try {
+      const res: { instructions: string; applicationUrl: string; schemeTitle: string } = await apiClient.post('/ai/scheme-instructions', dto, { timeout: 60000 });
+      return res;
+    } catch {
+      return {
+        schemeTitle: dto.schemeTitle,
+        applicationUrl: 'https://www.india.gov.in/my-government/schemes',
+        instructions: `### 📋 Step-by-Step Application Guide for ${dto.schemeTitle}\n\n1. **Verify Prerequisites & Documents**: Prepare clear scans of your Aadhaar Card, Income Certificate, and Domicile Proof.\n2. **Register on Official Portal**: Access the official portal using the button below.\n3. **Complete Application Form**: Fill personal, income, and educational/occupational details.\n4. **Upload Required Scans**: Attach mandatory identity and category proofs.\n5. **Submit & Track**: Submit the application and save the Acknowledgement Reference Number.`,
+      };
+    }
+  },
 
   exportHistory(messages: { id: string; sender: string; text: string; timestamp: string }[]): string {
     return JSON.stringify(

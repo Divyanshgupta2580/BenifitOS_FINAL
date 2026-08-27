@@ -1,21 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { citizenApiService, UpdateDemographicsDto } from '../services/citizen.service';
-
-export const CITIZEN_PROFILE_QUERY_KEY = ['citizenProfile'];
+import { useAuthStore } from '../store/auth.store';
 
 export const useCitizenProfile = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
 
   const profileQuery = useQuery({
-    queryKey: CITIZEN_PROFILE_QUERY_KEY,
+    queryKey: ['citizen-profile', user?.id],
     queryFn: () => citizenApiService.getProfile(),
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    enabled: !!user?.id,
   });
 
   const updateProfileMutation = useMutation({
     mutationFn: (dto: UpdateDemographicsDto) => citizenApiService.updateProfile(dto),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: CITIZEN_PROFILE_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['citizen-profile'] });
     },
   });
 

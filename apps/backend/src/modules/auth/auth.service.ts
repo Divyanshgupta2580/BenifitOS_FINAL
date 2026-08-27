@@ -50,7 +50,7 @@ export class AuthService {
       firstName: dto.name.split(' ')[0] || dto.name,
       lastName: dto.name.split(' ').slice(1).join(' ') || '',
       dateOfBirth: birthDate,
-      gender: Gender.OTHER,
+      gender: dto.gender || Gender.OTHER,
       maritalStatus: MaritalStatus.SINGLE,
       socialCategory: dto.category || SocialCategory.GENERAL,
       employmentStatus: dto.profession || EmploymentStatus.UNEMPLOYED,

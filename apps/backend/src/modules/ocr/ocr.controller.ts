@@ -1,4 +1,4 @@
-import { Controller, Post, Param } from '@nestjs/common';
+import { Controller, Post, Get, Param } from '@nestjs/common';
 import { OcrPipelineService } from './ocr.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -11,6 +11,14 @@ export class OcrController {
     const result = await this.ocrService.processDocumentOcr(userId, documentId);
     return {
       message: 'OCR extraction completed successfully.',
+      result,
+    };
+  }
+
+  @Get(':documentId')
+  async getOcrResult(@CurrentUser('sub') userId: string, @Param('documentId') documentId: string) {
+    const result = await this.ocrService.getOcrResult(userId, documentId);
+    return {
       result,
     };
   }

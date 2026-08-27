@@ -6,6 +6,7 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { CheckCircleIcon, AlertTriangleIcon } from '../../components/ui/Icons';
 import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { useRecommendation } from '../../hooks/useRecommendation';
+import { SchemeInstructionsSection } from '../../components/ui/SchemeInstructionsSection';
 
 interface Props {
   recommendationId: string;
@@ -127,8 +128,11 @@ export const RecommendationDetailScreen: React.FC<Props> = ({
           title="View Full Natural Language Explanation →"
           variant="secondary"
           onClick={() => onViewExplanation(recommendation.id)}
-          className="w-full py-3.5 font-bold shadow-md"
+          className="w-full py-3.5 font-bold shadow-md mb-6"
         />
+
+        {/* Complete AI Step-by-Step Instructions & Official Apply Link Button */}
+        <SchemeInstructionsSection schemeTitle={title} schemeId={recommendation.schemeId} />
       </main>
     </div>
   );

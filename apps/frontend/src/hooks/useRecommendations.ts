@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { recommendationApiService, SchemeRecommendationItem } from '../services/recommendation.service';
-
-export const RECOMMENDATIONS_QUERY_KEY = ['recommendations'];
+import { useAuthStore } from '../store/auth.store';
 
 export const useRecommendations = () => {
+  const { user } = useAuthStore();
+
   const query = useQuery({
-    queryKey: RECOMMENDATIONS_QUERY_KEY,
+    queryKey: ['recommendations', user?.id],
     queryFn: () => recommendationApiService.getRecommendations(),
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    enabled: !!user?.id,
   });
 
   return {

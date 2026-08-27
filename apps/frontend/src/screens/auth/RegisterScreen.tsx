@@ -22,6 +22,7 @@ export const isValidEmail = (email: string): boolean => {
 export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
   const [name, setName] = useState('');
   const [age, setAge] = useState<string>('');
+  const [gender, setGender] = useState('MALE');
   const [category, setCategory] = useState('GENERAL');
   const [profession, setProfession] = useState('EMPLOYED');
   const [annualIncome, setAnnualIncome] = useState<string>('');
@@ -79,7 +80,7 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
 
     const numIncome = parseFloat(annualIncome);
     if (isNaN(numIncome) || numIncome < 0) {
-      setIncomeError('Enter a valid non-negative annual income in Rupees (₹).');
+      setIncomeError('Enter a valid non-negative household annual income in Rupees (₹).');
       hasValidationError = true;
     }
 
@@ -111,6 +112,7 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
       const response: any = await apiClient.post('/auth/register', {
         name: trimmedName,
         age: numAge,
+        gender,
         category,
         profession,
         annualIncome: numIncome,
@@ -177,7 +179,7 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
             autoComplete="name"
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input
               label="Age (Years)"
               type="number"
@@ -187,6 +189,20 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
               error={ageError || undefined}
               required
             />
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Gender</label>
+              <select
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                className="w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-lg focus:outline-none focus:ring-4 focus:border-blue-700 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-950/50"
+              >
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="TRANSGENDER">Transgender</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Social Category</label>
@@ -223,7 +239,7 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
             </div>
 
             <Input
-              label="Annual Income (₹ / Year)"
+              label="Household Annual Income (₹ / Year)"
               type="number"
               placeholder="e.g. 250000"
               value={annualIncome}

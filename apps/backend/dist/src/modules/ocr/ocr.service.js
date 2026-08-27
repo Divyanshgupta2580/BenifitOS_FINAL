@@ -55,6 +55,26 @@ let OcrPipelineService = class OcrPipelineService {
             extractedFields: ocrResult.extractedFields,
         };
     }
+    async getOcrResult(userId, documentId) {
+        const doc = await this.documentRepo.findById(documentId);
+        if (!doc || doc.userId !== userId) {
+            throw new common_1.NotFoundException(`Document with ID '${documentId}' not found or access denied.`);
+        }
+        const ocr = await this.prisma.client.ocrResult.findUnique({
+            where: { documentId },
+        });
+        if (!ocr) {
+            throw new common_1.NotFoundException(`No OCR result found for document '${documentId}'.`);
+        }
+        return {
+            id: ocr.id,
+            documentId: ocr.documentId,
+            rawText: ocr.rawText,
+            confidenceScore: ocr.confidenceScore,
+            extractedData: ocr.extractedData,
+            processedAt: ocr.processedAt ? ocr.processedAt.toISOString() : new Date().toISOString(),
+        };
+    }
 };
 exports.OcrPipelineService = OcrPipelineService;
 exports.OcrPipelineService = OcrPipelineService = __decorate([

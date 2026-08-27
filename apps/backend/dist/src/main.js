@@ -39,8 +39,9 @@ async function bootstrap() {
     }));
     app.enableShutdownHooks();
     const port = process.env.PORT || 4000;
-    await app.listen(port);
-    logger.log(`🚀 BenefitOS Backend Engine running on http://localhost:${port}/${prefix}`);
+    const host = process.env.HOST || '0.0.0.0';
+    await app.listen(port, host);
+    logger.log(`🚀 BenefitOS Backend Engine running on http://${host}:${port}/${prefix}`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

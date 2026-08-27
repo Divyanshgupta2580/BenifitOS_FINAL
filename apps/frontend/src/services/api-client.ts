@@ -65,53 +65,53 @@ apiClient.interceptors.response.use(
     // Handle 401 Unauthorized & auto refresh token via HttpOnly cookie
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       if (originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/refresh')) {
-        return Promise.reject(error);
-      }
+        // Fall through to error message formatting below
+      } else {
+        originalRequest._retry = true;
 
-      originalRequest._retry = true;
-
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return apiClient(originalRequest);
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
           })
-          .catch((err) => Promise.reject(err));
-      }
+            .then((token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              return apiClient(originalRequest);
+            })
+            .catch((err) => Promise.reject(err));
+        }
 
-      isRefreshing = true;
+        isRefreshing = true;
 
-      try {
-        const refreshResponse = await axios.post(
-          `${getApiBaseUrl()}/auth/refresh`,
-          {},
-          { withCredentials: true },
-        );
+        try {
+          const refreshResponse = await axios.post(
+            `${getApiBaseUrl()}/auth/refresh`,
+            {},
+            { withCredentials: true },
+          );
 
-        const newAccessToken = refreshResponse.data?.tokens?.accessToken || refreshResponse.data?.accessToken;
+          const newAccessToken = refreshResponse.data?.tokens?.accessToken || refreshResponse.data?.accessToken;
 
-        if (newAccessToken) {
-          await storageService.setItem('accessToken', newAccessToken);
-          apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          if (newAccessToken) {
+            await storageService.setItem('accessToken', newAccessToken);
+            apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
-          processQueue(null, newAccessToken);
+            processQueue(null, newAccessToken);
+            isRefreshing = false;
+            return apiClient(originalRequest);
+          } else {
+            throw new Error('Refresh failed to return a new access token.');
+          }
+        } catch (refreshErr) {
+          processQueue(refreshErr, null);
           isRefreshing = false;
-          return apiClient(originalRequest);
-        } else {
-          throw new Error('Refresh failed to return a new access token.');
+          await storageService.removeItem('accessToken');
+          await storageService.removeItem('access_token');
+          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+          return Promise.reject(refreshErr);
         }
-      } catch (refreshErr) {
-        processQueue(refreshErr, null);
-        isRefreshing = false;
-        await storageService.removeItem('accessToken');
-        await storageService.removeItem('access_token');
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
-        return Promise.reject(refreshErr);
       }
     }
 

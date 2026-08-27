@@ -1,13 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { documentApiService } from '../services/document.service';
+import { useAuthStore } from '../store/auth.store';
 
 export const DOCUMENTS_QUERY_KEY = ['documents'];
 
 export const useDocuments = () => {
+  const { user } = useAuthStore();
+
   const query = useQuery({
-    queryKey: DOCUMENTS_QUERY_KEY,
+    queryKey: ['documents', user?.id],
     queryFn: () => documentApiService.getDocuments(),
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    enabled: !!user?.id,
   });
 
   return {

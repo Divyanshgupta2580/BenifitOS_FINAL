@@ -60,28 +60,33 @@ export const DashboardScreen: React.FC<Props> = ({
   }, [accessToken]);
 
   const { data: profileData, isLoading: isProfileLoading, refetch: refetchProfile } = useQuery({
-    queryKey: ['citizen-profile'],
+    queryKey: ['citizen-profile', user?.id],
     queryFn: () => citizenApiService.getProfile(),
+    enabled: !!user?.id,
   });
 
   const { data: recsData, isLoading: isRecsLoading, refetch: refetchRecs } = useQuery({
-    queryKey: ['recommendations'],
+    queryKey: ['recommendations', user?.id],
     queryFn: () => recommendationApiService.getRecommendations(),
+    enabled: !!user?.id,
   });
 
   const { data: docsData, refetch: refetchDocs } = useQuery({
-    queryKey: ['documents'],
+    queryKey: ['documents', user?.id],
     queryFn: () => documentApiService.getDocuments(),
+    enabled: !!user?.id,
   });
 
   const { data: appsData, refetch: refetchApps } = useQuery({
-    queryKey: ['applications'],
+    queryKey: ['applications', user?.id],
     queryFn: () => applicationApiService.getApplications(),
+    enabled: !!user?.id,
   });
 
   const { data: notifsData, refetch: refetchNotifs } = useQuery({
-    queryKey: ['notifications'],
+    queryKey: ['notifications', user?.id],
     queryFn: () => notificationApiService.getNotifications(),
+    enabled: !!user?.id,
   });
 
   const profile = profileData?.profile;

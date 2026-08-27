@@ -10,4 +10,14 @@ export declare class OcrController {
             extractedFields: Record<string, any>;
         };
     }>;
+    getOcrResult(userId: string, documentId: string): Promise<{
+        result: {
+            id: string;
+            documentId: string;
+            rawText: string;
+            confidenceScore: number;
+            extractedData: Record<string, any>;
+            processedAt: string;
+        };
+    }>;
 }

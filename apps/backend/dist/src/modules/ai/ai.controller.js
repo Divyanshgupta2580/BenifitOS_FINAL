@@ -12,10 +12,11 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AiController = exports.ExplainRecommendationDto = exports.AiChatDto = void 0;
+exports.AiController = exports.SchemeInstructionsDto = exports.ExplainRecommendationDto = exports.AiChatDto = void 0;
 const common_1 = require("@nestjs/common");
 const ai_service_1 = require("./ai.service");
 const class_validator_1 = require("class-validator");
+const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
 class AiChatDto {
     prompt;
     context;
@@ -65,13 +66,27 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ExplainRecommendationDto.prototype, "language", void 0);
+class SchemeInstructionsDto {
+    schemeTitle;
+    schemeId;
+}
+exports.SchemeInstructionsDto = SchemeInstructionsDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SchemeInstructionsDto.prototype, "schemeTitle", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SchemeInstructionsDto.prototype, "schemeId", void 0);
 let AiController = class AiController {
     aiService;
     constructor(aiService) {
         this.aiService = aiService;
     }
-    async chat(dto) {
-        const res = await this.aiService.chat(dto.prompt, dto.context);
+    async chat(dto, userId) {
+        const res = await this.aiService.chat(dto.prompt, dto.context, userId);
         return {
             reply: res.content,
             provider: res.provider,
@@ -81,13 +96,17 @@ let AiController = class AiController {
         const explanation = await this.aiService.explainRecommendation(dto.schemeTitle, dto.matchPercentage, dto.criteriaMet, dto.missingCriteria);
         return { explanation };
     }
+    async getSchemeInstructions(dto) {
+        return await this.aiService.getSchemeInstructions(dto.schemeTitle, dto.schemeId);
+    }
 };
 exports.AiController = AiController;
 __decorate([
     (0, common_1.Post)('chat'),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)('sub')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [AiChatDto]),
+    __metadata("design:paramtypes", [AiChatDto, String]),
     __metadata("design:returntype", Promise)
 ], AiController.prototype, "chat", null);
 __decorate([
@@ -97,6 +116,13 @@ __decorate([
     __metadata("design:paramtypes", [ExplainRecommendationDto]),
     __metadata("design:returntype", Promise)
 ], AiController.prototype, "explainRecommendation", null);
+__decorate([
+    (0, common_1.Post)('scheme-instructions'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [SchemeInstructionsDto]),
+    __metadata("design:returntype", Promise)
+], AiController.prototype, "getSchemeInstructions", null);
 exports.AiController = AiController = __decorate([
     (0, common_1.Controller)('ai'),
     __metadata("design:paramtypes", [ai_service_1.AiService])

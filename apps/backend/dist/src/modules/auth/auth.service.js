@@ -60,7 +60,7 @@ let AuthService = AuthService_1 = class AuthService {
             firstName: dto.name.split(' ')[0] || dto.name,
             lastName: dto.name.split(' ').slice(1).join(' ') || '',
             dateOfBirth: birthDate,
-            gender: citizen_entity_1.Gender.OTHER,
+            gender: dto.gender || citizen_entity_1.Gender.OTHER,
             maritalStatus: citizen_entity_1.MaritalStatus.SINGLE,
             socialCategory: dto.category || citizen_entity_1.SocialCategory.GENERAL,
             employmentStatus: dto.profession || citizen_entity_1.EmploymentStatus.UNEMPLOYED,

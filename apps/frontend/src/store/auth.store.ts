@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { storageService } from '../services/storage.service';
 import { apiClient } from '../services/api-client';
+import { queryClient } from '../queryClient';
 
 export interface User {
   id: string;
@@ -29,6 +30,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   error: null,
 
   setAuth: async (user, accessToken, refreshToken) => {
+    queryClient.clear();
     await storageService.setItem('user', JSON.stringify(user));
     await storageService.setItem('accessToken', accessToken);
     if (refreshToken) {
@@ -44,6 +46,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch {
       // Ignore logout network errors
     }
+    queryClient.clear();
     await storageService.removeItem('user');
     await storageService.removeItem('accessToken');
     await storageService.removeItem('refreshToken');

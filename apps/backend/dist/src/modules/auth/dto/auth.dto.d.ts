@@ -1,7 +1,8 @@
-import { SocialCategory, EmploymentStatus } from '../../../domain/citizen/citizen.entity';
+import { Gender, SocialCategory, EmploymentStatus } from '../../../domain/citizen/citizen.entity';
 export declare class RegisterDto {
     name: string;
     age: number;
+    gender?: Gender;
     category: SocialCategory;
     profession: EmploymentStatus;
     annualIncome: number;

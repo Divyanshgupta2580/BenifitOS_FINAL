@@ -15,6 +15,7 @@ const citizen_entity_1 = require("../../../domain/citizen/citizen.entity");
 class RegisterDto {
     name;
     age;
+    gender;
     category;
     profession;
     annualIncome;
@@ -35,6 +36,11 @@ __decorate([
     (0, class_validator_1.Max)(120, { message: 'Age must be less than 120' }),
     __metadata("design:type", Number)
 ], RegisterDto.prototype, "age", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(citizen_entity_1.Gender, { message: 'Gender must be MALE, FEMALE, TRANSGENDER, or OTHER' }),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "gender", void 0);
 __decorate([
     (0, class_validator_1.IsEnum)(citizen_entity_1.SocialCategory, { message: 'Category must be one of GENERAL, OBC, SC, ST, EWS' }),
     __metadata("design:type", String)

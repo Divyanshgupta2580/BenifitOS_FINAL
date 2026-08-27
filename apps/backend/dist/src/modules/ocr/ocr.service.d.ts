@@ -13,4 +13,12 @@ export declare class OcrPipelineService {
         confidenceScore: number;
         extractedFields: Record<string, any>;
     }>;
+    getOcrResult(userId: string, documentId: string): Promise<{
+        id: string;
+        documentId: string;
+        rawText: string;
+        confidenceScore: number;
+        extractedData: Record<string, any>;
+        processedAt: string;
+    }>;
 }

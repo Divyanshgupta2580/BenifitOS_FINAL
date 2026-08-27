@@ -1,13 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { applicationApiService } from '../services/application.service';
+import { useAuthStore } from '../store/auth.store';
 
 export const APPLICATIONS_QUERY_KEY = ['applications'];
 
 export const useApplications = () => {
+  const { user } = useAuthStore();
+
   const query = useQuery({
-    queryKey: APPLICATIONS_QUERY_KEY,
+    queryKey: ['applications', user?.id],
     queryFn: () => applicationApiService.getApplications(),
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    enabled: !!user?.id,
   });
 
   return {

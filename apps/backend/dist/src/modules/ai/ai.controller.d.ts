@@ -11,14 +11,23 @@ export declare class ExplainRecommendationDto {
     missingCriteria: string[];
     language?: string;
 }
+export declare class SchemeInstructionsDto {
+    schemeTitle: string;
+    schemeId?: string;
+}
 export declare class AiController {
     private readonly aiService;
     constructor(aiService: AiService);
-    chat(dto: AiChatDto): Promise<{
+    chat(dto: AiChatDto, userId?: string): Promise<{
         reply: string;
         provider: string;
     }>;
     explainRecommendation(dto: ExplainRecommendationDto): Promise<{
         explanation: string;
+    }>;
+    getSchemeInstructions(dto: SchemeInstructionsDto): Promise<{
+        instructions: string;
+        applicationUrl: string;
+        schemeTitle: string;
     }>;
 }

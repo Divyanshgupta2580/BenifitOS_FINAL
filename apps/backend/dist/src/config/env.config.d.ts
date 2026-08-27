@@ -11,7 +11,9 @@ export declare const envSchema: z.ZodObject<{
     DATABASE_URL: z.ZodString;
     REDIS_URL: z.ZodDefault<z.ZodString>;
     DEFAULT_AI_PROVIDER: z.ZodDefault<z.ZodEnum<["gemini", "openai", "claude", "azure"]>>;
+    GEMINI_MODEL: z.ZodDefault<z.ZodString>;
     GEMINI_API_KEY: z.ZodOptional<z.ZodString>;
+    GEMINI_SCHEME_GUIDANCE_API_KEY: z.ZodOptional<z.ZodString>;
     OPENAI_API_KEY: z.ZodOptional<z.ZodString>;
     SARVAM_API_KEY: z.ZodOptional<z.ZodString>;
     STORAGE_PROVIDER: z.ZodDefault<z.ZodEnum<["supabase", "s3", "local"]>>;
@@ -28,6 +30,7 @@ export declare const envSchema: z.ZodObject<{
     SMTP_FROM: z.ZodOptional<z.ZodString>;
     SMTP_SECURE: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
+    GEMINI_MODEL: string;
     REDIS_URL: string;
     SECURITY_STATE_MODE: "local" | "distributed";
     NODE_ENV: "production" | "development" | "test";
@@ -43,6 +46,7 @@ export declare const envSchema: z.ZodObject<{
     STORAGE_PROVIDER: "local" | "supabase" | "s3";
     STORAGE_BUCKET_NAME: string;
     GEMINI_API_KEY?: string | undefined;
+    GEMINI_SCHEME_GUIDANCE_API_KEY?: string | undefined;
     SMTP_HOST?: string | undefined;
     SMTP_PORT?: string | undefined;
     SMTP_USER?: string | undefined;
@@ -60,6 +64,8 @@ export declare const envSchema: z.ZodObject<{
     JWT_SECRET: string;
     DATABASE_URL: string;
     GEMINI_API_KEY?: string | undefined;
+    GEMINI_SCHEME_GUIDANCE_API_KEY?: string | undefined;
+    GEMINI_MODEL?: string | undefined;
     REDIS_URL?: string | undefined;
     SECURITY_STATE_MODE?: "local" | "distributed" | undefined;
     NODE_ENV?: "production" | "development" | "test" | undefined;

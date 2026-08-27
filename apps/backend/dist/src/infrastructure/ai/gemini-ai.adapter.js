@@ -17,14 +17,20 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
     providerName = 'gemini';
     logger = new common_1.Logger(GeminiAiAdapter_1.name);
     aiClient = null;
+    guidanceClient = null;
     constructor() {
         const apiKey = process.env.GEMINI_API_KEY;
         if (apiKey && !apiKey.includes('temp') && !apiKey.includes('your-')) {
             this.aiClient = new genai_1.GoogleGenAI({ apiKey });
-            this.logger.log('Google Gemini AI Client initialized successfully.');
+            this.logger.log('Google Gemini AI Client (Chatbot) initialized successfully.');
         }
         else {
             this.logger.warn('GEMINI_API_KEY not configured. Running in fallback mode.');
+        }
+        const guidanceApiKey = process.env.GEMINI_SCHEME_GUIDANCE_API_KEY || apiKey;
+        if (guidanceApiKey && !guidanceApiKey.includes('temp') && !guidanceApiKey.includes('your-')) {
+            this.guidanceClient = new genai_1.GoogleGenAI({ apiKey: guidanceApiKey });
+            this.logger.log('Google Gemini AI Scheme Guidance Client initialized with dedicated secondary API key.');
         }
     }
     getModelName() {
@@ -123,6 +129,52 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
                 confidenceScore: 0.0,
                 extractedFields: {},
             };
+        }
+    }
+    async generateSchemeInstructions(options) {
+        const client = this.guidanceClient || this.aiClient;
+        const model = this.getModelName();
+        const prompt = `Provide exhaustive, clear, step-by-step instructions on how an Indian citizen can apply for the welfare scheme '${options.schemeTitle}' (${options.category || 'Welfare'}) offered by '${options.department || 'Government Welfare Department'}'.
+Scheme Overview: ${options.description || 'Government welfare program for eligible citizens.'}
+Eligibility Rules: ${options.eligibilityRules?.join('; ') || 'Standard welfare criteria.'}
+
+Format your response in clean, beautiful Markdown with clear section headings and bullet points covering:
+1. 📋 **Prerequisites & Document Checklist** (Exactly what files and ID proofs are required)
+2. 🌐 **Official Portal Registration & Account Setup** (How to register on the government website)
+3. 📝 **Application Form Details (Start to Finish)** (Field-by-field guidance)
+4. 📤 **Document Scanning & Upload Guidelines** (Accepted file sizes and formats)
+5. 🔐 **Final Submission & Application Reference Number** (Safeguard your reference ID)
+6. 📊 **Tracking Application Status & Disbursement** (How to track approval and bank transfer)`;
+        if (!client) {
+            return `### 📋 Step-by-Step Application Guide for ${options.schemeTitle}
+
+1. **Verify Prerequisites & Documents**: Prepare clear scans of your Aadhaar Card, Income Certificate, Domicile Certificate, and Bank Passbook.
+2. **Register on Official Portal**: Access the official portal using the button below. Click 'New Citizen Registration' and complete OTP verification using your Aadhaar-linked mobile number.
+3. **Fill Application Form (Start to Finish)**: Enter your personal details, household income, state domicile, and active bank account details for direct benefit transfer.
+4. **Upload Required Documents**: Upload scanned copies of required documents (PDF/JPEG, under 2MB).
+5. **Submit & Download Receipt**: Submit your application and save your Application Reference Number for tracking.`;
+        }
+        try {
+            const response = await client.models.generateContent({
+                model,
+                contents: [prompt],
+                config: {
+                    systemInstruction: 'You are BenefitOS Scheme Application Specialist. Provide complete, clear, step-by-step instructions from start to finish.',
+                    temperature: 0.2,
+                    maxOutputTokens: 1500,
+                },
+            });
+            return response.text || '';
+        }
+        catch (err) {
+            this.logger.error(`Gemini generateSchemeInstructions error: ${err.message}`);
+            return `### 📋 Step-by-Step Application Guide for ${options.schemeTitle}
+
+1. **Prerequisites Checklist**: Verify Aadhaar, mobile number linked to bank account, and category/income certificate.
+2. **Portal Registration**: Access official portal and register with your mobile number.
+3. **Complete Form**: Fill personal, income, and educational/occupational details accurately.
+4. **Upload Scanned Proofs**: Attach mandatory identity and income proofs.
+5. **Final Submission**: Submit the form and store the Application Reference ID.`;
         }
     }
 };

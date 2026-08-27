@@ -28,6 +28,12 @@ let OcrController = class OcrController {
             result,
         };
     }
+    async getOcrResult(userId, documentId) {
+        const result = await this.ocrService.getOcrResult(userId, documentId);
+        return {
+            result,
+        };
+    }
 };
 exports.OcrController = OcrController;
 __decorate([
@@ -38,6 +44,14 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], OcrController.prototype, "processOcr", null);
+__decorate([
+    (0, common_1.Get)(':documentId'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('documentId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], OcrController.prototype, "getOcrResult", null);
 exports.OcrController = OcrController = __decorate([
     (0, common_1.Controller)('ocr'),
     __metadata("design:paramtypes", [ocr_service_1.OcrPipelineService])

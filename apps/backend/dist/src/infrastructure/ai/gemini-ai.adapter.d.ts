@@ -3,6 +3,7 @@ export declare class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider 
     readonly providerName = "gemini";
     private readonly logger;
     private aiClient;
+    private guidanceClient;
     constructor();
     private getModelName;
     generateText(options: AiPromptOptions): Promise<AiResponse>;
@@ -12,4 +13,11 @@ export declare class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider 
         confidenceScore: number;
         extractedFields: Record<string, any>;
     }>;
+    generateSchemeInstructions(options: {
+        schemeTitle: string;
+        department?: string;
+        category?: string;
+        description?: string;
+        eligibilityRules?: string[];
+    }): Promise<string>;
 }
