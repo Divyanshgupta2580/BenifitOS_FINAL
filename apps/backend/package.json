@@ -15,8 +15,11 @@
     "test": "node dist/src/test-registration-flow.js && node dist/src/test-password-reset-flow.js && node dist/src/test-runner.js && node dist/src/test-security-idor.js",
     "test:all": "tsc --noEmit && tsc && node dist/src/test-registration-flow.js && node dist/src/test-password-reset-flow.js && node dist/src/test-runner.js && node dist/src/test-security-idor.js"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
-    "@google/genai": "latest",
+    "@google/genai": "^2.16.0",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.0",
@@ -29,7 +32,7 @@
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^11.0.1",
     "@prisma/client": "^6.3.0",
-    "argon2": "latest",
+    "argon2": "^0.45.1",
     "bullmq": "^5.38.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",

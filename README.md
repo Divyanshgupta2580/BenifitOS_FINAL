@@ -263,6 +263,7 @@ All environment variables are validated at startup via Zod (`apps/backend/src/co
 | `GEMINI_API_KEY` | Optional | — | Primary Google Gemini API key (Chatbot Copilot & OCR) |
 | `GEMINI_SCHEME_GUIDANCE_API_KEY` | Optional | Defaults to `GEMINI_API_KEY` | Dedicated secondary Gemini key for scheme instructions |
 | `SECURITY_STATE_MODE` | Optional | `local` | `local` (in-memory test fallback) or `distributed` (fail-closed in prod) |
+| `CORS_ORIGIN` | Optional | — | Allowed frontend origin URL (e.g. `https://your-frontend.onrender.com` or `*`) |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Optional | — | SMTP mail server credentials (optional; unconfigured mode active by default) |
 
 ---
@@ -273,7 +274,7 @@ BenefitOS is pre-configured for Render Web Service deployment:
 
 - **Root Directory:** `apps/backend`
 - **Environment:** `Node`
-- **Build Command:** `npm install && npx prisma generate && npm run build`
+- **Build Command:** `npm install --include=dev && npx prisma generate && npm run build`
 - **Start Command:** `npm run start:prod`
 - **Port Handling:** Automatically reads `process.env.PORT` supplied by Render
 - **Host Binding:** `0.0.0.0`
