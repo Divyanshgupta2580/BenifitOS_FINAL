@@ -125,21 +125,23 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
     } catch (err: any) {
       const status = err.status || err.response?.status;
       const message = err.message || '';
+      const responseData = err.response?.data;
+      const backendMessage = responseData?.error?.message || responseData?.message || message;
 
-      if (status === 409 || message.toLowerCase().includes('already exists')) {
+      if (status === 409 || backendMessage.toLowerCase().includes('already exists')) {
         setEmailError('An account with this email address already exists.');
         setGeneralError('An account with this email address already exists. Please sign in instead.');
-      } else if (status === 400 || message.toLowerCase().includes('validation') || message.toLowerCase().includes('valid email')) {
-        if (message.toLowerCase().includes('email')) {
-          setEmailError(message);
+      } else if (status === 400 || backendMessage.toLowerCase().includes('validation') || backendMessage.toLowerCase().includes('valid email')) {
+        if (backendMessage.toLowerCase().includes('email')) {
+          setEmailError(backendMessage);
         }
-        setGeneralError(message || 'Please check the highlighted fields and try again.');
-      } else if (err.code === 'ERR_NETWORK' || message.includes('Network Error') || message.includes('connect')) {
+        setGeneralError(backendMessage || 'Please check the highlighted fields and try again.');
+      } else if (err.code === 'ERR_NETWORK' || message.includes('Network Error')) {
         setGeneralError('Unable to connect to the BenefitOS backend service. Please verify your network connection or try again.');
       } else if (status >= 500) {
         setGeneralError('An unexpected server error occurred. Please try again later.');
       } else {
-        setGeneralError(message || 'Could not register account. Please check your connection.');
+        setGeneralError(backendMessage || 'Could not register account. Please check your connection.');
       }
     } finally {
       setIsLoading(false);
