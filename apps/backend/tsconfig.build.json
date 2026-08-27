@@ -4,6 +4,8 @@
     "node_modules",
     "dist",
     "test",
+    "scripts",
+    "scripts/**/*",
     "**/*spec.ts",
     "**/*test.ts"
   ]
