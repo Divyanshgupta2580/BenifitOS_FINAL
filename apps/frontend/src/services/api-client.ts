@@ -10,9 +10,9 @@ const getApiBaseUrl = (): string => {
     if (isLocal) {
       return 'http://localhost:4000/api/v1';
     }
-    return `${window.location.origin}/api/v1`;
+    return 'https://benefitos-backend-1dq1.onrender.com/api/v1';
   }
-  return 'http://localhost:4000/api/v1';
+  return 'https://benefitos-backend-1dq1.onrender.com/api/v1';
 };
 
 export const apiClient = axios.create({
