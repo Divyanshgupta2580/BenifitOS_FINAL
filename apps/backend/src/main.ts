@@ -18,25 +18,47 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // Enable CORS with credentials support
-  const isProduction = process.env.NODE_ENV === 'production';
-  let allowedOrigins: (string | RegExp)[] = [
+  const defaultAllowedOrigins = [
+    'https://benifitos-final.onrender.com',
     'http://localhost:3000',
     'http://localhost:5173',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5173',
-    'https://benifitos-final.onrender.com',
   ];
 
+  let allowedOrigins: (string | RegExp)[] = defaultAllowedOrigins;
+
   if (process.env.CORS_ORIGIN) {
-    allowedOrigins = process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
-  } else if (isProduction) {
-    logger.warn('CORS_ORIGIN not configured in production mode. Defaulting to strict origin validation.');
-    allowedOrigins = [];
+    const configuredOrigins = process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+    allowedOrigins = [...new Set([...configuredOrigins, ...defaultAllowedOrigins])];
   }
 
   app.enableCors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : false,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // Allow non-browser requests (e.g. curl, server-to-server, health probes)
+      if (!origin) return callback(null, true);
+
+      const isAllowed = allowedOrigins.some((allowed) => {
+        if (typeof allowed === 'string') {
+          return (
+            allowed.toLowerCase() === origin.toLowerCase() ||
+            (origin.endsWith('.onrender.com') && origin.startsWith('https://'))
+          );
+        }
+        return allowed.test(origin);
+      });
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        logger.warn(`Blocked CORS request from unauthorized origin: ${origin}`);
+        callback(new Error(`CORS blocked for origin: ${origin}`));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cookie'],
+    exposedHeaders: ['Set-Cookie'],
   });
 
   // Global prefix
