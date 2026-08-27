@@ -58,3 +58,7 @@ apps/frontend/dist/
 apps/frontend/.expo/
 uploads/
 apps/backend/uploads/
+
+# Markdown Documentation Policy (Only root README.md is tracked on GitHub)
+*.md
+!README.md
