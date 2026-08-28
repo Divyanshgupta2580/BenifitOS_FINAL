@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { aiApiService, ExplainRecommendationDto } from '../services/ai.service';
+import { useLanguageStore } from '../store/language.store';
 
 export interface CopilotMessage {
   id: string;
@@ -13,48 +14,64 @@ export interface CopilotMessage {
 
 export const AI_COPILOT_QUERY_KEY = ['aiCopilotHistory'];
 
-const INITIAL_MESSAGES: CopilotMessage[] = [
-  {
-    id: 'msg-welcome-1',
-    sender: 'assistant',
-    text: 'Welcome to BenefitOS AI Citizen Copilot. Based on your verified citizen profile, government scheme database, and uploaded documents, I am here to assist with scheme discovery, eligibility assessment, and application procedures. How may I assist your welfare journey today?',
-    timestamp: '10:00 AM',
-    sources: ['Government Database', 'Citizen Profile'],
-    provider: 'BenefitOS AI',
-  },
-];
+export const getWelcomeMessage = (lang: 'en' | 'hi'): CopilotMessage => ({
+  id: 'msg-welcome-1',
+  sender: 'assistant',
+  text:
+    lang === 'hi'
+      ? 'BenefitOS में आपका स्वागत है।\n\nमैं आपके प्रोफ़ाइल में उपलब्ध जानकारी के आधार पर सरकारी कल्याण योजनाएँ खोजने, पात्रता समझने, आवश्यक दस्तावेज़ तैयार करने और सरकारी सेवाओं तक पहुँचने में सहायता कर सकता हूँ।\n\nआज आप किस विषय में सहायता चाहते हैं?'
+      : 'Welcome to BenefitOS.\n\nI can help you discover welfare schemes, understand eligibility requirements, prepare documents, and navigate government services using the information available in your profile.\n\nWhat would you like help with today?',
+  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  sources: ['Government Scheme Database', 'Citizen Profile'],
+  provider: 'BenefitOS AI',
+});
 
 export const useAiCopilot = () => {
   const queryClient = useQueryClient();
-  const [messages, setMessages] = useState<CopilotMessage[]>(INITIAL_MESSAGES);
-  const [language, setLanguage] = useState<'en' | 'hi'>('en');
+  const { locale, setLocale } = useLanguageStore();
+  const currentLanguage: 'en' | 'hi' = locale === 'hi' ? 'hi' : 'en';
+
+  const [messages, setMessages] = useState<CopilotMessage[]>([getWelcomeMessage(currentLanguage)]);
   const [isSpeechEnabled, setIsSpeechEnabled] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+
+  // If conversation only contains welcome message, auto-update when language changes
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === 'msg-welcome-1') {
+        return [getWelcomeMessage(currentLanguage)];
+      }
+      return prev;
+    });
+  }, [currentLanguage]);
 
   const chatMutation = useMutation({
     mutationFn: async ({ prompt, context }: { prompt: string; context?: Record<string, any> }) => {
       setIsStreaming(true);
-      const res = await aiApiService.sendChatMessage({ prompt, context, language });
+      const res = await aiApiService.sendChatMessage({ prompt, context, language: currentLanguage });
       setIsStreaming(false);
       return res;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       const assistantMsg: CopilotMessage = {
         id: 'msg-' + Date.now(),
         sender: 'assistant',
         text: data.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sources: data.sources || ['Government Database', 'Recommendation Engine'],
+        sources: data.sources || ['Government Scheme Database', 'Citizen Profile'],
         provider: 'BenefitOS AI',
       };
       setMessages((prev) => [...prev, assistantMsg]);
     },
-    onError: (error: any) => {
+    onError: () => {
       setIsStreaming(false);
       const errorMsg: CopilotMessage = {
         id: 'msg-err-' + Date.now(),
         sender: 'assistant',
-        text: 'We are unable to process your request right now. Please verify your connection and try again.',
+        text:
+          currentLanguage === 'hi'
+            ? 'हम अभी आपका अनुरोध संसाधित करने में असमर्थ हैं। कृपया अपना कनेक्शन जांचें और पुनः प्रयास करें।'
+            : 'We could not prepare your response right now. Please verify your connection and try again.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         sources: ['System Status'],
         provider: 'BenefitOS AI',
@@ -85,21 +102,21 @@ export const useAiCopilot = () => {
       const userMsg: CopilotMessage = {
         id: 'msg-rec-' + Date.now(),
         sender: 'user',
-        text: `Explain match criteria for ${dto.schemeTitle}`,
+        text: currentLanguage === 'hi' ? `${dto.schemeTitle} के लिए पात्रता मानदंड समझाएं` : `Explain match criteria for ${dto.schemeTitle}`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
       setMessages((prev) => [...prev, userMsg]);
       setIsStreaming(true);
       try {
-        const res = await aiApiService.explainRecommendation({ ...dto, language });
+        const res = await aiApiService.explainRecommendation({ ...dto, language: currentLanguage });
         setIsStreaming(false);
         const assistantMsg: CopilotMessage = {
           id: 'msg-exp-' + Date.now(),
           sender: 'assistant',
           text: res.explanation,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          sources: res.sources || ['Recommendation Engine', 'Government Database'],
+          sources: res.sources || ['Recommendation Engine', 'Government Scheme Database'],
           provider: 'BenefitOS AI',
         };
         setMessages((prev) => [...prev, assistantMsg]);
@@ -107,16 +124,24 @@ export const useAiCopilot = () => {
         setIsStreaming(false);
       }
     },
-    [language]
+    [currentLanguage]
   );
 
   const clearMessages = useCallback(() => {
-    setMessages(INITIAL_MESSAGES);
-  }, []);
+    setMessages([getWelcomeMessage(currentLanguage)]);
+  }, [currentLanguage]);
 
-  const toggleLanguage = useCallback(() => {
-    setLanguage((prev) => (prev === 'en' ? 'hi' : 'en'));
-  }, []);
+  const toggleLanguage = useCallback(async () => {
+    const nextLocale = currentLanguage === 'en' ? 'hi' : 'en';
+    await setLocale(nextLocale);
+  }, [currentLanguage, setLocale]);
+
+  const setLanguageExplicit = useCallback(
+    async (lang: 'en' | 'hi') => {
+      await setLocale(lang);
+    },
+    [setLocale]
+  );
 
   const toggleSpeech = useCallback(() => {
     setIsSpeechEnabled((prev) => !prev);
@@ -133,8 +158,9 @@ export const useAiCopilot = () => {
     isLoading: chatMutation.isPending || isStreaming,
     isError: chatMutation.isError,
     clearMessages,
-    language,
+    language: currentLanguage,
     toggleLanguage,
+    setLanguageExplicit,
     isSpeechEnabled,
     toggleSpeech,
     exportHistory,

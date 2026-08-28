@@ -7,7 +7,7 @@ export declare class AiService {
     private readonly prisma;
     private readonly logger;
     constructor(geminiAdapter: GeminiAiAdapter, aiSafety: AiSafetyService, prisma: PrismaService);
-    chat(prompt: string, context?: Record<string, any>, userId?: string): Promise<{
+    chat(prompt: string, context?: Record<string, any>, userId?: string, language?: string): Promise<{
         content: string;
         provider: string;
     }>;

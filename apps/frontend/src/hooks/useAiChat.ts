@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { aiApiService, AiChatResponse } from '../services/ai.service';
+import { useLanguageStore } from '../store/language.store';
 
 export interface ChatMessage {
   id: string;
@@ -11,27 +12,49 @@ export interface ChatMessage {
   isError?: boolean;
 }
 
-export const SUGGESTED_PROMPTS = [
+export const SUGGESTED_PROMPTS_EN = [
   'What welfare schemes am I eligible for?',
   'How do I apply for PM-Kisan Samman Nidhi?',
   'Which documents are required for Ration Card application?',
   'Explain the benefits of Ayushman Bharat Golden Card',
 ];
 
+export const SUGGESTED_PROMPTS_HI = [
+  'मैं किन सरकारी कल्याणकारी योजनाओं के लिए पात्र हूँ?',
+  'पीएम-किसान सम्मान निधि के लिए आवेदन कैसे करें?',
+  'राशन कार्ड आवेदन के लिए कौन से दस्तावेज़ आवश्यक हैं?',
+  'आयुष्मान भारत योजना के लाभ बताएं',
+];
+
+export const getAssistantWelcomeMessage = (lang: string): ChatMessage => ({
+  id: 'welcome-1',
+  sender: 'assistant',
+  text:
+    lang === 'hi'
+      ? 'BenefitOS में आपका स्वागत है।\n\nमैं आपके प्रोफ़ाइल में उपलब्ध जानकारी के आधार पर सरकारी कल्याण योजनाएँ खोजने, पात्रता समझने और आवेदन प्रक्रियाओं में सहायता कर सकता हूँ।\n\nआज आप किस विषय में सहायता चाहते हैं?'
+      : 'Welcome to BenefitOS.\n\nI can help you discover welfare schemes, understand eligibility requirements, prepare documents, and navigate government services using the information available in your profile.\n\nWhat would you like help with today?',
+  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  provider: 'BenefitOS AI',
+});
+
 export const useAiChat = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome-1',
-      sender: 'assistant',
-      text: 'Welcome to BenefitOS AI Citizen Copilot. Based on your verified profile and government welfare records, I can help you evaluate scheme eligibility, prepare required documents, and navigate application procedures. How may I assist you today?',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      provider: 'BenefitOS AI',
-    },
-  ]);
+  const { locale } = useLanguageStore();
+  const currentLanguage: 'en' | 'hi' = locale === 'hi' ? 'hi' : 'en';
+
+  const [messages, setMessages] = useState<ChatMessage[]>([getAssistantWelcomeMessage(currentLanguage)]);
   const [lastPrompt, setLastPrompt] = useState<string>('');
 
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === 'welcome-1') {
+        return [getAssistantWelcomeMessage(currentLanguage)];
+      }
+      return prev;
+    });
+  }, [currentLanguage]);
+
   const chatMutation = useMutation<AiChatResponse, Error, { prompt: string; context?: Record<string, any> }>({
-    mutationFn: (payload) => aiApiService.sendChatMessage(payload),
+    mutationFn: (payload) => aiApiService.sendChatMessage({ ...payload, language: currentLanguage }),
     onSuccess: (data) => {
       const assistantMessage: ChatMessage = {
         id: `msg-${Date.now()}`,
@@ -42,11 +65,14 @@ export const useAiChat = () => {
       };
       setMessages((prev) => [...prev, assistantMessage]);
     },
-    onError: (error: Error) => {
+    onError: () => {
       const errorMessage: ChatMessage = {
         id: `err-${Date.now()}`,
         sender: 'assistant',
-        text: 'We are unable to process your request right now. Please verify your connection and try again.',
+        text:
+          currentLanguage === 'hi'
+            ? 'हम अभी आपका अनुरोध संसाधित करने में असमर्थ हैं। कृपया अपना कनेक्शन जांचें और पुनः प्रयास करें।'
+            : 'We could not prepare your response right now. Please verify your connection and try again.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isError: true,
       };
@@ -54,22 +80,25 @@ export const useAiChat = () => {
     },
   });
 
-  const sendMessage = useCallback((promptText: string, context?: Record<string, any>) => {
-    if (!promptText.trim()) return;
+  const sendMessage = useCallback(
+    (promptText: string, context?: Record<string, any>) => {
+      if (!promptText.trim()) return;
 
-    const trimmedPrompt = promptText.trim();
-    setLastPrompt(trimmedPrompt);
+      const trimmedPrompt = promptText.trim();
+      setLastPrompt(trimmedPrompt);
 
-    const userMsg: ChatMessage = {
-      id: `user-${Date.now()}`,
-      sender: 'user',
-      text: trimmedPrompt,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+      const userMsg: ChatMessage = {
+        id: `user-${Date.now()}`,
+        sender: 'user',
+        text: trimmedPrompt,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
 
-    setMessages((prev) => [...prev, userMsg]);
-    chatMutation.mutate({ prompt: trimmedPrompt, context });
-  }, [chatMutation]);
+      setMessages((prev) => [...prev, userMsg]);
+      chatMutation.mutate({ prompt: trimmedPrompt, context });
+    },
+    [chatMutation]
+  );
 
   const retryLastMessage = useCallback(() => {
     if (!lastPrompt) return;
@@ -78,16 +107,8 @@ export const useAiChat = () => {
   }, [lastPrompt, chatMutation]);
 
   const clearChat = useCallback(() => {
-    setMessages([
-      {
-        id: `welcome-${Date.now()}`,
-        sender: 'assistant',
-        text: 'Chat history cleared. How else may I assist you with citizen welfare services?',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        provider: 'BenefitOS AI Core',
-      },
-    ]);
-  }, []);
+    setMessages([getAssistantWelcomeMessage(currentLanguage)]);
+  }, [currentLanguage]);
 
   return {
     messages,
@@ -96,6 +117,6 @@ export const useAiChat = () => {
     sendMessage,
     retryLastMessage,
     clearChat,
-    suggestedPrompts: SUGGESTED_PROMPTS,
+    suggestedPrompts: currentLanguage === 'hi' ? SUGGESTED_PROMPTS_HI : SUGGESTED_PROMPTS_EN,
   };
 };

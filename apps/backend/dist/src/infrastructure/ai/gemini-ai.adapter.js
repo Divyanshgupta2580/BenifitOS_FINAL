@@ -40,10 +40,10 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
         const model = this.getModelName();
         if (!this.aiClient) {
             return {
-                content: 'BenefitOS AI is currently unavailable (Unconfigured API key). Please try again later.',
+                content: 'BenefitOS AI Citizen Copilot is currently offline. Please verify service configuration and try again.',
                 tokensUsed: 0,
-                provider: 'gemini-unconfigured',
-                model,
+                provider: 'BenefitOS AI',
+                model: 'BenefitOS-AI',
             };
         }
         try {
@@ -63,17 +63,17 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
             return {
                 content: text,
                 tokensUsed: Math.ceil(text.length / 4),
-                provider: this.providerName,
-                model,
+                provider: 'BenefitOS AI',
+                model: 'BenefitOS-AI',
             };
         }
         catch (err) {
-            this.logger.error(`Gemini generateText error: ${err.message}`);
+            this.logger.error(`AI generateText error: ${err.message}`);
             return {
-                content: '[BenefitOS AI Notice] Live AI inference is currently unavailable due to network or service connectivity. Please verify internet access and GEMINI_API_KEY configuration.',
+                content: 'BenefitOS AI is temporarily unable to process your request. Please verify your connection or try again shortly.',
                 tokensUsed: 0,
-                provider: 'gemini-offline',
-                model: `${model}-fallback`,
+                provider: 'BenefitOS AI',
+                model: 'BenefitOS-AI',
             };
         }
     }

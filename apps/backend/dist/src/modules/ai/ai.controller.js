@@ -86,10 +86,10 @@ let AiController = class AiController {
         this.aiService = aiService;
     }
     async chat(dto, userId) {
-        const res = await this.aiService.chat(dto.prompt, dto.context, userId);
+        const res = await this.aiService.chat(dto.prompt, dto.context, userId, dto.language);
         return {
             reply: res.content,
-            provider: res.provider,
+            provider: 'BenefitOS AI',
         };
     }
     async explainRecommendation(dto) {
