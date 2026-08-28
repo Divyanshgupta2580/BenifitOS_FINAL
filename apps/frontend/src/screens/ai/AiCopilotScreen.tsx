@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { useAiCopilot, CopilotMessage } from '../../hooks/useAiCopilot';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
+import { StructuredAiResponseRenderer } from '../../components/ai/StructuredAiResponseRenderer';
 import {
   GlobeIcon,
   VolumeIcon,
@@ -242,50 +243,35 @@ export const AiCopilotScreen: React.FC<Props> = ({
         </div>
 
         {/* Messages Stream */}
-        <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm overflow-y-auto space-y-4 max-h-[500px]">
+        <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm overflow-y-auto space-y-5 max-h-[560px]">
           {messages.map((item: CopilotMessage) => {
             const isUser = item.sender === 'user';
             return (
               <div key={item.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl border text-sm leading-relaxed ${
+                  className={`w-full ${
                     isUser
-                      ? 'bg-blue-900 dark:bg-blue-700 text-white border-blue-900 dark:border-blue-700 rounded-br-none shadow-xs'
-                      : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-none'
+                      ? 'max-w-[85%] sm:max-w-[70%] p-4 rounded-2xl bg-blue-900 dark:bg-blue-700 text-white border border-blue-900 dark:border-blue-700 rounded-br-none shadow-xs text-sm leading-relaxed ml-auto'
+                      : 'max-w-full p-4 sm:p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-850/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-none shadow-xs'
                   }`}
                 >
-                  {!isUser && (
-                    <div className="flex justify-between items-center mb-1 text-[11px] font-bold text-blue-900 dark:text-blue-400">
-                      <span>{item.provider || 'BenefitOS AI'}</span>
-                      <span className="text-slate-400 font-normal">{item.timestamp}</span>
-                    </div>
-                  )}
-
-                  <p className="whitespace-pre-wrap">{item.text}</p>
-
-                  {isUser && (
-                    <div className="mt-1 text-right">
-                      <span className="text-[10px] text-blue-200">{item.timestamp}</span>
-                    </div>
-                  )}
-
-                  {!isUser && item.sources && item.sources.length > 0 && (
-                    <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
-                        Verified Sources:
-                      </span>
-                      <div className="flex flex-wrap gap-1">
-                        {item.sources.map((src, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1"
-                          >
-                            <CheckIcon className="w-3 h-3 text-emerald-700 dark:text-emerald-400" />
-                            <span>{src}</span>
-                          </span>
-                        ))}
+                  {isUser ? (
+                    <div>
+                      <p className="whitespace-pre-wrap">{item.text}</p>
+                      <div className="mt-1 text-right">
+                        <span className="text-[10px] text-blue-200">{item.timestamp}</span>
                       </div>
                     </div>
+                  ) : (
+                    <StructuredAiResponseRenderer
+                      content={item.text}
+                      sources={item.sources || ['Government Database', 'Citizen Profile']}
+                      timestamp={item.timestamp}
+                      onActionClick={(actionQuery) => sendMessage(actionQuery)}
+                      onNavigateToSchemes={onNavigateToSchemes}
+                      onNavigateToVault={onNavigateToVault}
+                      onNavigateToApplications={onNavigateToApplications}
+                    />
                   )}
                 </div>
               </div>
@@ -294,22 +280,27 @@ export const AiCopilotScreen: React.FC<Props> = ({
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 flex items-center gap-3">
-                <svg className="animate-spin h-4 w-4 text-blue-900 dark:text-blue-400" viewBox="0 0 24 24" fill="none">
+              <div className="bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 rounded-2xl p-4 flex items-center gap-3 shadow-xs">
+                <svg className="animate-spin h-5 w-5 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300 animate-pulse">
-                  Copilot is analyzing profile & government databases...
-                </span>
+                <div className="space-y-0.5">
+                  <span className="text-xs font-bold text-blue-950 dark:text-blue-200 block">
+                    BenefitOS AI Citizen Copilot
+                  </span>
+                  <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium animate-pulse block">
+                    Analyzing citizen profile &amp; verified government scheme database...
+                  </span>
+                </div>
               </div>
             </div>
           )}
 
           {isError && (
-            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl flex justify-between items-center text-xs font-semibold text-rose-800 dark:text-rose-300">
-              <span>Connection timeout. Failed to fetch response.</span>
-              <button onClick={retryLast} className="underline font-bold">
+            <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl flex justify-between items-center text-xs font-semibold text-rose-800 dark:text-rose-300 shadow-xs">
+              <span>We are unable to process your request right now. Please check your connection and try again.</span>
+              <button onClick={retryLast} className="underline font-bold hover:text-rose-900 dark:hover:text-rose-100 ml-2 shrink-0">
                 Retry
               </button>
             </div>

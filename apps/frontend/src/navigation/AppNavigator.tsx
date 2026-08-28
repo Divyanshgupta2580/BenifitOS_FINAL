@@ -371,7 +371,14 @@ const ApplicationWizardScreenWrapper = () => {
 
 const AiAssistantScreenWrapper = () => {
   const navigate = useNavigate();
-  return <AiAssistantScreen onBack={() => navigate('/dashboard')} />;
+  return (
+    <AiAssistantScreen
+      onBack={() => navigate('/dashboard')}
+      onNavigateToSchemes={() => navigate('/schemes')}
+      onNavigateToVault={() => navigate('/documents')}
+      onNavigateToApplications={() => navigate('/applications')}
+    />
+  );
 };
 
 const AiCopilotScreenWrapper = () => {

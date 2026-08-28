@@ -31,18 +31,17 @@ export const aiApiService = {
       const res: AiChatResponse = await apiClient.post('/ai/chat', dto, { timeout: 60000 });
       return {
         reply: res.reply,
-        provider: res.provider || 'BenefitOS AI',
+        provider: 'BenefitOS AI',
         sources: ['Government Database', 'Recommendation Engine', 'Citizen Profile', 'OCR Vault'],
       };
     } catch (err: any) {
-      // Return honest error notice if backend endpoint is unreachable
       const isHindi = dto.language === 'hi';
       return {
         reply: isHindi
-          ? `[BenefitOS AI] सेवा अनुपलब्ध है (${err?.message || 'कनेक्शन त्रुटि'})। कृपया अपना नेटवर्क कनेक्शन जांचें।`
-          : `[BenefitOS AI Notice] Unable to communicate with the AI Gateway (${err?.message || 'Endpoint unreachable'}). Please verify your backend server connection.`,
-        provider: 'BenefitOS Gateway',
-        sources: ['System Notice'],
+          ? 'वर्तमान में सेवा अनुपलब्ध है। कृपया थोड़ी देर बाद पुनः प्रयास करें।'
+          : 'We are unable to process your request right now. Please verify your network connection or try again shortly.',
+        provider: 'BenefitOS AI',
+        sources: ['System Status'],
       };
     }
   },

@@ -23,9 +23,9 @@ export const useAiChat = () => {
     {
       id: 'welcome-1',
       sender: 'assistant',
-      text: 'Namaste! I am your BenefitOS Citizen AI Assistant. How can I help you discover schemes or assist with your welfare applications today?',
+      text: 'Welcome to BenefitOS AI Citizen Copilot. Based on your verified profile and government welfare records, I can help you evaluate scheme eligibility, prepare required documents, and navigate application procedures. How may I assist you today?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      provider: 'BenefitOS AI Core',
+      provider: 'BenefitOS AI',
     },
   ]);
   const [lastPrompt, setLastPrompt] = useState<string>('');
@@ -38,7 +38,7 @@ export const useAiChat = () => {
         sender: 'assistant',
         text: data.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        provider: data.provider || 'BenefitOS AI',
+        provider: 'BenefitOS AI',
       };
       setMessages((prev) => [...prev, assistantMessage]);
     },
@@ -46,7 +46,7 @@ export const useAiChat = () => {
       const errorMessage: ChatMessage = {
         id: `err-${Date.now()}`,
         sender: 'assistant',
-        text: `Failed to receive response: ${error.message || 'Network communication error.'}. Please try again.`,
+        text: 'We are unable to process your request right now. Please verify your connection and try again.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isError: true,
       };

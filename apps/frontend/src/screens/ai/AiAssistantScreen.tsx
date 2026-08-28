@@ -3,12 +3,21 @@ import { Button } from '../../components/ui/Button';
 import { useAiChat, ChatMessage } from '../../hooks/useAiChat';
 import { LightbulbIcon, BotIcon, RefreshIcon } from '../../components/ui/Icons';
 import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import { StructuredAiResponseRenderer } from '../../components/ai/StructuredAiResponseRenderer';
 
 interface Props {
   onBack?: () => void;
+  onNavigateToSchemes?: () => void;
+  onNavigateToVault?: () => void;
+  onNavigateToApplications?: () => void;
 }
 
-export const AiAssistantScreen: React.FC<Props> = ({ onBack }) => {
+export const AiAssistantScreen: React.FC<Props> = ({
+  onBack,
+  onNavigateToSchemes,
+  onNavigateToVault,
+  onNavigateToApplications,
+}) => {
   const { messages, isLoading, sendMessage, retryLastMessage, clearChat, suggestedPrompts } = useAiChat();
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -45,8 +54,8 @@ export const AiAssistantScreen: React.FC<Props> = ({ onBack }) => {
               </button>
             )}
             <div>
-              <h1 className="text-base font-bold text-blue-900 dark:text-blue-400 leading-tight">Citizen AI Assistant</h1>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">BenefitOS Intelligent Welfare Gateway</span>
+              <h1 className="text-base font-bold text-blue-900 dark:text-blue-100 leading-tight">BenefitOS AI Citizen Copilot</h1>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Official Digital Welfare Intelligence</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -85,41 +94,48 @@ export const AiAssistantScreen: React.FC<Props> = ({ onBack }) => {
         </div>
 
         {/* Message History */}
-        <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm overflow-y-auto space-y-4 max-h-[520px]">
+        <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm overflow-y-auto space-y-5 max-h-[520px]">
           {messages.map((item: ChatMessage) => {
             const isUser = item.sender === 'user';
             return (
               <div key={item.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl border text-sm leading-relaxed ${
+                  className={`w-full ${
                     isUser
-                      ? 'bg-blue-900 dark:bg-blue-800 text-white border-blue-900 dark:border-blue-700 rounded-br-none shadow-xs'
-                      : item.isError
-                      ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 rounded-bl-none'
-                      : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-none'
+                      ? 'max-w-[85%] sm:max-w-[70%] p-4 rounded-2xl bg-blue-900 dark:bg-blue-700 text-white border border-blue-900 dark:border-blue-700 rounded-br-none shadow-xs text-sm leading-relaxed ml-auto'
+                      : 'max-w-full p-4 sm:p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-850/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-none shadow-xs'
                   }`}
                 >
-                  {!isUser && (
-                    <div className="flex items-center gap-1.5 mb-1 text-xs font-bold text-blue-900 dark:text-blue-400">
-                      <BotIcon className="w-4 h-4 text-blue-900 dark:text-blue-400" />
-                      <span>{item.provider || 'BenefitOS AI'}</span>
+                  {isUser ? (
+                    <div>
+                      <p className="whitespace-pre-wrap">{item.text}</p>
+                      <div className="mt-1 text-right">
+                        <span className="text-[10px] text-blue-200">{item.timestamp}</span>
+                      </div>
                     </div>
-                  )}
-                  <p className="whitespace-pre-wrap">{item.text}</p>
-                  <div className="mt-2 text-right">
-                    <span className={`text-[10px] ${isUser ? 'text-blue-200' : 'text-slate-400 dark:text-slate-500'}`}>
-                      {item.timestamp}
-                    </span>
-                  </div>
-
-                  {item.isError && (
-                    <button
-                      onClick={retryLastMessage}
-                      className="mt-2 text-xs font-bold text-rose-700 dark:text-rose-400 underline flex items-center gap-1"
-                    >
-                      <RefreshIcon className="w-3.5 h-3.5" />
-                      <span>Retry Request</span>
-                    </button>
+                  ) : item.isError ? (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-rose-700 dark:text-rose-300">
+                        {item.text}
+                      </p>
+                      <button
+                        onClick={retryLastMessage}
+                        className="text-xs font-bold text-rose-700 dark:text-rose-400 underline flex items-center gap-1"
+                      >
+                        <RefreshIcon className="w-3.5 h-3.5" />
+                        <span>Retry Request</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <StructuredAiResponseRenderer
+                      content={item.text}
+                      sources={['Government Database', 'Citizen Profile']}
+                      timestamp={item.timestamp}
+                      onActionClick={(actionQuery) => sendMessage(actionQuery)}
+                      onNavigateToSchemes={onNavigateToSchemes}
+                      onNavigateToVault={onNavigateToVault}
+                      onNavigateToApplications={onNavigateToApplications}
+                    />
                   )}
                 </div>
               </div>

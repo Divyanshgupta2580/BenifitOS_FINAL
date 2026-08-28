@@ -17,7 +17,7 @@ const INITIAL_MESSAGES: CopilotMessage[] = [
   {
     id: 'msg-welcome-1',
     sender: 'assistant',
-    text: 'Namaste! I am your BenefitOS AI Citizen Copilot. I have loaded your verified citizen profile, uploaded documents, OCR records, and government service links. How can I assist your welfare journey today?',
+    text: 'Welcome to BenefitOS AI Citizen Copilot. Based on your verified citizen profile, government scheme database, and uploaded documents, I am here to assist with scheme discovery, eligibility assessment, and application procedures. How may I assist your welfare journey today?',
     timestamp: '10:00 AM',
     sources: ['Government Database', 'Citizen Profile'],
     provider: 'BenefitOS AI',
@@ -45,7 +45,7 @@ export const useAiCopilot = () => {
         text: data.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         sources: data.sources || ['Government Database', 'Recommendation Engine'],
-        provider: data.provider || 'BenefitOS AI',
+        provider: 'BenefitOS AI',
       };
       setMessages((prev) => [...prev, assistantMsg]);
     },
@@ -54,9 +54,10 @@ export const useAiCopilot = () => {
       const errorMsg: CopilotMessage = {
         id: 'msg-err-' + Date.now(),
         sender: 'assistant',
-        text: 'Sorry, I encountered a temporary connection issue. Please check your network and tap Retry.',
+        text: 'We are unable to process your request right now. Please verify your connection and try again.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sources: ['System Exception'],
+        sources: ['System Status'],
+        provider: 'BenefitOS AI',
       };
       setMessages((prev) => [...prev, errorMsg]);
     },
