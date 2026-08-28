@@ -163,27 +163,18 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
           </div>
         ) : !hasLoaded ? (
           /* Initial Unloaded State */
-          <div className="p-4 rounded-xl bg-white/70 dark:bg-slate-900/50 border border-blue-100 dark:border-blue-900/40 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center text-blue-600 dark:text-blue-400 text-base shrink-0">
-                ✨
-              </div>
-              <div>
-                <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                  Detailed Official Application Procedure
-                </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Click to generate comprehensive prerequisites, document checklists, official portal steps, and DBT payment tracking for {schemeTitle}.
-                </p>
-              </div>
+          <div className="p-4 rounded-xl bg-white/70 dark:bg-slate-900/50 border border-blue-100 dark:border-blue-900/40 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center text-blue-600 dark:text-blue-400 text-base shrink-0">
+              ✨
             </div>
-            <button
-              onClick={handleFetchInstructions}
-              className="whitespace-nowrap inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span>✨</span>
-              <span>Get Detailed AI Guidance</span>
-            </button>
+            <div className="flex-1">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                Detailed Official Application Procedure
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Click &quot;Get Detailed AI Guidance&quot; above to generate comprehensive prerequisites, document checklists, official portal steps, and DBT payment tracking for {schemeTitle}.
+              </p>
+            </div>
           </div>
         ) : null}
       </Card>
