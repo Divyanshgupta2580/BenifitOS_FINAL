@@ -12,8 +12,10 @@
     "start:prod": "node dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "prisma:generate": "prisma generate",
-    "test": "node dist/src/test-registration-flow.js && node dist/src/test-password-reset-flow.js && node dist/src/test-runner.js && node dist/src/test-security-idor.js",
-    "test:all": "tsc --noEmit && tsc && node dist/src/test-registration-flow.js && node dist/src/test-password-reset-flow.js && node dist/src/test-runner.js && node dist/src/test-security-idor.js"
+    "cron:daily-maintenance": "node dist/src/cron/daily-maintenance.cron.js",
+    "cron:sync-schemes": "node dist/src/cron/daily-maintenance.cron.js",
+    "test": "node dist/src/test-registration-flow.js && node dist/src/test-password-reset-flow.js && node dist/src/test-runner.js && node dist/src/test-security-idor.js && node dist/src/test-cron.js",
+    "test:all": "tsc --noEmit && tsc && node dist/src/test-registration-flow.js && node dist/src/test-password-reset-flow.js && node dist/src/test-runner.js && node dist/src/test-security-idor.js && node dist/src/test-cron.js"
   },
   "engines": {
     "node": "22.x"

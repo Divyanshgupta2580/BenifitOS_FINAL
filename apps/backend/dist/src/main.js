@@ -12,23 +12,41 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.use((0, helmet_1.default)());
     app.use(cookieParser());
-    const isProduction = process.env.NODE_ENV === 'production';
-    let allowedOrigins = [
+    const defaultAllowedOrigins = [
+        'https://benifitos-final.onrender.com',
         'http://localhost:3000',
         'http://localhost:5173',
         'http://127.0.0.1:3000',
         'http://127.0.0.1:5173',
     ];
+    let allowedOrigins = defaultAllowedOrigins;
     if (process.env.CORS_ORIGIN) {
-        allowedOrigins = process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
-    }
-    else if (isProduction) {
-        logger.warn('CORS_ORIGIN not configured in production mode. Defaulting to strict origin validation.');
-        allowedOrigins = [];
+        const configuredOrigins = process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+        allowedOrigins = [...new Set([...configuredOrigins, ...defaultAllowedOrigins])];
     }
     app.enableCors({
-        origin: allowedOrigins.length > 0 ? allowedOrigins : false,
+        origin: (origin, callback) => {
+            if (!origin)
+                return callback(null, true);
+            const isAllowed = allowedOrigins.some((allowed) => {
+                if (typeof allowed === 'string') {
+                    return (allowed.toLowerCase() === origin.toLowerCase() ||
+                        (origin.endsWith('.onrender.com') && origin.startsWith('https://')));
+                }
+                return allowed.test(origin);
+            });
+            if (isAllowed) {
+                callback(null, true);
+            }
+            else {
+                logger.warn(`Blocked CORS request from unauthorized origin: ${origin}`);
+                callback(new Error(`CORS blocked for origin: ${origin}`));
+            }
+        },
         credentials: true,
+        methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Cookie'],
+        exposedHeaders: ['Set-Cookie'],
     });
     const prefix = process.env.API_PREFIX || 'api/v1';
     app.setGlobalPrefix(prefix);

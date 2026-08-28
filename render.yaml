@@ -1,0 +1,72 @@
+# =============================================================================
+# BENEFITOS PRODUCTION RENDER BLUEPRINT SPECIFICATION
+# =============================================================================
+# Documentation: https://render.com/docs/blueprint-spec
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1. BENEFITOS BACKEND API GATEWAY & MICROSERVICES WEB SERVICE
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: benefitos-backend
+    runtime: node
+    plan: standard
+    rootDir: apps/backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PREFIX
+        value: api/v1
+      - key: CORS_ORIGIN
+        value: https://benifitos-final.onrender.com
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_SCHEME_GUIDANCE_API_KEY
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+  # ---------------------------------------------------------------------------
+  # 2. BENEFITOS FRONTEND SINGLE PAGE APPLICATION STATIC SITE
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: benefitos-frontend
+    runtime: static
+    rootDir: apps/frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://benefitos-backend-1dq1.onrender.com/api/v1
+      - key: VITE_WS_URL
+        value: wss://benefitos-backend-1dq1.onrender.com/ws
+
+  # ---------------------------------------------------------------------------
+  # 3. BENEFITOS PRODUCTION SCHEDULED CRON JOB: DAILY MAINTENANCE & SYNC
+  # ---------------------------------------------------------------------------
+  - type: cron
+    name: benefitos-cron-maintenance
+    runtime: node
+    plan: starter
+    rootDir: apps/backend
+    schedule: "0 2 * * *" # Runs daily at 02:00 UTC (07:30 IST)
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run cron:daily-maintenance
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false

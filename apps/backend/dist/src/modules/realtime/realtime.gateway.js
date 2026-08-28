@@ -19,6 +19,7 @@ const socket_io_1 = require("socket.io");
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const defaultWsOrigins = [
+    'https://benifitos-final.onrender.com',
     'http://localhost:3000',
     'http://localhost:5173',
     'http://127.0.0.1:3000',
@@ -116,7 +117,9 @@ exports.RealtimeGateway = RealtimeGateway = RealtimeGateway_1 = __decorate([
                 const configured = process.env.CORS_ORIGIN
                     ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
                     : defaultWsOrigins;
-                const isAllowed = configured.includes(origin) || defaultWsOrigins.includes(origin);
+                const isAllowed = configured.some((allowed) => allowed.toLowerCase() === origin.toLowerCase()) ||
+                    defaultWsOrigins.some((allowed) => allowed.toLowerCase() === origin.toLowerCase()) ||
+                    (origin.endsWith('.onrender.com') && origin.startsWith('https://'));
                 if (isAllowed) {
                     callback(null, true);
                 }
