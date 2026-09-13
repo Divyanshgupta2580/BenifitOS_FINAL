@@ -414,7 +414,9 @@ async function runSecurityAuditTests() {
   // TEST 8: WebSocket Room Isolation & JWT Binding
   // -------------------------------------------------------------
   console.log('\n8. Testing WebSocket Room Isolation...');
-  const realtimeGateway = new RealtimeGateway(jwtService);
+  const mockAiService: any = { getSchemeInstructions: async () => ({}) };
+  const realtimeGateway = new RealtimeGateway(jwtService, mockAiService);
+
 
   const mockSocketUserA: any = {
     id: 'socket-user-a',

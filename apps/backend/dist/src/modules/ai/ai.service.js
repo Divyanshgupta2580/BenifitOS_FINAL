@@ -214,12 +214,24 @@ Explain in clear, encouraging, natural language how they can fulfill missing cri
             applicationUrl = 'https://www.mudra.org.in';
         if (scheme?.state?.toLowerCase().includes('uttar pradesh'))
             applicationUrl = 'https://scholarship.up.gov.in';
-        const rules = scheme?.eligibilityRules?.map((r) => r.description) || [];
-        const schemeVersion = scheme?.updatedAt ? scheme.updatedAt.toISOString() : 'v1';
+        const rules = scheme?.eligibilityRules?.map((r) => `${r.attributeKey}:${r.operator}:${r.targetValue}:${r.description}`) || [];
+        const docs = scheme?.requiredDocuments?.map((d) => `${d.documentType}:${d.isMandatory}`) || [];
+        const schemeRuleHash = (0, crypto_1.createHash)('sha256')
+            .update([
+            scheme?.title || schemeTitle,
+            scheme?.department || '',
+            scheme?.description || '',
+            rules.sort().join('|'),
+            docs.sort().join('|'),
+            scheme?.updatedAt ? scheme.updatedAt.toISOString() : 'v1',
+        ].join('::'))
+            .digest('hex')
+            .substring(0, 16);
         const cacheKeyOptions = {
             useCase: 'scheme-instructions',
             schemeId: scheme?.id || schemeTitle.toLowerCase().replace(/\s+/g, '-'),
-            minimizedProfileHash: schemeVersion,
+            schemeRuleHash,
+            minimizedProfileHash: 'static_scheme_guidance',
             language: language === 'hi' ? 'hi' : 'en',
             promptVersion: 'v2.0',
         };

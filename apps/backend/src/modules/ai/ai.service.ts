@@ -240,16 +240,29 @@ Explain in clear, encouraging, natural language how they can fulfill missing cri
     if (scheme?.category === 'FINANCIAL_INCLUSION') applicationUrl = 'https://www.mudra.org.in';
     if (scheme?.state?.toLowerCase().includes('uttar pradesh')) applicationUrl = 'https://scholarship.up.gov.in';
 
-    const rules = scheme?.eligibilityRules?.map((r: any) => r.description) || [];
-    const schemeVersion = scheme?.updatedAt ? scheme.updatedAt.toISOString() : 'v1';
+    const rules = scheme?.eligibilityRules?.map((r: any) => `${r.attributeKey}:${r.operator}:${r.targetValue}:${r.description}`) || [];
+    const docs = scheme?.requiredDocuments?.map((d: any) => `${d.documentType}:${d.isMandatory}`) || [];
+    const schemeRuleHash = createHash('sha256')
+      .update([
+        scheme?.title || schemeTitle,
+        scheme?.department || '',
+        scheme?.description || '',
+        rules.sort().join('|'),
+        docs.sort().join('|'),
+        scheme?.updatedAt ? scheme.updatedAt.toISOString() : 'v1',
+      ].join('::'))
+      .digest('hex')
+      .substring(0, 16);
 
     const cacheKeyOptions = {
       useCase: 'scheme-instructions' as const,
       schemeId: scheme?.id || schemeTitle.toLowerCase().replace(/\s+/g, '-'),
-      minimizedProfileHash: schemeVersion,
+      schemeRuleHash,
+      minimizedProfileHash: 'static_scheme_guidance',
       language: language === 'hi' ? 'hi' : 'en',
       promptVersion: 'v2.0',
     };
+
 
     const cachedResult = await this.aiCache.getOrExecute(
       cacheKeyOptions,

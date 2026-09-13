@@ -125,7 +125,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     if (this.isConnected && this.pubClient) {
       try {
         await this.pubClient.publish(channel, message);
-      } catch (err) {
+      } catch (err: any) {
         this.logger.warn(`Redis publish failed for channel ${channel}: ${err.message}`);
       }
     }
@@ -138,9 +138,76 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         this.subClient.on('message', (chan, msg) => {
           if (chan === channel) callback(msg);
         });
-      } catch (err) {
+      } catch (err: any) {
         this.logger.warn(`Redis subscribe failed for channel ${channel}: ${err.message}`);
       }
     }
   }
+
+  /**
+   * Acquires a distributed lock using Redis SET key value EX ttl NX.
+   * Returns a unique lock token if successful, or null if lock is held.
+   */
+  public async acquireLock(lockKey: string, ttlSeconds = 15): Promise<string | null> {
+    const lockToken = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const expiresAt = Date.now() + ttlSeconds * 1000;
+
+    if (this.isConnected && this.client) {
+      try {
+        const res = await this.client.set(lockKey, lockToken, 'EX', ttlSeconds, 'NX');
+        if (res === 'OK') {
+          return lockToken;
+        }
+        return null;
+      } catch (err: any) {
+        if (this.isDistributedMode()) {
+          throw new ServiceUnavailableException('Distributed lock service (Redis) unavailable.');
+        }
+        this.logger.warn(`Redis acquireLock failed for ${lockKey}, falling back to local memory: ${err.message}`);
+      }
+    }
+
+    // Local in-memory fallback lock
+    const existing = this.inMemoryStore.get(lockKey);
+    if (existing && (!existing.expiresAt || Date.now() < existing.expiresAt)) {
+      return null; // Lock is already actively held
+    }
+
+    this.inMemoryStore.set(lockKey, { value: lockToken, expiresAt });
+    return lockToken;
+  }
+
+
+  /**
+   * Releases a distributed lock atomically using a Lua script.
+   */
+  public async releaseLock(lockKey: string, lockToken: string): Promise<boolean> {
+    if (this.isConnected && this.client) {
+      try {
+        const luaScript = `
+          if redis.call("get", KEYS[1]) == ARGV[1] then
+            return redis.call("del", KEYS[1])
+          else
+            return 0
+          end
+        `;
+        const result = await this.client.eval(luaScript, 1, lockKey, lockToken);
+        return result === 1;
+      } catch (err: any) {
+        if (this.isDistributedMode()) {
+          throw new ServiceUnavailableException('Distributed lock release failed.');
+        }
+        this.logger.warn(`Redis releaseLock failed for ${lockKey}: ${err.message}`);
+      }
+    }
+
+    // Local in-memory fallback release
+    const existing = this.inMemoryStore.get(lockKey);
+    if (existing && existing.value === lockToken) {
+      this.inMemoryStore.delete(lockKey);
+      return true;
+    }
+    return false;
+  }
 }
+

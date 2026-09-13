@@ -145,6 +145,58 @@ let RedisService = RedisService_1 = class RedisService {
             }
         }
     }
+    async acquireLock(lockKey, ttlSeconds = 15) {
+        const lockToken = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+        const expiresAt = Date.now() + ttlSeconds * 1000;
+        if (this.isConnected && this.client) {
+            try {
+                const res = await this.client.set(lockKey, lockToken, 'EX', ttlSeconds, 'NX');
+                if (res === 'OK') {
+                    return lockToken;
+                }
+                return null;
+            }
+            catch (err) {
+                if (this.isDistributedMode()) {
+                    throw new common_1.ServiceUnavailableException('Distributed lock service (Redis) unavailable.');
+                }
+                this.logger.warn(`Redis acquireLock failed for ${lockKey}, falling back to local memory: ${err.message}`);
+            }
+        }
+        const existing = this.inMemoryStore.get(lockKey);
+        if (existing && (!existing.expiresAt || Date.now() < existing.expiresAt)) {
+            return null;
+        }
+        this.inMemoryStore.set(lockKey, { value: lockToken, expiresAt });
+        return lockToken;
+    }
+    async releaseLock(lockKey, lockToken) {
+        if (this.isConnected && this.client) {
+            try {
+                const luaScript = `
+          if redis.call("get", KEYS[1]) == ARGV[1] then
+            return redis.call("del", KEYS[1])
+          else
+            return 0
+          end
+        `;
+                const result = await this.client.eval(luaScript, 1, lockKey, lockToken);
+                return result === 1;
+            }
+            catch (err) {
+                if (this.isDistributedMode()) {
+                    throw new common_1.ServiceUnavailableException('Distributed lock release failed.');
+                }
+                this.logger.warn(`Redis releaseLock failed for ${lockKey}: ${err.message}`);
+            }
+        }
+        const existing = this.inMemoryStore.get(lockKey);
+        if (existing && existing.value === lockToken) {
+            this.inMemoryStore.delete(lockKey);
+            return true;
+        }
+        return false;
+    }
 };
 exports.RedisService = RedisService;
 exports.RedisService = RedisService = RedisService_1 = __decorate([

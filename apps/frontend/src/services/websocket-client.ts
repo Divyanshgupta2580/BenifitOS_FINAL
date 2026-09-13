@@ -1,7 +1,15 @@
 import { io, Socket } from 'socket.io-client';
 import { storageService } from './storage.service';
+import { aiApiService } from './ai.service';
 
 export type WsConnectionStatus = 'CONNECTING' | 'CONNECTED' | 'DISCONNECTED' | 'ERROR';
+
+export interface SchemeGuidanceResult {
+  instructions: string;
+  applicationUrl: string;
+  schemeTitle: string;
+  isCached?: boolean;
+}
 
 const getWsBaseUrl = (): string => {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WS_URL) {
@@ -137,6 +145,127 @@ class WebSocketService {
 
   getSocket(): Socket | null {
     return this.socket;
+  }
+
+  /**
+   * Resilient AI scheme guidance request.
+   * Attempts WebSocket real-time delivery with correlation ID first;
+   * automatically falls back to HTTP API if WebSocket is offline or times out.
+   */
+  async requestSchemeGuidance(
+    params: {
+      schemeTitle: string;
+      schemeId?: string;
+      language?: string;
+      abortSignal?: AbortSignal;
+      timeoutMs?: number;
+    },
+  ): Promise<SchemeGuidanceResult> {
+    const { schemeTitle, schemeId, language, abortSignal, timeoutMs = 20000 } = params;
+    const requestId = `ws_req_${Math.random().toString(36).substring(2, 9)}_${Date.now()}`;
+
+    // 1. Check if socket is connected or attempt connecting
+    let socket = this.socket;
+    if (!socket || !socket.connected) {
+      try {
+        socket = await this.connect();
+      } catch {
+        socket = null;
+      }
+    }
+
+    // Fallback directly to HTTP if WebSocket cannot connect
+    if (!socket || !socket.connected) {
+      console.log('[WebSocket] WS unavailable, using resilient HTTP fallback for guidance');
+      return await aiApiService.getSchemeInstructions({ schemeTitle, schemeId });
+    }
+
+    return new Promise<SchemeGuidanceResult>((resolve, reject) => {
+      let isSettled = false;
+      let timeoutHandle: any = null;
+
+      const cleanup = () => {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        if (socket) {
+          socket.off('guidance_cached', handleSuccess);
+          socket.off('guidance_completed', handleSuccess);
+          socket.off('guidance_failed', handleFailure);
+        }
+        if (abortSignal) {
+          abortSignal.removeEventListener('abort', handleAbort);
+        }
+      };
+
+      const handleSuccess = (data: any) => {
+        if (data && data.requestId === requestId) {
+          if (isSettled) return;
+          isSettled = true;
+          cleanup();
+          resolve({
+            instructions: data.instructions,
+            applicationUrl: data.applicationUrl || 'https://www.india.gov.in/my-government/schemes',
+            schemeTitle: data.schemeTitle || schemeTitle,
+            isCached: Boolean(data.isCached),
+          });
+        }
+      };
+
+      const handleFailure = (data: any) => {
+        if (data && data.requestId === requestId) {
+          if (isSettled) return;
+          isSettled = true;
+          cleanup();
+          // Fallback to HTTP on socket error
+          console.warn('[WebSocket] Guidance WS failed, attempting HTTP fallback...');
+          aiApiService
+            .getSchemeInstructions({ schemeTitle, schemeId })
+            .then(resolve)
+            .catch(reject);
+        }
+      };
+
+      const handleAbort = () => {
+        if (isSettled) return;
+        isSettled = true;
+        cleanup();
+        const err = new Error('Aborted');
+        err.name = 'AbortError';
+        reject(err);
+      };
+
+      if (abortSignal) {
+        if (abortSignal.aborted) {
+          return handleAbort();
+        }
+        abortSignal.addEventListener('abort', handleAbort);
+      }
+
+      // Attach listeners
+      socket.on('guidance_cached', handleSuccess);
+      socket.on('guidance_completed', handleSuccess);
+      socket.on('guidance_failed', handleFailure);
+
+      // Set timeout fallback to HTTP
+      timeoutHandle = setTimeout(() => {
+        if (!isSettled) {
+          isSettled = true;
+          cleanup();
+          console.warn('[WebSocket] WS guidance timed out, falling back to HTTP...');
+          aiApiService
+            .getSchemeInstructions({ schemeTitle, schemeId })
+            .then(resolve)
+            .catch(reject);
+        }
+      }, timeoutMs);
+
+      // Emit request
+      socket.emit('request_guidance', {
+        requestId,
+        schemeTitle,
+        schemeId,
+        language,
+      });
+    });
   }
 }
 

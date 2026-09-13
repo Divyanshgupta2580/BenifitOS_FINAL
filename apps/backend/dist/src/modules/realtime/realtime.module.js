@@ -10,6 +10,7 @@ exports.RealtimeModule = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const realtime_gateway_1 = require("./realtime.gateway");
+const ai_module_1 = require("../ai/ai.module");
 let RealtimeModule = class RealtimeModule {
 };
 exports.RealtimeModule = RealtimeModule;
@@ -19,6 +20,7 @@ exports.RealtimeModule = RealtimeModule = __decorate([
             jwt_1.JwtModule.register({
                 secret: process.env.JWT_SECRET,
             }),
+            ai_module_1.AiModule,
         ],
         providers: [realtime_gateway_1.RealtimeGateway],
         exports: [realtime_gateway_1.RealtimeGateway],

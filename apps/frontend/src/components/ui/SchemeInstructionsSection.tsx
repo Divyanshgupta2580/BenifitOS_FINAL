@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { aiApiService } from '../../services/ai.service';
+import { wsService } from '../../services/websocket-client';
 import { Card } from './Card';
 import { LoadingSpinner } from './LoadingSpinner';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -50,7 +50,11 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
     abortControllerRef.current = new AbortController();
 
     try {
-      const res = await aiApiService.getSchemeInstructions({ schemeTitle, schemeId });
+      const res = await wsService.requestSchemeGuidance({
+        schemeTitle,
+        schemeId,
+        abortSignal: abortControllerRef.current.signal,
+      });
       if (res && res.instructions && res.instructions.trim().length > 0) {
         setInstructions(res.instructions);
         if (res.applicationUrl) {

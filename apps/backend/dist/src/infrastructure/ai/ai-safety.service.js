@@ -18,22 +18,40 @@ let AiSafetyService = class AiSafetyService {
             .trim();
     }
     redactPiiFromContext(context) {
-        const redacted = JSON.parse(JSON.stringify(context));
-        const maskString = (str, keepLast = 4) => {
-            if (!str || str.length <= keepLast)
-                return '****';
-            return '*'.repeat(str.length - keepLast) + str.slice(-keepLast);
-        };
-        if (redacted.aadhaarNumber)
-            redacted.aadhaarNumber = maskString(String(redacted.aadhaarNumber));
-        if (redacted.aadhaarHash)
-            redacted.aadhaarHash = maskString(String(redacted.aadhaarHash));
-        if (redacted.panHash)
-            redacted.panHash = maskString(String(redacted.panHash));
-        if (redacted.bplCardNumber)
-            redacted.bplCardNumber = maskString(String(redacted.bplCardNumber));
-        if (redacted.phone)
-            redacted.phone = maskString(String(redacted.phone));
+        if (!context || typeof context !== 'object')
+            return {};
+        const redacted = {};
+        const sensitiveKeyPatterns = [
+            /token/i,
+            /secret/i,
+            /password/i,
+            /auth/i,
+            /jwt/i,
+            /session/i,
+            /cookie/i,
+            /key/i,
+            /credential/i,
+            /phone/i,
+            /email/i,
+            /aadhaar/i,
+            /pan/i,
+            /bpl/i,
+            /passcode/i,
+            /pin/i,
+            /cvv/i,
+        ];
+        for (const [key, value] of Object.entries(context)) {
+            const isSensitive = sensitiveKeyPatterns.some((pattern) => pattern.test(key));
+            if (isSensitive) {
+                redacted[key] = '[REDACTED_SECURITY_DATA]';
+            }
+            else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                redacted[key] = this.redactPiiFromContext(value);
+            }
+            else {
+                redacted[key] = value;
+            }
+        }
         return redacted;
     }
 };

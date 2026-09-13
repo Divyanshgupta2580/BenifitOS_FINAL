@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { createHash } from 'crypto';
 
 export interface CacheKeyOptions {
@@ -10,6 +11,7 @@ export interface CacheKeyOptions {
   language?: string;
   promptVersion?: string;
   normalizedPrompt?: string;
+  schemeRuleHash?: string;
 }
 
 export interface CachedAiResult {
@@ -18,6 +20,13 @@ export interface CachedAiResult {
   isCached: boolean;
   cachedAt?: Date;
   expiresAt?: Date;
+  metrics?: {
+    totalDurationMs: number;
+    cacheLookupMs: number;
+    lockAcquisitionMs: number;
+    aiProviderMs: number;
+    dbWriteMs: number;
+  };
 }
 
 @Injectable()
@@ -25,12 +34,16 @@ export class AiCacheService {
   private readonly logger = new Logger(AiCacheService.name);
   private inFlightRequests = new Map<string, Promise<CachedAiResult>>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   public generateCacheKey(options: CacheKeyOptions): string {
     const parts = [
       options.useCase,
       options.schemeId || 'none',
+      options.schemeRuleHash || 'norules',
       options.minimizedProfileHash || (options.userId ? `usr_${options.userId}` : 'anon'),
       (options.language || 'en').toLowerCase().trim(),
       options.promptVersion || 'v1.0',
@@ -51,7 +64,7 @@ export class AiCacheService {
 
       if (entry.status !== 'ACTIVE' || entry.expiresAt < new Date()) {
         if (entry.status === 'ACTIVE') {
-          // Mark expired asynchronously
+          // Mark expired asynchronously without blocking
           this.prisma.client.aiResponseCache
             .update({
               where: { id: entry.id },
@@ -81,35 +94,103 @@ export class AiCacheService {
     ttlHours = 24,
   ): Promise<CachedAiResult> {
     const startTime = Date.now();
+    let cacheLookupMs = 0;
+    let lockAcquisitionMs = 0;
+    let aiProviderMs = 0;
+    let dbWriteMs = 0;
+
     const cacheKey = this.generateCacheKey(cacheKeyOptions);
 
     // 1. Check database cache
+    const lookupStart = Date.now();
     const cached = await this.getCachedResponse(cacheKey);
+    cacheLookupMs = Date.now() - lookupStart;
+
     if (cached) {
-      const durationMs = Date.now() - startTime;
+      const totalDurationMs = Date.now() - startTime;
       this.logger.log(
-        `AI Cache HIT [useCase: ${cacheKeyOptions.useCase}, lang: ${cacheKeyOptions.language || 'en'}, duration: ${durationMs}ms]`,
+        `AI Cache HIT [useCase: ${cacheKeyOptions.useCase}, lang: ${cacheKeyOptions.language || 'en'}, duration: ${totalDurationMs}ms]`,
       );
-      return cached;
+      return {
+        ...cached,
+        metrics: {
+          totalDurationMs,
+          cacheLookupMs,
+          lockAcquisitionMs: 0,
+          aiProviderMs: 0,
+          dbWriteMs: 0,
+        },
+      };
     }
 
-    // 2. Request deduplication (in-flight Promise cache)
+    // 2. Request deduplication (Local in-flight fast-path)
     const existingInFlight = this.inFlightRequests.get(cacheKey);
     if (existingInFlight) {
-      this.logger.log(`AI Request In-Flight Deduplication HIT [useCase: ${cacheKeyOptions.useCase}]`);
+      this.logger.log(`AI Request In-Flight Local Deduplication HIT [useCase: ${cacheKeyOptions.useCase}]`);
       return await existingInFlight;
     }
 
-    // 3. Execute generator with in-flight protection
-    const executionPromise = (async () => {
+    // Wrap execution inside the in-flight Promise registered immediately
+    const executionPromise = (async (): Promise<CachedAiResult> => {
+      // 3. Distributed Lock Acquisition (Multi-Instance Coordination)
+      const lockKey = `lock:ai:${cacheKey}`;
+      const lockStart = Date.now();
+      let lockToken: string | null = null;
       try {
+        lockToken = await this.redis.acquireLock(lockKey, 15);
+      } catch (err: any) {
+        this.logger.warn(`Redis lock acquire error: ${err.message}. Proceeding with local execution.`);
+      }
+      lockAcquisitionMs = Date.now() - lockStart;
+
+      // If lock is held by another instance/thread, wait and poll for cached result
+      if (!lockToken) {
+        this.logger.log(
+          `AI Request Distributed Contention — Waiting for active worker [useCase: ${cacheKeyOptions.useCase}]`,
+        );
+        const pollStart = Date.now();
+        const maxPollMs = 10000;
+        const pollIntervalMs = 100;
+
+        while (Date.now() - pollStart < maxPollMs) {
+          await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+          const polledResult = await this.getCachedResponse(cacheKey);
+          if (polledResult) {
+            const totalDurationMs = Date.now() - startTime;
+            this.logger.log(
+              `AI Request Distributed Poll Resolved [useCase: ${cacheKeyOptions.useCase}, duration: ${totalDurationMs}ms]`,
+            );
+            return {
+              ...polledResult,
+              metrics: {
+                totalDurationMs,
+                cacheLookupMs,
+                lockAcquisitionMs,
+                aiProviderMs: 0,
+                dbWriteMs: 0,
+              },
+            };
+          }
+        }
+        this.logger.warn(`Distributed lock wait timed out for key ${cacheKey.substring(0, 12)}... Executing directly.`);
+      }
+
+      // 4. Execute generator with in-flight protection & lock release
+      try {
+        // Double-check cache in case it was written during lock acquisition
+        const doubleCheck = await this.getCachedResponse(cacheKey);
+        if (doubleCheck) {
+          return doubleCheck;
+        }
+
+        const genStart = Date.now();
         const result = await generatorFn();
-        const durationMs = Date.now() - startTime;
+        aiProviderMs = Date.now() - genStart;
 
         if (result && result.content && result.content.trim().length > 0) {
           const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000);
-          
-          // Save to database
+
+          const dbWriteStart = Date.now();
           await this.prisma.client.aiResponseCache.upsert({
             where: { cacheKey },
             create: {
@@ -130,9 +211,11 @@ export class AiCacheService {
               invalidatedAt: null,
             },
           });
+          dbWriteMs = Date.now() - dbWriteStart;
 
+          const totalDurationMs = Date.now() - startTime;
           this.logger.log(
-            `AI Cache MISS & STORED [useCase: ${cacheKeyOptions.useCase}, lang: ${cacheKeyOptions.language || 'en'}, duration: ${durationMs}ms]`,
+            `AI Cache MISS & STORED [useCase: ${cacheKeyOptions.useCase}, lang: ${cacheKeyOptions.language || 'en'}, duration: ${totalDurationMs}ms]`,
           );
 
           return {
@@ -140,12 +223,26 @@ export class AiCacheService {
             provider: 'BenefitOS AI',
             isCached: false,
             expiresAt,
+            metrics: {
+              totalDurationMs,
+              cacheLookupMs,
+              lockAcquisitionMs,
+              aiProviderMs,
+              dbWriteMs,
+            },
           };
         } else {
           return {
             content: result?.content || '',
             provider: 'BenefitOS AI',
             isCached: false,
+            metrics: {
+              totalDurationMs: Date.now() - startTime,
+              cacheLookupMs,
+              lockAcquisitionMs,
+              aiProviderMs,
+              dbWriteMs: 0,
+            },
           };
         }
       } catch (err: any) {
@@ -153,6 +250,13 @@ export class AiCacheService {
         throw err;
       } finally {
         this.inFlightRequests.delete(cacheKey);
+        if (lockToken) {
+          try {
+            await this.redis.releaseLock(lockKey, lockToken);
+          } catch (err: any) {
+            this.logger.warn(`Failed to release distributed lock ${lockKey}: ${err.message}`);
+          }
+        }
       }
     })();
 

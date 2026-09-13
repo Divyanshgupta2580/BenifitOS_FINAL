@@ -85,7 +85,14 @@ assert(promptContext.includes('STUDENT'), 'Prompt Context: contains necessary oc
 
 // 2. CACHE KEY GENERATION TESTS
 const mockPrisma: any = { client: { aiResponseCache: {} } };
-const cacheService = new AiCacheService(mockPrisma);
+const mockRedis: any = {
+  acquireLock: async () => 'mock-token',
+  releaseLock: async () => true,
+  get: async () => null,
+  set: async () => {},
+};
+const cacheService = new AiCacheService(mockPrisma, mockRedis);
+
 
 const key1_en = cacheService.generateCacheKey({
   useCase: 'scheme-instructions',

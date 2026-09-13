@@ -10,6 +10,8 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { AiService } from '../ai/ai.service';
+import { randomUUID } from 'crypto';
 
 const defaultWsOrigins = [
   'https://benifitos-final.onrender.com',
@@ -46,7 +48,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   private readonly logger = new Logger(RealtimeGateway.name);
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly aiService: AiService,
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
@@ -79,7 +84,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         userId: payload.sub,
         timestamp: new Date().toISOString(),
       });
-    } catch (err) {
+    } catch (err: any) {
       this.logger.warn(`WebSocket authentication failed for client ${client.id}: ${err.message}`);
       client.emit('error', { code: 'UNAUTHORIZED', message: 'Invalid or missing authentication token.' });
       client.disconnect(true);
@@ -88,6 +93,32 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected from /ws: ${client.id}`);
+  }
+
+  @SubscribeMessage('reauthenticate')
+  async handleReauthenticate(
+    @MessageBody() data: { token: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      if (!data?.token) {
+        throw new UnauthorizedException('Missing reauthentication token.');
+      }
+      const token = data.token.startsWith('Bearer ') ? data.token.slice(7) : data.token;
+      const jwtSecret = process.env.JWT_SECRET;
+      if (!jwtSecret) {
+        throw new UnauthorizedException('Server JWT configuration missing.');
+      }
+      const payload = this.jwtService.verify(token, { secret: jwtSecret });
+      client.data.user = payload;
+      client.join(`user:${payload.sub}`);
+      this.logger.log(`Socket ${client.id} successfully reauthenticated as user:${payload.sub}`);
+      return { status: 'AUTHENTICATED', userId: payload.sub };
+    } catch (err: any) {
+      this.logger.warn(`Socket reauthentication failed for ${client.id}: ${err.message}`);
+      client.emit('error', { code: 'UNAUTHORIZED', message: 'Token expired or invalid. Please log in again.' });
+      return { status: 'ERROR', message: 'Authentication failed.' };
+    }
   }
 
   @SubscribeMessage('subscribe_user')
@@ -105,6 +136,68 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       return { status: 'SUBSCRIBED', room: `user:${data.userId}` };
     } else {
       return { status: 'ERROR', message: 'Forbidden: Cannot subscribe to another user room.' };
+    }
+  }
+
+  @SubscribeMessage('request_guidance')
+  async handleRequestGuidance(
+    @MessageBody()
+    data: {
+      requestId?: string;
+      schemeTitle: string;
+      schemeId?: string;
+      language?: string;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const authenticatedUserId = client.data.user?.sub;
+    if (!authenticatedUserId) {
+      client.emit('guidance_failed', {
+        requestId: data?.requestId,
+        error: 'Unauthorized: Active user session required.',
+      });
+      return;
+    }
+
+    const requestId = data?.requestId || randomUUID();
+    const schemeTitle = data?.schemeTitle || 'Welfare Scheme';
+
+    try {
+      // 1. Emit started event
+      client.emit('guidance_started', {
+        requestId,
+        schemeId: data?.schemeId,
+        schemeTitle,
+        timestamp: new Date().toISOString(),
+      });
+
+      // 2. Query AI guidance (backed by distributed Redis lock + DB cache)
+      const res = await this.aiService.getSchemeInstructions(
+        schemeTitle,
+        data?.schemeId,
+        data?.language,
+      );
+
+      // 3. Emit completed or cached event with correlation ID
+      const eventName = res.isCached ? 'guidance_cached' : 'guidance_completed';
+      client.emit(eventName, {
+        requestId,
+        schemeId: data?.schemeId,
+        schemeTitle: res.schemeTitle,
+        instructions: res.instructions,
+        applicationUrl: res.applicationUrl,
+        isCached: Boolean(res.isCached),
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err: any) {
+      this.logger.error(`Guidance generation failed for requestId ${requestId}: ${err.message}`);
+      client.emit('guidance_failed', {
+        requestId,
+        schemeId: data?.schemeId,
+        schemeTitle,
+        error: 'Unable to generate scheme guidance at this time. Please try again.',
+        timestamp: new Date().toISOString(),
+      });
     }
   }
 

@@ -14,14 +14,15 @@ const gemini_ai_adapter_1 = require("../../infrastructure/ai/gemini-ai.adapter")
 const ai_safety_service_1 = require("../../infrastructure/ai/ai-safety.service");
 const ai_cache_service_1 = require("../../infrastructure/ai/ai-cache.service");
 const ai_data_minimizer_service_1 = require("../../infrastructure/ai/ai-data-minimizer.service");
+const redis_service_1 = require("../../infrastructure/redis/redis.service");
 let AiModule = class AiModule {
 };
 exports.AiModule = AiModule;
 exports.AiModule = AiModule = __decorate([
     (0, common_1.Module)({
         controllers: [ai_controller_1.AiController],
-        providers: [ai_service_1.AiService, gemini_ai_adapter_1.GeminiAiAdapter, ai_safety_service_1.AiSafetyService, ai_cache_service_1.AiCacheService, ai_data_minimizer_service_1.AiDataMinimizerService],
-        exports: [ai_service_1.AiService, gemini_ai_adapter_1.GeminiAiAdapter, ai_safety_service_1.AiSafetyService, ai_cache_service_1.AiCacheService, ai_data_minimizer_service_1.AiDataMinimizerService],
+        providers: [ai_service_1.AiService, gemini_ai_adapter_1.GeminiAiAdapter, ai_safety_service_1.AiSafetyService, ai_cache_service_1.AiCacheService, ai_data_minimizer_service_1.AiDataMinimizerService, redis_service_1.RedisService],
+        exports: [ai_service_1.AiService, gemini_ai_adapter_1.GeminiAiAdapter, ai_safety_service_1.AiSafetyService, ai_cache_service_1.AiCacheService, ai_data_minimizer_service_1.AiDataMinimizerService, redis_service_1.RedisService],
     })
 ], AiModule);
 //# sourceMappingURL=ai.module.js.map

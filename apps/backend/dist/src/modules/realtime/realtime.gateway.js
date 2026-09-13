@@ -18,6 +18,8 @@ const websockets_1 = require("@nestjs/websockets");
 const socket_io_1 = require("socket.io");
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
+const ai_service_1 = require("../ai/ai.service");
+const crypto_1 = require("crypto");
 const defaultWsOrigins = [
     'https://benifitos-final.onrender.com',
     'http://localhost:3000',
@@ -27,10 +29,12 @@ const defaultWsOrigins = [
 ];
 let RealtimeGateway = RealtimeGateway_1 = class RealtimeGateway {
     jwtService;
+    aiService;
     server;
     logger = new common_1.Logger(RealtimeGateway_1.name);
-    constructor(jwtService) {
+    constructor(jwtService, aiService) {
         this.jwtService = jwtService;
+        this.aiService = aiService;
     }
     async handleConnection(client) {
         try {
@@ -69,6 +73,28 @@ let RealtimeGateway = RealtimeGateway_1 = class RealtimeGateway {
     handleDisconnect(client) {
         this.logger.log(`Client disconnected from /ws: ${client.id}`);
     }
+    async handleReauthenticate(data, client) {
+        try {
+            if (!data?.token) {
+                throw new common_1.UnauthorizedException('Missing reauthentication token.');
+            }
+            const token = data.token.startsWith('Bearer ') ? data.token.slice(7) : data.token;
+            const jwtSecret = process.env.JWT_SECRET;
+            if (!jwtSecret) {
+                throw new common_1.UnauthorizedException('Server JWT configuration missing.');
+            }
+            const payload = this.jwtService.verify(token, { secret: jwtSecret });
+            client.data.user = payload;
+            client.join(`user:${payload.sub}`);
+            this.logger.log(`Socket ${client.id} successfully reauthenticated as user:${payload.sub}`);
+            return { status: 'AUTHENTICATED', userId: payload.sub };
+        }
+        catch (err) {
+            this.logger.warn(`Socket reauthentication failed for ${client.id}: ${err.message}`);
+            client.emit('error', { code: 'UNAUTHORIZED', message: 'Token expired or invalid. Please log in again.' });
+            return { status: 'ERROR', message: 'Authentication failed.' };
+        }
+    }
     handleUserSubscription(data, client) {
         const authenticatedUserId = client.data.user?.sub;
         const userRole = client.data.user?.role;
@@ -82,6 +108,47 @@ let RealtimeGateway = RealtimeGateway_1 = class RealtimeGateway {
         }
         else {
             return { status: 'ERROR', message: 'Forbidden: Cannot subscribe to another user room.' };
+        }
+    }
+    async handleRequestGuidance(data, client) {
+        const authenticatedUserId = client.data.user?.sub;
+        if (!authenticatedUserId) {
+            client.emit('guidance_failed', {
+                requestId: data?.requestId,
+                error: 'Unauthorized: Active user session required.',
+            });
+            return;
+        }
+        const requestId = data?.requestId || (0, crypto_1.randomUUID)();
+        const schemeTitle = data?.schemeTitle || 'Welfare Scheme';
+        try {
+            client.emit('guidance_started', {
+                requestId,
+                schemeId: data?.schemeId,
+                schemeTitle,
+                timestamp: new Date().toISOString(),
+            });
+            const res = await this.aiService.getSchemeInstructions(schemeTitle, data?.schemeId, data?.language);
+            const eventName = res.isCached ? 'guidance_cached' : 'guidance_completed';
+            client.emit(eventName, {
+                requestId,
+                schemeId: data?.schemeId,
+                schemeTitle: res.schemeTitle,
+                instructions: res.instructions,
+                applicationUrl: res.applicationUrl,
+                isCached: Boolean(res.isCached),
+                timestamp: new Date().toISOString(),
+            });
+        }
+        catch (err) {
+            this.logger.error(`Guidance generation failed for requestId ${requestId}: ${err.message}`);
+            client.emit('guidance_failed', {
+                requestId,
+                schemeId: data?.schemeId,
+                schemeTitle,
+                error: 'Unable to generate scheme guidance at this time. Please try again.',
+                timestamp: new Date().toISOString(),
+            });
         }
     }
     emitOcrProgress(userId, progressData) {
@@ -100,6 +167,14 @@ __decorate([
     __metadata("design:type", socket_io_1.Server)
 ], RealtimeGateway.prototype, "server", void 0);
 __decorate([
+    (0, websockets_1.SubscribeMessage)('reauthenticate'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
+    __metadata("design:returntype", Promise)
+], RealtimeGateway.prototype, "handleReauthenticate", null);
+__decorate([
     (0, websockets_1.SubscribeMessage)('subscribe_user'),
     __param(0, (0, websockets_1.MessageBody)()),
     __param(1, (0, websockets_1.ConnectedSocket)()),
@@ -107,6 +182,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
     __metadata("design:returntype", void 0)
 ], RealtimeGateway.prototype, "handleUserSubscription", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('request_guidance'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
+    __metadata("design:returntype", Promise)
+], RealtimeGateway.prototype, "handleRequestGuidance", null);
 exports.RealtimeGateway = RealtimeGateway = RealtimeGateway_1 = __decorate([
     (0, websockets_1.WebSocketGateway)({
         namespace: 'ws',
@@ -130,6 +213,7 @@ exports.RealtimeGateway = RealtimeGateway = RealtimeGateway_1 = __decorate([
             credentials: true,
         },
     }),
-    __metadata("design:paramtypes", [jwt_1.JwtService])
+    __metadata("design:paramtypes", [jwt_1.JwtService,
+        ai_service_1.AiService])
 ], RealtimeGateway);
 //# sourceMappingURL=realtime.gateway.js.map

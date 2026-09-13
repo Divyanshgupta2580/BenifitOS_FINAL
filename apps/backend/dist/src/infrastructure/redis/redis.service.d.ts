@@ -15,4 +15,6 @@ export declare class RedisService implements OnModuleInit, OnModuleDestroy {
     del(key: string): Promise<void>;
     publish(channel: string, message: string): Promise<void>;
     subscribe(channel: string, callback: (message: string) => void): Promise<void>;
+    acquireLock(lockKey: string, ttlSeconds?: number): Promise<string | null>;
+    releaseLock(lockKey: string, lockToken: string): Promise<boolean>;
 }
