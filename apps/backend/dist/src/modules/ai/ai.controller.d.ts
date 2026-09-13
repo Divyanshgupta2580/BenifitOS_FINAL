@@ -14,6 +14,7 @@ export declare class ExplainRecommendationDto {
 export declare class SchemeInstructionsDto {
     schemeTitle: string;
     schemeId?: string;
+    language?: string;
 }
 export declare class AiController {
     private readonly aiService;
@@ -21,13 +22,17 @@ export declare class AiController {
     chat(dto: AiChatDto, userId?: string): Promise<{
         reply: string;
         provider: string;
+        isCached: boolean | undefined;
     }>;
     explainRecommendation(dto: ExplainRecommendationDto): Promise<{
         explanation: string;
+        isCached: boolean | undefined;
+        provider: string;
     }>;
     getSchemeInstructions(dto: SchemeInstructionsDto): Promise<{
         instructions: string;
         applicationUrl: string;
         schemeTitle: string;
+        isCached?: boolean;
     }>;
 }

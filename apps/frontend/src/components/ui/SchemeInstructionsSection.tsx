@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { aiApiService } from '../../services/ai.service';
 import { Card } from './Card';
 import { LoadingSpinner } from './LoadingSpinner';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import {
+  BotIcon,
+  DocumentTextIcon,
+  AlertTriangleIcon,
+  RefreshIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ArrowRightIcon,
+} from './Icons';
 
 interface Props {
   schemeTitle: string;
@@ -19,12 +28,26 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isSectionOpen, setIsSectionOpen] = useState<boolean>(true);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [schemeTitle, schemeId]);
 
   const handleFetchInstructions = async () => {
     if (isLoading) return;
     setIsLoading(true);
     setIsError(false);
     setErrorMessage('');
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     try {
       const res = await aiApiService.getSchemeInstructions({ schemeTitle, schemeId });
@@ -40,6 +63,7 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
         setErrorMessage('No detailed guidance was returned. Please try again.');
       }
     } catch (err: any) {
+      if (err.name === 'AbortError') return;
       setIsError(true);
       setErrorMessage(err?.message || 'Unable to generate detailed guidance right now. Please verify your connection or try again.');
     } finally {
@@ -58,12 +82,14 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
   return (
     <div className="space-y-6 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
       {/* AI Generated Instructions Card */}
-      <Card className="border-blue-200 dark:border-blue-800/80 bg-blue-50/30 dark:bg-blue-950/20 shadow-xs">
+      <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <h2 className="text-base font-extrabold text-blue-900 dark:text-blue-300">
-              AI Step-by-Step Application Instructions
+            <div className="w-6 h-6 rounded-md bg-blue-900 dark:bg-blue-600 text-white flex items-center justify-center shrink-0">
+              <BotIcon className="w-3.5 h-3.5" />
+            </div>
+            <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+              Official Step-by-Step Application Procedure
             </h2>
           </div>
 
@@ -71,16 +97,16 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
           {hasLoaded ? (
             <button
               onClick={toggleSectionOpen}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 text-blue-900 dark:text-blue-300 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold text-xs border border-slate-200 dark:border-slate-700 shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-xs border border-slate-200 dark:border-slate-700 shadow-xs transition-colors"
             >
               {isSectionOpen ? (
                 <>
-                  <span>⌃</span>
+                  <ChevronUpIcon className="w-3.5 h-3.5" />
                   <span>Hide Guidance</span>
                 </>
               ) : (
                 <>
-                  <span>⌄</span>
+                  <ChevronDownIcon className="w-3.5 h-3.5" />
                   <span>Show Guidance</span>
                 </>
               )}
@@ -89,7 +115,7 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
             <button
               onClick={handleFetchInstructions}
               disabled={isLoading}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-blue-400 text-white font-bold text-xs shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98] border border-blue-500/40"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 disabled:opacity-60 text-white font-bold text-xs shadow-xs transition-colors"
             >
               {isLoading ? (
                 <>
@@ -98,8 +124,8 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
                 </>
               ) : (
                 <>
-                  <span>✨</span>
-                  <span>Get Detailed AI Guidance</span>
+                  <DocumentTextIcon className="w-3.5 h-3.5" />
+                  <span>Get Detailed Guidance</span>
                 </>
               )}
             </button>
@@ -114,14 +140,15 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
         ) : isError ? (
           <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-300 space-y-3">
             <div className="flex items-center gap-2">
-              <span className="font-bold">⚠️ Guidance Engine Notice:</span>
+              <AlertTriangleIcon className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+              <span className="font-semibold">Guidance Engine Notice:</span>
               <span>{errorMessage || 'Unable to generate detailed guidance right now. Please try again.'}</span>
             </div>
             <button
               onClick={handleFetchInstructions}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs shadow-xs transition-colors"
             >
-              <span>🔄</span>
+              <RefreshIcon className="w-3.5 h-3.5" />
               <span>Try Again</span>
             </button>
           </div>
@@ -135,27 +162,27 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
             >
               <MarkdownRenderer content={instructions} />
 
-              {/* Bottom Gradient Fade when collapsed */}
+              {/* Bottom Fade when collapsed */}
               {!isExpanded && (
-                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-blue-50/95 dark:from-slate-900/95 via-blue-50/50 dark:via-slate-900/50 to-transparent pointer-events-none" />
+                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white dark:from-slate-900 via-white/70 dark:via-slate-900/70 to-transparent pointer-events-none" />
               )}
             </div>
 
             {/* Show More / Show Less Toggle Button */}
-            <div className="pt-2 flex justify-center border-t border-slate-200/60 dark:border-slate-800/60">
+            <div className="pt-2 flex justify-center border-t border-slate-200 dark:border-slate-800">
               <button
                 onClick={() => setIsExpanded((prev) => !prev)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white dark:bg-slate-800 text-blue-900 dark:text-blue-300 hover:bg-slate-100 dark:hover:bg-slate-700 font-bold text-xs border border-slate-200 dark:border-slate-700 shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-xs border border-slate-200 dark:border-slate-700 shadow-xs transition-colors"
               >
                 {isExpanded ? (
                   <>
                     <span>Hide Guidance</span>
-                    <span>▲</span>
+                    <ChevronUpIcon className="w-3.5 h-3.5" />
                   </>
                 ) : (
                   <>
                     <span>Show More</span>
-                    <span>▼</span>
+                    <ChevronDownIcon className="w-3.5 h-3.5" />
                   </>
                 )}
               </button>
@@ -163,16 +190,16 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
           </div>
         ) : !hasLoaded ? (
           /* Initial Unloaded State */
-          <div className="p-4 rounded-xl bg-white/70 dark:bg-slate-900/50 border border-blue-100 dark:border-blue-900/40 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center text-blue-600 dark:text-blue-400 text-base shrink-0">
-              ✨
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 flex items-center justify-center text-sm shrink-0">
+              <DocumentTextIcon className="w-5 h-5" />
             </div>
             <div className="flex-1">
               <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">
                 Detailed Official Application Procedure
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Click &quot;Get Detailed AI Guidance&quot; above to generate comprehensive prerequisites, document checklists, official portal steps, and DBT payment tracking for {schemeTitle}.
+                Click &quot;Get Detailed Guidance&quot; to generate comprehensive prerequisites, document checklists, official portal steps, and tracking procedures for {schemeTitle}.
               </p>
             </div>
           </div>
@@ -180,12 +207,12 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
       </Card>
 
       {/* Official Government Portal Apply Redirect Button */}
-      <div className="p-5 bg-gradient-to-r from-emerald-900 to-teal-900 text-white rounded-2xl border border-emerald-700 shadow-lg text-center space-y-3">
+      <div className="p-5 bg-slate-900 dark:bg-slate-900 text-white rounded-2xl border border-slate-700 dark:border-slate-700 shadow-sm text-center space-y-3">
         <div>
-          <h3 className="text-sm font-bold text-emerald-200 uppercase tracking-wider">
+          <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">
             Ready to Submit Your Application?
           </h3>
-          <p className="text-xs text-emerald-100 mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Click below to proceed directly to the verified official government portal for {schemeTitle}.
           </p>
         </div>
@@ -194,11 +221,10 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
           href={applicationUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 w-full py-4 px-6 text-white bg-emerald-600 hover:bg-emerald-500 font-black text-base rounded-xl shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] border border-emerald-400/40"
+          className="inline-flex items-center justify-center gap-2 w-full py-3.5 px-6 text-white bg-blue-900 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500 font-bold text-sm rounded-xl shadow-xs transition-colors border border-blue-700 dark:border-blue-500"
         >
           <span>Apply Now on Official Portal</span>
-          <span className="text-xs font-mono font-normal opacity-90">({applicationUrl})</span>
-          <span className="text-lg">↗</span>
+          <ArrowRightIcon className="w-4 h-4" />
         </a>
       </div>
     </div>

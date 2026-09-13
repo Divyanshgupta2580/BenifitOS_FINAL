@@ -48,10 +48,40 @@ export class RecommendationEngineService {
   }
 
   async getEnrichedRecommendations(userId: string): Promise<any[]> {
+    const citizen = await this.citizenRepo.findByUserId(userId);
+    if (!citizen) {
+      throw new NotFoundException(`Citizen profile not found for user '${userId}'.`);
+    }
+
     const recs = await this.getRecommendations(userId);
     const enriched = await Promise.all(
       recs.map(async (r) => {
         const scheme = await this.schemeRepo.findById(r.schemeId);
+        let detailedStatus: {
+          eligibilityStatus: import('./services/eligibility-evaluator.service').EligibilityStatus;
+          statusReason: string;
+          missingProfileFields: string[];
+          failedRules: string[];
+          passedRules: string[];
+        } = {
+          eligibilityStatus: r.isEligible ? 'ELIGIBLE' : 'NOT_ELIGIBLE',
+          statusReason: r.isEligible ? 'All criteria met' : 'Requirements not met',
+          missingProfileFields: [],
+          failedRules: [],
+          passedRules: r.criteriaMet,
+        };
+
+        if (scheme) {
+          const detailed = this.evaluator.evaluateDetailedEligibility(citizen, scheme);
+          detailedStatus = {
+            eligibilityStatus: detailed.eligibilityStatus,
+            statusReason: detailed.statusReason,
+            missingProfileFields: detailed.missingProfileFields,
+            failedRules: detailed.failedRules,
+            passedRules: detailed.passedRules,
+          };
+        }
+
         return {
           id: r.id,
           schemeId: r.schemeId,
@@ -63,6 +93,11 @@ export class RecommendationEngineService {
           matchPercentage: r.matchPercentage,
           estimatedBenefit: r.estimatedBenefit,
           isEligible: r.isEligible,
+          eligibilityStatus: detailedStatus.eligibilityStatus,
+          statusReason: detailedStatus.statusReason,
+          missingProfileFields: detailedStatus.missingProfileFields,
+          failedRules: detailedStatus.failedRules,
+          passedRules: detailedStatus.passedRules,
           criteriaMet: r.criteriaMet,
           missingCriteria: r.missingCriteria,
           missingDocuments: r.missingDocuments,

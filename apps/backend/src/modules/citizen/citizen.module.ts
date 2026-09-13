@@ -3,10 +3,11 @@ import { CitizenController } from './citizen.controller';
 import { CitizenService } from './citizen.service';
 import { CitizenRepositoryImpl } from '../../infrastructure/database/repositories/citizen.repository';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
-
 import { SchemeRecommendationRepositoryImpl } from '../../infrastructure/database/repositories/welfare.repository';
+import { AiModule } from '../ai/ai.module';
 
 @Module({
+  imports: [AiModule],
   controllers: [CitizenController],
   providers: [
     CitizenService,

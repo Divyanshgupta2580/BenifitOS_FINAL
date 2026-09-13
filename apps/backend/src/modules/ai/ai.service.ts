@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GeminiAiAdapter } from '../../infrastructure/ai/gemini-ai.adapter';
 import { AiSafetyService } from '../../infrastructure/ai/ai-safety.service';
+import { AiCacheService } from '../../infrastructure/ai/ai-cache.service';
+import { AiDataMinimizerService } from '../../infrastructure/ai/ai-data-minimizer.service';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { createHash } from 'crypto';
 
 @Injectable()
 export class AiService {
@@ -10,6 +13,8 @@ export class AiService {
   constructor(
     private readonly geminiAdapter: GeminiAiAdapter,
     private readonly aiSafety: AiSafetyService,
+    private readonly aiCache: AiCacheService,
+    private readonly aiDataMinimizer: AiDataMinimizerService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -18,16 +23,17 @@ export class AiService {
     context?: Record<string, any>,
     userId?: string,
     language?: string,
-  ): Promise<{ content: string; provider: string }> {
+  ): Promise<{ content: string; provider: string; isCached?: boolean }> {
     const sanitizedPrompt = this.aiSafety.sanitizePromptInput(prompt);
     const redactedContext = context ? this.aiSafety.redactPiiFromContext(context) : {};
     const isHindi = language === 'hi';
 
     let citizenProfileContext = '';
+    let profileHash = 'anonymous';
 
     if (userId) {
       try {
-        const profile = await this.prisma.client.citizenProfile.findUnique({
+        const rawProfile = await this.prisma.client.citizenProfile.findUnique({
           where: { userId },
           include: {
             address: true,
@@ -39,47 +45,30 @@ export class AiService {
           },
         });
 
-        if (profile) {
-          const age = profile.dateOfBirth
-            ? Math.floor((new Date().getTime() - new Date(profile.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-            : 'Not specified';
-
-          const matchedSchemes = profile.recommendations && profile.recommendations.length > 0
-            ? profile.recommendations.map((r: any) => {
-                return `* Scheme: [${r.scheme.title}] (Category: ${r.scheme.category}, Department: ${r.scheme.department}, State: ${r.scheme.state || 'Central'}, Financial Benefit: ₹${r.estimatedBenefit})
-  - Match Score: ${r.matchPercentage}% | Eligible: ${r.isEligible ? 'YES' : 'NO'}
-  - Satisfied Criteria: ${r.criteriaMet.length > 0 ? r.criteriaMet.join('; ') : 'All general criteria met'}
-  - Missing Requirements: ${r.missingCriteria.length > 0 ? r.missingCriteria.join('; ') : 'None'}`;
-              }).join('\n')
-            : 'No pre-calculated scheme recommendations found in database.';
-
-          citizenProfileContext = `
-============================================================
-VERIFIED CITIZEN DATABASE PROFILE (Loaded from BenefitOS Database):
-============================================================
-- Full Name: ${profile.firstName} ${profile.lastName}
-- Age: ${age} years
-- Gender: ${profile.gender}
-- Marital Status: ${profile.maritalStatus}
-- Social Category: ${profile.socialCategory}
-- Occupation / Employment Status: ${profile.employmentStatus}
-- Annual Household Income: ₹${profile.annualIncomeINR} / year
-- Domicile State / UT: ${profile.address?.state || 'Delhi'}
-- District / City: ${profile.address?.district || profile.address?.city || 'Delhi'}
-- Disability Status: ${profile.disabilityType} (${profile.disabilityPercent}%)
-- BPL Card Holder: ${profile.isBplCardHolder ? 'Yes' : 'No'}
-
-PRE-CALCULATED SCHEME ELIGIBILITY & RECOMMENDATIONS (BenefitOS Matching Engine):
-${matchedSchemes}
-============================================================`;
+        if (rawProfile) {
+          const minimized = this.aiDataMinimizer.minimizeCitizenProfile(rawProfile);
+          profileHash = this.aiDataMinimizer.computeProfileHash(minimized);
+          citizenProfileContext = this.aiDataMinimizer.formatContextForPrompt(minimized);
         }
       } catch (err: any) {
         this.logger.warn(`Could not load citizen profile for AI chat context: ${err.message}`);
       }
     }
 
-    const languageDirective = isHindi
-      ? `MANDATORY LANGUAGE DIRECTIVE — HINDI (हिंदी):
+    const cacheKeyOptions = {
+      useCase: 'chat' as const,
+      userId,
+      minimizedProfileHash: profileHash,
+      language: isHindi ? 'hi' : 'en',
+      promptVersion: 'v2.0',
+      normalizedPrompt: sanitizedPrompt,
+    };
+
+    const cachedResult = await this.aiCache.getOrExecute(
+      cacheKeyOptions,
+      async () => {
+        const languageDirective = isHindi
+          ? `MANDATORY LANGUAGE DIRECTIVE — HINDI (हिंदी):
 - You MUST generate your ENTIRE response in polite, formal, accurate Hindi (हिंदी).
 - Use Devanagari script for the entire response.
 - Retain proper nouns and official acronyms in English only where standard (e.g., 'PM-KISAN', 'Ayushman Bharat PM-JAY', 'Aadhaar').
@@ -101,7 +90,7 @@ ${matchedSchemes}
   चरण 04: आवेदन पत्र जमा करें
   चरण 05: आवेदन स्थिति ट्रैक करें
 - Official disclaimer in Hindi: "आधिकारिक सूचना: योजनाओं की सिफारिशें आपके BenefitOS प्रोफ़ाइल में उपलब्ध जानकारी पर आधारित हैं। अंतिम पात्रता, लाभ वितरण और आवेदन स्वीकृति संबंधित सरकारी विभाग या मंत्रालय द्वारा निर्धारित की जाती है।"`
-      : `MANDATORY LANGUAGE DIRECTIVE — ENGLISH:
+          : `MANDATORY LANGUAGE DIRECTIVE — ENGLISH:
 - Respond in clear, professional, concise Indian English.
 - Scheme format:
   ### [Scheme Name]
@@ -122,17 +111,19 @@ ${matchedSchemes}
   Step 05: Track Application Status
 - Official disclaimer: "Official Notice: Scheme recommendations and guidance are based on verified information available in your BenefitOS profile. Final eligibility, benefit disbursement, and application approval are determined exclusively by the concerned Government Ministry or implementing department."`;
 
-    const systemInstruction = `You are BenefitOS AI Citizen Copilot, the official digital welfare intelligence assistant for Indian citizens.
+        const systemInstruction = `You are BenefitOS AI Citizen Copilot, the official digital welfare intelligence assistant for Indian citizens.
 Your role is to act as an authoritative, respectful, clear, neutral, citizen-friendly, and helpful government welfare assistance officer.
 
 OFFICIAL TONE & IDENTITY:
 - Speak as "BenefitOS AI Citizen Copilot" or "BenefitOS AI". NEVER mention any external AI provider, model name, or LLM infrastructure.
 - Tone: Professional, respectful, clear, evidence-based, concise, and non-judgmental.
 - Avoid casual greetings ("Hey!", "Great question!"), marketing hype ("Amazing benefits!"), or conversational fluff ("I am excited to help").
+- NEVER use emojis anywhere in the response.
 
 ${languageDirective}
 
 STRICT ELIGIBILITY & EVIDENCE RULES:
+- The supplied citizen profile attributes are the ONLY data available. Do not invent missing information.
 - NEVER declare unconditional eligibility without authoritative verification.
 - Always distinguish between:
   1. "Appears relevant based on available information"
@@ -144,29 +135,79 @@ PRIVACY DIRECTIVE:
 
 ${citizenProfileContext}`;
 
-    const fullPrompt = `${sanitizedPrompt}\n\n[Client Context: ${JSON.stringify(redactedContext)}]`;
-    const result = await this.geminiAdapter.generateText({
-      prompt: fullPrompt,
-      systemInstruction,
-    });
+        const fullPrompt = `${sanitizedPrompt}\n\n[Client Context: ${JSON.stringify(redactedContext)}]`;
+        const result = await this.geminiAdapter.generateText({
+          prompt: fullPrompt,
+          systemInstruction,
+        });
 
-    return { content: result.content, provider: result.provider };
+        return { content: result.content, provider: result.provider };
+      },
+      24, // 24-hour TTL
+    );
+
+    return {
+      content: cachedResult.content,
+      provider: 'BenefitOS AI',
+      isCached: cachedResult.isCached,
+    };
   }
 
-  async explainRecommendation(schemeTitle: string, matchPercentage: number, criteriaMet: string[], missingCriteria: string[]): Promise<string> {
-    const prompt = `Explain why a citizen received a ${matchPercentage}% match for the scheme '${schemeTitle}'.
-Criteria Satisfied: ${criteriaMet.join('; ')}
-Missing Requirements: ${missingCriteria.join('; ')}
-Explain in clear, encouraging, natural language how they can fulfill missing criteria.`;
+  async explainRecommendation(
+    schemeTitle: string,
+    matchPercentage: number,
+    criteriaMet: string[],
+    missingCriteria: string[],
+    language?: string,
+  ): Promise<{ explanation: string; isCached?: boolean }> {
+    const isHindi = language === 'hi';
+    const criteriaHash = createHash('sha256')
+      .update(`${criteriaMet.sort().join(';')}|${missingCriteria.sort().join(';')}|${matchPercentage}`)
+      .digest('hex')
+      .substring(0, 16);
 
-    const res = await this.geminiAdapter.generateText({ prompt });
-    return res.content;
+    const cacheKeyOptions = {
+      useCase: 'explain' as const,
+      schemeId: schemeTitle.toLowerCase().replace(/\s+/g, '-'),
+      minimizedProfileHash: criteriaHash,
+      language: isHindi ? 'hi' : 'en',
+      promptVersion: 'v2.0',
+    };
+
+    const cachedResult = await this.aiCache.getOrExecute(
+      cacheKeyOptions,
+      async () => {
+        const prompt = isHindi
+          ? `नागरिक को योजना '${schemeTitle}' के लिए ${matchPercentage}% मैच प्राप्त हुआ है।
+संतुष्ट मानदंड: ${criteriaMet.length > 0 ? criteriaMet.join('; ') : 'सामान्य मानदंड'}
+अपूर्ण आवश्यकताएं: ${missingCriteria.length > 0 ? missingCriteria.join('; ') : 'कोई नहीं'}
+नागरिक को स्पष्ट और पेशेवर भाषा में समझाएं कि वे छूटी हुई आवश्यकताओं को कैसे पूरा कर सकते हैं। इमोजी का उपयोग न करें।`
+          : `Explain why a citizen received a ${matchPercentage}% match for the scheme '${schemeTitle}'.
+Criteria Satisfied: ${criteriaMet.length > 0 ? criteriaMet.join('; ') : 'General criteria'}
+Missing Requirements: ${missingCriteria.length > 0 ? missingCriteria.join('; ') : 'None'}
+Explain in clear, encouraging, natural language how they can fulfill missing criteria. Do not use emojis.`;
+
+        const res = await this.geminiAdapter.generateText({ prompt });
+        return { content: res.content, provider: res.provider };
+      },
+      24,
+    );
+
+    return {
+      explanation: cachedResult.content,
+      isCached: cachedResult.isCached,
+    };
   }
 
-  async getSchemeInstructions(schemeTitle: string, schemeId?: string): Promise<{
+  async getSchemeInstructions(
+    schemeTitle: string,
+    schemeId?: string,
+    language?: string,
+  ): Promise<{
     instructions: string;
     applicationUrl: string;
     schemeTitle: string;
+    isCached?: boolean;
   }> {
     let scheme: any = null;
     if (schemeId) {
@@ -181,15 +222,6 @@ Explain in clear, encouraging, natural language how they can fulfill missing cri
         include: { eligibilityRules: true, requiredDocuments: true },
       });
     }
-
-    const rules = scheme?.eligibilityRules?.map((r: any) => r.description) || [];
-    const instructions = await this.geminiAdapter.generateSchemeInstructions({
-      schemeTitle: scheme?.title || schemeTitle,
-      category: scheme?.category,
-      department: scheme?.department,
-      description: scheme?.description,
-      eligibilityRules: rules,
-    });
 
     const officialApplyUrls: Record<string, string> = {
       'PM-KISAN': 'https://pmkisan.gov.in',
@@ -208,10 +240,37 @@ Explain in clear, encouraging, natural language how they can fulfill missing cri
     if (scheme?.category === 'FINANCIAL_INCLUSION') applicationUrl = 'https://www.mudra.org.in';
     if (scheme?.state?.toLowerCase().includes('uttar pradesh')) applicationUrl = 'https://scholarship.up.gov.in';
 
+    const rules = scheme?.eligibilityRules?.map((r: any) => r.description) || [];
+    const schemeVersion = scheme?.updatedAt ? scheme.updatedAt.toISOString() : 'v1';
+
+    const cacheKeyOptions = {
+      useCase: 'scheme-instructions' as const,
+      schemeId: scheme?.id || schemeTitle.toLowerCase().replace(/\s+/g, '-'),
+      minimizedProfileHash: schemeVersion,
+      language: language === 'hi' ? 'hi' : 'en',
+      promptVersion: 'v2.0',
+    };
+
+    const cachedResult = await this.aiCache.getOrExecute(
+      cacheKeyOptions,
+      async () => {
+        const text = await this.geminiAdapter.generateSchemeInstructions({
+          schemeTitle: scheme?.title || schemeTitle,
+          category: scheme?.category,
+          department: scheme?.department,
+          description: scheme?.description,
+          eligibilityRules: rules,
+        });
+        return { content: text, provider: 'BenefitOS AI' };
+      },
+      48, // 48-hour TTL for static scheme instructions
+    );
+
     return {
-      instructions,
+      instructions: cachedResult.content,
       applicationUrl,
       schemeTitle: scheme?.title || schemeTitle,
+      isCached: cachedResult.isCached,
     };
   }
 }

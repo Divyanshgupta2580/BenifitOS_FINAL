@@ -16,12 +16,15 @@ exports.CitizenService = void 0;
 const common_1 = require("@nestjs/common");
 const citizen_entity_1 = require("../../domain/citizen/citizen.entity");
 const crypto_1 = require("crypto");
+const ai_cache_service_1 = require("../../infrastructure/ai/ai-cache.service");
 let CitizenService = class CitizenService {
     citizenRepo;
     recommendationRepo;
-    constructor(citizenRepo, recommendationRepo) {
+    aiCacheService;
+    constructor(citizenRepo, recommendationRepo, aiCacheService) {
         this.citizenRepo = citizenRepo;
         this.recommendationRepo = recommendationRepo;
+        this.aiCacheService = aiCacheService;
     }
     async getProfileByUserId(userId) {
         const profile = await this.citizenRepo.findByUserId(userId);
@@ -54,6 +57,9 @@ let CitizenService = class CitizenService {
             if (this.recommendationRepo) {
                 await this.recommendationRepo.deleteForCitizen(saved.id);
             }
+            if (this.aiCacheService) {
+                await this.aiCacheService.invalidateForUser(userId);
+            }
             return saved;
         }
         const addressProps = (dto.state || dto.district || dto.city || dto.streetAddress)
@@ -76,6 +82,9 @@ let CitizenService = class CitizenService {
         if (this.recommendationRepo) {
             await this.recommendationRepo.deleteForCitizen(updated.id);
         }
+        if (this.aiCacheService) {
+            await this.aiCacheService.invalidateForUser(userId);
+        }
         return updated;
     }
 };
@@ -84,6 +93,7 @@ exports.CitizenService = CitizenService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('ICitizenRepository')),
     __param(1, (0, common_1.Inject)('ISchemeRecommendationRepository')),
-    __metadata("design:paramtypes", [Object, Object])
+    __param(2, (0, common_1.Optional)()),
+    __metadata("design:paramtypes", [Object, Object, ai_cache_service_1.AiCacheService])
 ], CitizenService);
 //# sourceMappingURL=citizen.service.js.map

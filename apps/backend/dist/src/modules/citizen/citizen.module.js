@@ -13,11 +13,13 @@ const citizen_service_1 = require("./citizen.service");
 const citizen_repository_1 = require("../../infrastructure/database/repositories/citizen.repository");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
 const welfare_repository_1 = require("../../infrastructure/database/repositories/welfare.repository");
+const ai_module_1 = require("../ai/ai.module");
 let CitizenModule = class CitizenModule {
 };
 exports.CitizenModule = CitizenModule;
 exports.CitizenModule = CitizenModule = __decorate([
     (0, common_1.Module)({
+        imports: [ai_module_1.AiModule],
         controllers: [citizen_controller_1.CitizenController],
         providers: [
             citizen_service_1.CitizenService,

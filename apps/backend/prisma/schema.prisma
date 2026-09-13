@@ -79,6 +79,12 @@ enum DocumentType {
   AADHAAR
   DRIVING_LICENSE
   VOTER_ID
+  INCOME_CERTIFICATE
+  RATION_CARD
+  LAND_RECORD
+  BANK_PASSBOOK
+  PAN_CARD
+  OTHER
 }
 
 enum VerificationStatus {
@@ -112,6 +118,12 @@ enum OutboxStatus {
   PROCESSING
   PUBLISHED
   FAILED
+}
+
+enum CacheStatus {
+  ACTIVE
+  EXPIRED
+  INVALIDATED
 }
 
 model User {
@@ -491,4 +503,25 @@ model OutboxEvent {
 
   @@index([status])
   @@map("outbox_events")
+}
+
+model AiResponseCache {
+  id               String       @id @default(uuid())
+  cacheKey         String       @unique
+  userId           String?
+  schemeId         String?
+  useCase          String
+  response         String
+  metadata         Json?
+  language         String       @default("en")
+  promptVersion    String       @default("v1.0")
+  status           CacheStatus  @default(ACTIVE)
+  createdAt        DateTime     @default(now())
+  expiresAt        DateTime
+  invalidatedAt    DateTime?
+
+  @@index([cacheKey, status])
+  @@index([userId, status])
+  @@index([schemeId, status])
+  @@map("ai_response_cache")
 }

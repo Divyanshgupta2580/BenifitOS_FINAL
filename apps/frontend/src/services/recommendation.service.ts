@@ -11,6 +11,11 @@ export interface SchemeRecommendationItem {
   matchPercentage: number;
   estimatedBenefit: number;
   isEligible: boolean;
+  eligibilityStatus?: 'ELIGIBLE' | 'NOT_ELIGIBLE' | 'NEEDS_VERIFICATION' | 'INCOMPLETE_PROFILE';
+  statusReason?: string;
+  missingProfileFields?: string[];
+  failedRules?: string[];
+  passedRules?: string[];
   confidenceScore?: number;
   criteriaMet: string[];
   missingCriteria: string[];

@@ -12,14 +12,16 @@ const ai_controller_1 = require("./ai.controller");
 const ai_service_1 = require("./ai.service");
 const gemini_ai_adapter_1 = require("../../infrastructure/ai/gemini-ai.adapter");
 const ai_safety_service_1 = require("../../infrastructure/ai/ai-safety.service");
+const ai_cache_service_1 = require("../../infrastructure/ai/ai-cache.service");
+const ai_data_minimizer_service_1 = require("../../infrastructure/ai/ai-data-minimizer.service");
 let AiModule = class AiModule {
 };
 exports.AiModule = AiModule;
 exports.AiModule = AiModule = __decorate([
     (0, common_1.Module)({
         controllers: [ai_controller_1.AiController],
-        providers: [ai_service_1.AiService, gemini_ai_adapter_1.GeminiAiAdapter, ai_safety_service_1.AiSafetyService],
-        exports: [ai_service_1.AiService, gemini_ai_adapter_1.GeminiAiAdapter, ai_safety_service_1.AiSafetyService],
+        providers: [ai_service_1.AiService, gemini_ai_adapter_1.GeminiAiAdapter, ai_safety_service_1.AiSafetyService, ai_cache_service_1.AiCacheService, ai_data_minimizer_service_1.AiDataMinimizerService],
+        exports: [ai_service_1.AiService, gemini_ai_adapter_1.GeminiAiAdapter, ai_safety_service_1.AiSafetyService, ai_cache_service_1.AiCacheService, ai_data_minimizer_service_1.AiDataMinimizerService],
     })
 ], AiModule);
 //# sourceMappingURL=ai.module.js.map

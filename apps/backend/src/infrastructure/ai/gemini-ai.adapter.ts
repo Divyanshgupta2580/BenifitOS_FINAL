@@ -146,26 +146,29 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
   }): Promise<string> {
     const client = this.guidanceClient || this.aiClient;
     const model = this.getModelName();
-    const prompt = `Provide exhaustive, clear, step-by-step instructions on how an Indian citizen can apply for the welfare scheme '${options.schemeTitle}' (${options.category || 'Welfare'}) offered by '${options.department || 'Government Welfare Department'}'.
+    const prompt = `Provide clear, authoritative, step-by-step instructions on how an Indian citizen can apply for the welfare scheme '${options.schemeTitle}' (${options.category || 'Welfare'}) offered by '${options.department || 'Government Welfare Department'}'.
 Scheme Overview: ${options.description || 'Government welfare program for eligible citizens.'}
 Eligibility Rules: ${options.eligibilityRules?.join('; ') || 'Standard welfare criteria.'}
 
-Format your response in clean, beautiful Markdown with clear section headings and bullet points covering:
-1. 📋 **Prerequisites & Document Checklist** (Exactly what files and ID proofs are required)
-2. 🌐 **Official Portal Registration & Account Setup** (How to register on the government website)
-3. 📝 **Application Form Details (Start to Finish)** (Field-by-field guidance)
-4. 📤 **Document Scanning & Upload Guidelines** (Accepted file sizes and formats)
-5. 🔐 **Final Submission & Application Reference Number** (Safeguard your reference ID)
-6. 📊 **Tracking Application Status & Disbursement** (How to track approval and bank transfer)`;
+Format your response in clean, formal Markdown with clear section headings and bullet points covering:
+1. Prerequisites and Document Checklist (Required files and identification proofs)
+2. Official Portal Registration and Account Setup (Registration on the government portal)
+3. Application Form Details (Step-by-step field guidance)
+4. Document Scanning and Upload Guidelines (Accepted formats and size requirements)
+5. Final Submission and Acknowledgement Number (Safeguarding application reference ID)
+6. Tracking Application Status and Benefit Disbursement (Verification and direct transfer tracking)
+
+IMPORTANT: Do not use emojis, casual language, or marketing claims. Maintain a professional, neutral government portal tone.`;
 
     if (!client) {
-      return `### 📋 Step-by-Step Application Guide for ${options.schemeTitle}
+      return `### Step-by-Step Application Guide for ${options.schemeTitle}
 
-1. **Verify Prerequisites & Documents**: Prepare clear scans of your Aadhaar Card, Income Certificate, Domicile Certificate, and Bank Passbook.
-2. **Register on Official Portal**: Access the official portal using the button below. Click 'New Citizen Registration' and complete OTP verification using your Aadhaar-linked mobile number.
-3. **Fill Application Form (Start to Finish)**: Enter your personal details, household income, state domicile, and active bank account details for direct benefit transfer.
-4. **Upload Required Documents**: Upload scanned copies of required documents (PDF/JPEG, under 2MB).
-5. **Submit & Download Receipt**: Submit your application and save your Application Reference Number for tracking.`;
+1. **Prerequisites and Document Checklist**: Prepare clear copies of your Aadhaar Card, Income Certificate, Domicile Certificate, and Bank Account Passbook.
+2. **Official Portal Registration**: Access the official portal using the portal link. Complete registration and verify your mobile number.
+3. **Application Form Details**: Enter your personal details, household income, state domicile, and active bank account details for direct benefit transfer.
+4. **Upload Required Documents**: Upload scanned copies of required documents in PDF or JPEG format.
+5. **Final Submission and Acknowledgement**: Submit your application and save your Application Reference Number for tracking.
+6. **Track Status**: Monitor verification status and benefit disbursement timeline on the portal.`;
     }
 
     try {
@@ -173,7 +176,7 @@ Format your response in clean, beautiful Markdown with clear section headings an
         model,
         contents: [prompt],
         config: {
-          systemInstruction: 'You are BenefitOS Scheme Application Specialist. Provide complete, clear, step-by-step instructions from start to finish.',
+          systemInstruction: 'You are BenefitOS Scheme Application Specialist. Provide complete, clear, step-by-step instructions without emojis.',
           temperature: 0.2,
           maxOutputTokens: 8192,
           thinkingConfig: {
@@ -183,14 +186,14 @@ Format your response in clean, beautiful Markdown with clear section headings an
       });
       return response.text || '';
     } catch (err: any) {
-      this.logger.error(`Gemini generateSchemeInstructions error: ${err.message}`);
-      return `### 📋 Step-by-Step Application Guide for ${options.schemeTitle}
+      this.logger.error(`AI generateSchemeInstructions error: ${err.message}`);
+      return `### Step-by-Step Application Guide for ${options.schemeTitle}
 
-1. **Prerequisites Checklist**: Verify Aadhaar, mobile number linked to bank account, and category/income certificate.
-2. **Portal Registration**: Access official portal and register with your mobile number.
-3. **Complete Form**: Fill personal, income, and educational/occupational details accurately.
+1. **Prerequisites and Document Checklist**: Verify Aadhaar, mobile number linked to bank account, and category or income certificate.
+2. **Official Portal Registration**: Access the official portal and register with your credentials.
+3. **Application Form Details**: Fill personal, income, and occupational details accurately.
 4. **Upload Scanned Proofs**: Attach mandatory identity and income proofs.
-5. **Final Submission**: Submit the form and store the Application Reference ID.`;
+5. **Final Submission and Acknowledgement**: Submit the form and store the Application Reference ID for tracking.`;
     }
   }
 }

@@ -42,6 +42,35 @@ export const DashboardScreen: React.FC<Props> = ({
   const [wsStatus, setWsStatus] = useState<WsConnectionStatus>('DISCONNECTED');
   const [refreshing, setRefreshing] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('benefitos_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarCollapse = useCallback(() => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('benefitos_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Keyboard shortcut support: Alt+[ to toggle sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === '[') {
+        e.preventDefault();
+        toggleSidebarCollapse();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleSidebarCollapse]);
 
   // WebSocket Subscription
   useEffect(() => {
@@ -133,6 +162,8 @@ export const DashboardScreen: React.FC<Props> = ({
           activeTab="dashboard"
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebarCollapse}
           onNavigateToDashboard={() => {}}
           onNavigateToAiCopilot={onNavigateToAiCopilot || onNavigateToAi}
           onNavigateToSchemes={onNavigateToSchemes}
@@ -145,7 +176,7 @@ export const DashboardScreen: React.FC<Props> = ({
         />
 
         {/* Scrollable Dashboard Body */}
-        <main className="flex-1 min-w-0 lg:pl-64 flex flex-col transition-all duration-200">
+        <main className={`flex-1 min-w-0 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} flex flex-col transition-all duration-300`}>
           <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-5 sm:space-y-6">
             {/* 1. Realtime Gateway Operational Status */}
             <GatewayStatusCard

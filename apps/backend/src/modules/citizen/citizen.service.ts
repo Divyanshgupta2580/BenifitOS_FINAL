@@ -1,16 +1,17 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, Optional } from '@nestjs/common';
 import { ICitizenRepository } from '../../domain/citizen/citizen-repository.interface';
 import { CitizenEntity } from '../../domain/citizen/citizen.entity';
 import { UpdateCitizenProfileDto } from './dto/citizen.dto';
 import { randomUUID } from 'crypto';
-
 import { ISchemeRecommendationRepository } from '../../domain/welfare/welfare-repository.interface';
+import { AiCacheService } from '../../infrastructure/ai/ai-cache.service';
 
 @Injectable()
 export class CitizenService {
   constructor(
     @Inject('ICitizenRepository') private readonly citizenRepo: ICitizenRepository,
     @Inject('ISchemeRecommendationRepository') private readonly recommendationRepo?: ISchemeRecommendationRepository,
+    @Optional() private readonly aiCacheService?: AiCacheService,
   ) {}
 
   async getProfileByUserId(userId: string): Promise<CitizenEntity> {
@@ -46,6 +47,9 @@ export class CitizenService {
       if (this.recommendationRepo) {
         await this.recommendationRepo.deleteForCitizen(saved.id);
       }
+      if (this.aiCacheService) {
+        await this.aiCacheService.invalidateForUser(userId);
+      }
       return saved;
     }
 
@@ -69,6 +73,9 @@ export class CitizenService {
     const updated = await this.citizenRepo.update(profile);
     if (this.recommendationRepo) {
       await this.recommendationRepo.deleteForCitizen(updated.id);
+    }
+    if (this.aiCacheService) {
+      await this.aiCacheService.invalidateForUser(userId);
     }
     return updated;
   }

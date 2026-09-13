@@ -69,6 +69,7 @@ __decorate([
 class SchemeInstructionsDto {
     schemeTitle;
     schemeId;
+    language;
 }
 exports.SchemeInstructionsDto = SchemeInstructionsDto;
 __decorate([
@@ -80,6 +81,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], SchemeInstructionsDto.prototype, "schemeId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SchemeInstructionsDto.prototype, "language", void 0);
 let AiController = class AiController {
     aiService;
     constructor(aiService) {
@@ -90,14 +96,19 @@ let AiController = class AiController {
         return {
             reply: res.content,
             provider: 'BenefitOS AI',
+            isCached: res.isCached,
         };
     }
     async explainRecommendation(dto) {
-        const explanation = await this.aiService.explainRecommendation(dto.schemeTitle, dto.matchPercentage, dto.criteriaMet, dto.missingCriteria);
-        return { explanation };
+        const res = await this.aiService.explainRecommendation(dto.schemeTitle, dto.matchPercentage, dto.criteriaMet, dto.missingCriteria, dto.language);
+        return {
+            explanation: res.explanation,
+            isCached: res.isCached,
+            provider: 'BenefitOS AI',
+        };
     }
     async getSchemeInstructions(dto) {
-        return await this.aiService.getSchemeInstructions(dto.schemeTitle, dto.schemeId);
+        return await this.aiService.getSchemeInstructions(dto.schemeTitle, dto.schemeId, dto.language);
     }
 };
 exports.AiController = AiController;

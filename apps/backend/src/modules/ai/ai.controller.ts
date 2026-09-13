@@ -41,6 +41,10 @@ export class SchemeInstructionsDto {
   @IsOptional()
   @IsString()
   schemeId?: string;
+
+  @IsOptional()
+  @IsString()
+  language?: string;
 }
 
 @Controller('ai')
@@ -53,22 +57,28 @@ export class AiController {
     return {
       reply: res.content,
       provider: 'BenefitOS AI',
+      isCached: res.isCached,
     };
   }
 
   @Post('explain-recommendation')
   async explainRecommendation(@Body() dto: ExplainRecommendationDto) {
-    const explanation = await this.aiService.explainRecommendation(
+    const res = await this.aiService.explainRecommendation(
       dto.schemeTitle,
       dto.matchPercentage,
       dto.criteriaMet,
       dto.missingCriteria,
+      dto.language,
     );
-    return { explanation };
+    return {
+      explanation: res.explanation,
+      isCached: res.isCached,
+      provider: 'BenefitOS AI',
+    };
   }
 
   @Post('scheme-instructions')
   async getSchemeInstructions(@Body() dto: SchemeInstructionsDto) {
-    return await this.aiService.getSchemeInstructions(dto.schemeTitle, dto.schemeId);
+    return await this.aiService.getSchemeInstructions(dto.schemeTitle, dto.schemeId, dto.language);
   }
 }
