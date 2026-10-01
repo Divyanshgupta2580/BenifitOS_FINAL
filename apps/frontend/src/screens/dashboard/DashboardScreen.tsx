@@ -42,6 +42,10 @@ export const DashboardScreen: React.FC<Props> = ({
   const [wsStatus, setWsStatus] = useState<WsConnectionStatus>('DISCONNECTED');
   const [refreshing, setRefreshing] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth >= 1024;
+  });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem('benefitos_sidebar_collapsed') === 'true';
@@ -58,6 +62,30 @@ export const DashboardScreen: React.FC<Props> = ({
       } catch {}
       return next;
     });
+  }, []);
+
+  const handleToggleSidebar = useCallback(() => {
+    if (isDesktop) {
+      toggleSidebarCollapse();
+      return;
+    }
+    setIsSidebarOpen((prev) => !prev);
+  }, [isDesktop, toggleSidebarCollapse]);
+
+  const isSidebarVisible = isDesktop ? !isSidebarCollapsed : isSidebarOpen;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsDesktop(event.matches);
+      if (event.matches) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    setIsDesktop(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   // Keyboard shortcut support: Alt+[ to toggle sidebar
@@ -147,7 +175,8 @@ export const DashboardScreen: React.FC<Props> = ({
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors">
       {/* Top Government Portal Header */}
       <GovernmentHeader
-        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+        onToggleSidebar={handleToggleSidebar}
+        isSidebarOpen={isSidebarVisible}
         onNavigateToProfile={onNavigateToProfile}
         onNavigateToNotifications={onNavigateToProfile}
         unreadNotificationsCount={unreadNotifsCount}
