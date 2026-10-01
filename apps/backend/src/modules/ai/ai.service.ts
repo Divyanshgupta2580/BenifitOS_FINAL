@@ -196,7 +196,7 @@ ${languageDirective}`;
     const selectedSchemeId = String(redactedContext?.schemeId || '').trim();
     const selectedSchemeTitle = String(redactedContext?.schemeTitle || redactedContext?.schemeName || '').trim().toLowerCase();
 
-    const selectedRecommendation = profile?.recommendations.find((rec) => {
+    const selectedRecommendation = profile?.recommendations.find((rec: any) => {
       if (selectedSchemeId && rec.schemeId === selectedSchemeId) return true;
       if (selectedSchemeTitle && rec.scheme?.title?.toLowerCase().includes(selectedSchemeTitle)) return true;
       return false;
@@ -213,25 +213,29 @@ ${languageDirective}`;
 
     const schemeForContext = selectedRecommendation?.scheme;
     const schemeDocuments = (schemeForContext?.requiredDocuments || [])
-      .filter((doc) => doc.isMandatory)
-      .map((doc) => doc.description || doc.documentType)
+      .filter((doc: any) => doc.isMandatory)
+      .map((doc: any) => doc.description || doc.documentType)
       .slice(0, 8);
 
     const schemeEligibilityRules = (schemeForContext?.eligibilityRules || [])
-      .filter((rule) => rule.isRequired)
-      .map((rule) => rule.description || `${rule.attributeKey} ${rule.operator} ${rule.targetValue}`)
+      .filter((rule: any) => rule.isRequired)
+      .map((rule: any) => rule.description || `${rule.attributeKey} ${rule.operator} ${rule.targetValue}`)
       .slice(0, 12);
 
-    const topRecommendations = (profile?.recommendations || []).slice(0, 6).map((rec) => ({
+    const topRecommendations = (profile?.recommendations || []).slice(0, 6).map((rec: any) => ({
       schemeId: rec.schemeId,
       schemeTitle: rec.scheme?.title,
       department: rec.scheme?.department,
       eligibilityStatus:
-        rec.isEligible ? 'ELIGIBLE' : rec.missingCriteria.some((item) => item.startsWith('Missing profile data:')) ? 'INCOMPLETE_PROFILE' : 'NOT_ELIGIBLE',
-      statusReason: rec.missingCriteria[0] || rec.criteriaMet[0] || 'No additional details available',
+        rec.isEligible
+          ? 'ELIGIBLE'
+          : (Array.isArray(rec.missingCriteria) ? rec.missingCriteria : []).some((item: string) => item.startsWith('Missing profile data:'))
+            ? 'INCOMPLETE_PROFILE'
+            : 'NOT_ELIGIBLE',
+      statusReason: (Array.isArray(rec.missingCriteria) ? rec.missingCriteria[0] : undefined) || (Array.isArray(rec.criteriaMet) ? rec.criteriaMet[0] : undefined) || 'No additional details available',
       matchPercentage: rec.matchPercentage,
-      missingCriteria: rec.missingCriteria.slice(0, 3),
-      criteriaMet: rec.criteriaMet.slice(0, 3),
+      missingCriteria: (Array.isArray(rec.missingCriteria) ? rec.missingCriteria : []).slice(0, 3),
+      criteriaMet: (Array.isArray(rec.criteriaMet) ? rec.criteriaMet : []).slice(0, 3),
       officialSource: null,
     }));
 
@@ -262,22 +266,27 @@ ${languageDirective}`;
 
     if (useCase === 'documents' || useCase === 'application-steps' || useCase === 'scheme-explanation' || selectedRecommendation) {
       if (schemeForContext) {
+        const selectedMissingCriteria = Array.isArray(selectedRecommendation?.missingCriteria)
+          ? selectedRecommendation.missingCriteria
+          : [];
+        const selectedCriteriaMet = Array.isArray(selectedRecommendation?.criteriaMet)
+          ? selectedRecommendation.criteriaMet
+          : [];
+        const selectedStatus = selectedRecommendation?.isEligible
+          ? 'ELIGIBLE'
+          : selectedMissingCriteria.some((item: string) => item.startsWith('Missing profile data:'))
+            ? 'INCOMPLETE_PROFILE'
+            : 'NOT_ELIGIBLE';
+
         promptPayload.schemeContext = {
           schemeId: schemeForContext.id,
           schemeTitle: schemeForContext.title,
           department: schemeForContext.department,
           category: schemeForContext.category,
           description: schemeForContext.description,
-          eligibilityStatus: this.formatEligibilityLabel(
-            selectedRecommendation?.isEligible
-              ? 'ELIGIBLE'
-              : selectedRecommendation?.missingCriteria.some((item) => item.startsWith('Missing profile data:'))
-                ? 'INCOMPLETE_PROFILE'
-                : 'NOT_ELIGIBLE',
-            language,
-          ),
-          criteriaMet: selectedRecommendation?.criteriaMet?.slice(0, 4) || [],
-          missingCriteria: selectedRecommendation?.missingCriteria?.slice(0, 4) || [],
+          eligibilityStatus: this.formatEligibilityLabel(selectedStatus, language),
+          criteriaMet: selectedCriteriaMet.slice(0, 4),
+          missingCriteria: selectedMissingCriteria.slice(0, 4),
           requiredDocuments: schemeDocuments,
           applicationSteps: schemeEligibilityRules,
           officialSource: null,

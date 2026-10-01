@@ -156,7 +156,7 @@ class WebSocketService {
     params: {
       schemeTitle: string;
       schemeId?: string;
-      language?: string;
+      language?: 'en' | 'hi';
       abortSignal?: AbortSignal;
       timeoutMs?: number;
     },

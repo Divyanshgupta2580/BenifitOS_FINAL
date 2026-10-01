@@ -15,7 +15,11 @@ export declare class AiService {
         content: string;
         provider: string;
         isCached?: boolean;
+        sources?: string[];
     }>;
+    private resolveUseCase;
+    private formatEligibilityLabel;
+    private buildVerifiedChatContext;
     explainRecommendation(schemeTitle: string, matchPercentage: number, criteriaMet: string[], missingCriteria: string[], language?: string): Promise<{
         explanation: string;
         isCached?: boolean;
