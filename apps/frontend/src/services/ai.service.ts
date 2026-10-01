@@ -8,8 +8,8 @@ export interface AiChatDto {
 
 export interface AiChatResponse {
   reply: string;
-  provider: string;
   sources?: string[];
+  isCached?: boolean;
 }
 
 export interface ExplainRecommendationDto {
@@ -31,16 +31,15 @@ export const aiApiService = {
       const res: AiChatResponse = await apiClient.post('/ai/chat', dto, { timeout: 60000 });
       return {
         reply: res.reply,
-        provider: 'BenefitOS AI',
-        sources: ['Government Database', 'Recommendation Engine', 'Citizen Profile', 'OCR Vault'],
+        sources: res.sources || ['Verified scheme information'],
+        isCached: res.isCached,
       };
-    } catch (err: any) {
+    } catch {
       const isHindi = dto.language === 'hi';
       return {
         reply: isHindi
           ? 'वर्तमान में सेवा अनुपलब्ध है। कृपया थोड़ी देर बाद पुनः प्रयास करें।'
           : 'We are unable to process your request right now. Please verify your network connection or try again shortly.',
-        provider: 'BenefitOS AI',
         sources: ['System Status'],
       };
     }
@@ -61,7 +60,7 @@ export const aiApiService = {
     }
   },
 
-  async getSchemeInstructions(dto: { schemeTitle: string; schemeId?: string }): Promise<{ instructions: string; applicationUrl: string; schemeTitle: string }> {
+  async getSchemeInstructions(dto: { schemeTitle: string; schemeId?: string; language?: 'en' | 'hi' }): Promise<{ instructions: string; applicationUrl: string; schemeTitle: string }> {
     try {
       const res: { instructions: string; applicationUrl: string; schemeTitle: string } = await apiClient.post('/ai/scheme-instructions', dto, { timeout: 60000 });
       return res;
@@ -69,7 +68,7 @@ export const aiApiService = {
       return {
         schemeTitle: dto.schemeTitle,
         applicationUrl: 'https://www.india.gov.in/my-government/schemes',
-        instructions: `### 📋 Step-by-Step Application Guide for ${dto.schemeTitle}\n\n1. **Verify Prerequisites & Documents**: Prepare clear scans of your Aadhaar Card, Income Certificate, and Domicile Proof.\n2. **Register on Official Portal**: Access the official portal using the button below.\n3. **Complete Application Form**: Fill personal, income, and educational/occupational details.\n4. **Upload Required Scans**: Attach mandatory identity and category proofs.\n5. **Submit & Track**: Submit the application and save the Acknowledgement Reference Number.`,
+        instructions: `### Step-by-Step Application Guide for ${dto.schemeTitle}\n\n1. **Verify Prerequisites & Documents**: Prepare clear scans of your Aadhaar Card, Income Certificate, and Domicile Proof.\n2. **Register on Official Portal**: Access the official portal using the button below.\n3. **Complete Application Form**: Fill personal, income, and educational or occupational details.\n4. **Upload Required Scans**: Attach mandatory identity and category proofs.\n5. **Submit and Track**: Submit the application and save the Acknowledgement Reference Number.`,
       };
     }
   },

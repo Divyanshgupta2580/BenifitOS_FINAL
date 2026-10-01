@@ -33,10 +33,10 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
     const model = this.getModelName();
     if (!this.aiClient) {
       return {
-        content: 'BenefitOS AI Citizen Copilot is currently offline. Please verify service configuration and try again.',
+        content: 'AI Copilot is currently offline. Please verify service configuration and try again.',
         tokensUsed: 0,
-        provider: 'BenefitOS AI',
-        model: 'BenefitOS-AI',
+        provider: 'AI Copilot',
+        model: 'AI-Copilot',
       };
     }
     try {
@@ -56,16 +56,16 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
       return {
         content: text,
         tokensUsed: Math.ceil(text.length / 4),
-        provider: 'BenefitOS AI',
-        model: 'BenefitOS-AI',
+        provider: 'AI Copilot',
+        model: 'AI-Copilot',
       };
     } catch (err: any) {
       this.logger.error(`AI generateText error: ${err.message}`);
       return {
-        content: 'BenefitOS AI is temporarily unable to process your request. Please verify your connection or try again shortly.',
+        content: 'AI Copilot is temporarily unable to process your request. Please verify your connection or try again shortly.',
         tokensUsed: 0,
-        provider: 'BenefitOS AI',
-        model: 'BenefitOS-AI',
+        provider: 'AI Copilot',
+        model: 'AI-Copilot',
       };
     }
   }
@@ -176,7 +176,7 @@ IMPORTANT: Do not use emojis, casual language, or marketing claims. Maintain a p
         model,
         contents: [prompt],
         config: {
-          systemInstruction: 'You are BenefitOS Scheme Application Specialist. Provide complete, clear, step-by-step instructions without emojis.',
+          systemInstruction: 'You are an AI Copilot scheme application specialist. Provide complete, clear, step-by-step instructions without emojis.',
           temperature: 0.2,
           maxOutputTokens: 8192,
           thinkingConfig: {

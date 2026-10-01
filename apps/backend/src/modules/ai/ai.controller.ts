@@ -56,8 +56,9 @@ export class AiController {
     const res = await this.aiService.chat(dto.prompt, dto.context, userId, dto.language);
     return {
       reply: res.content,
-      provider: 'BenefitOS AI',
+      provider: 'AI Copilot',
       isCached: res.isCached,
+      sources: res.sources || [],
     };
   }
 
@@ -73,7 +74,7 @@ export class AiController {
     return {
       explanation: res.explanation,
       isCached: res.isCached,
-      provider: 'BenefitOS AI',
+      provider: 'AI Copilot',
     };
   }
 
