@@ -1,8 +1,12 @@
-import { io, Socket } from 'socket.io-client';
-import { storageService } from './storage.service';
-import { aiApiService } from './ai.service';
+import { io, Socket } from "socket.io-client";
+import { storageService } from "./storage.service";
+import { aiApiService } from "./ai.service";
 
-export type WsConnectionStatus = 'CONNECTING' | 'CONNECTED' | 'DISCONNECTED' | 'ERROR';
+export type WsConnectionStatus =
+  | "CONNECTING"
+  | "CONNECTED"
+  | "DISCONNECTED"
+  | "ERROR";
 
 export interface SchemeGuidanceResult {
   instructions: string;
@@ -12,23 +16,29 @@ export interface SchemeGuidanceResult {
 }
 
 const getWsBaseUrl = (): string => {
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WS_URL) {
+  if (
+    typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    import.meta.env.VITE_WS_URL
+  ) {
     const raw = import.meta.env.VITE_WS_URL;
-    return raw.replace(/^ws:/i, 'http:').replace(/^wss:/i, 'https:');
+    return raw.replace(/^ws:/i, "http:").replace(/^wss:/i, "https:");
   }
-  if (typeof window !== 'undefined' && window.location) {
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (typeof window !== "undefined" && window.location) {
+    const isLocal =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
     if (isLocal) {
-      return 'http://localhost:4000/ws';
+      return "http://localhost:4000/ws";
     }
-    return 'https://benefitos-backend-1dq1.onrender.com/ws';
+    return "https://benefitos-backend-1dq1.onrender.com/ws";
   }
-  return 'https://benefitos-backend-1dq1.onrender.com/ws';
+  return "https://benefitos-backend-1dq1.onrender.com/ws";
 };
 
 class WebSocketService {
   private socket: Socket | null = null;
-  private status: WsConnectionStatus = 'DISCONNECTED';
+  private status: WsConnectionStatus = "DISCONNECTED";
   private listeners: Set<(status: WsConnectionStatus) => void> = new Set();
   private isConnecting = false;
 
@@ -36,7 +46,9 @@ class WebSocketService {
     return this.status;
   }
 
-  public subscribeStatus(listener: (status: WsConnectionStatus) => void): () => void {
+  public subscribeStatus(
+    listener: (status: WsConnectionStatus) => void,
+  ): () => void {
     this.listeners.add(listener);
     listener(this.status);
     return () => {
@@ -50,14 +62,14 @@ class WebSocketService {
       try {
         listener(newStatus);
       } catch (err) {
-        console.error('[WebSocket] Status listener error:', err);
+        console.error("[WebSocket] Status listener error:", err);
       }
     });
   }
 
   async connect(): Promise<Socket | null> {
     if (this.socket && this.socket.connected) {
-      this.setStatus('CONNECTED');
+      this.setStatus("CONNECTED");
       return this.socket;
     }
 
@@ -66,12 +78,12 @@ class WebSocketService {
     }
 
     this.isConnecting = true;
-    this.setStatus('CONNECTING');
+    this.setStatus("CONNECTING");
 
     try {
-      const token = await storageService.getItem('accessToken');
+      const token = await storageService.getItem("accessToken");
       if (!token) {
-        this.setStatus('DISCONNECTED');
+        this.setStatus("DISCONNECTED");
         this.isConnecting = false;
         return null;
       }
@@ -85,7 +97,7 @@ class WebSocketService {
       this.socket = io(url, {
         auth: { token },
         query: { token },
-        transports: ['websocket', 'polling'],
+        transports: ["websocket", "polling"],
         reconnection: true,
         reconnectionAttempts: 10,
         reconnectionDelay: 1000,
@@ -94,42 +106,55 @@ class WebSocketService {
         autoConnect: true,
       });
 
-      this.socket.on('connect', () => {
+      this.socket.on("connect", () => {
         this.isConnecting = false;
-        this.setStatus('CONNECTED');
-        console.log('[WebSocket] Connected to BenefitOS Realtime Gateway (/ws)');
+        this.setStatus("CONNECTED");
+        console.log(
+          "[WebSocket] Connected to BenefitOS Realtime Gateway (/ws)",
+        );
       });
 
-      this.socket.on('connection_ack', (ack) => {
-        console.log('[WebSocket] Connection acknowledged:', ack);
-        this.setStatus('CONNECTED');
+      this.socket.on("connection_ack", (ack) => {
+        console.log("[WebSocket] Connection acknowledged:", ack);
+        this.setStatus("CONNECTED");
       });
 
-      this.socket.on('disconnect', (reason) => {
+      this.socket.on("disconnect", (reason) => {
         this.isConnecting = false;
-        this.setStatus('DISCONNECTED');
-        console.log('[WebSocket] Disconnected from Realtime Gateway:', reason);
+        this.setStatus("DISCONNECTED");
+        console.log("[WebSocket] Disconnected from Realtime Gateway:", reason);
       });
 
-      this.socket.on('connect_error', (error) => {
+      this.socket.on("connect_error", (error) => {
         this.isConnecting = false;
-        this.setStatus('ERROR');
-        console.warn('[WebSocket] Realtime Gateway connection error:', error.message);
+        this.setStatus("ERROR");
+        console.warn(
+          "[WebSocket] Realtime Gateway connection error:",
+          error.message,
+        );
       });
 
-      this.socket.io.on('reconnect_attempt', async () => {
-        this.setStatus('CONNECTING');
-        const latestToken = await storageService.getItem('accessToken');
+      this.socket.io.on("reconnect_attempt", async () => {
+        this.setStatus("CONNECTING");
+        const latestToken = await storageService.getItem("accessToken");
         if (this.socket && latestToken) {
           this.socket.auth = { token: latestToken };
         }
       });
 
+      this.socket.io.on("reconnect_failed", () => {
+        this.isConnecting = false;
+        this.setStatus("ERROR");
+        console.warn(
+          "[WebSocket] Realtime Gateway reconnection attempts exhausted",
+        );
+      });
+
       return this.socket;
     } catch (err: any) {
       this.isConnecting = false;
-      this.setStatus('ERROR');
-      console.warn('[WebSocket] Connection initialization failed:', err);
+      this.setStatus("ERROR");
+      console.warn("[WebSocket] Connection initialization failed:", err);
       return null;
     }
   }
@@ -140,7 +165,7 @@ class WebSocketService {
       this.socket = null;
     }
     this.isConnecting = false;
-    this.setStatus('DISCONNECTED');
+    this.setStatus("DISCONNECTED");
   }
 
   getSocket(): Socket | null {
@@ -187,12 +212,12 @@ class WebSocketService {
       const cleanup = () => {
         if (timeoutHandle) clearTimeout(timeoutHandle);
         if (socket) {
-          socket.off('guidance_cached', handleSuccess);
-          socket.off('guidance_completed', handleSuccess);
-          socket.off('guidance_failed', handleFailure);
+          socket.off("guidance_cached", handleSuccess);
+          socket.off("guidance_completed", handleSuccess);
+          socket.off("guidance_failed", handleFailure);
         }
         if (abortSignal) {
-          abortSignal.removeEventListener('abort', handleAbort);
+          abortSignal.removeEventListener("abort", handleAbort);
         }
       };
 
@@ -203,7 +228,9 @@ class WebSocketService {
           cleanup();
           resolve({
             instructions: data.instructions,
-            applicationUrl: data.applicationUrl || 'https://www.india.gov.in/my-government/schemes',
+            applicationUrl:
+              data.applicationUrl ||
+              "https://www.india.gov.in/my-government/schemes",
             schemeTitle: data.schemeTitle || schemeTitle,
             isCached: Boolean(data.isCached),
           });
@@ -216,7 +243,9 @@ class WebSocketService {
           isSettled = true;
           cleanup();
           // Fallback to HTTP on socket error
-          console.warn('[WebSocket] Guidance WS failed, attempting HTTP fallback...');
+          console.warn(
+            "[WebSocket] Guidance WS failed, attempting HTTP fallback...",
+          );
           aiApiService
             .getSchemeInstructions({ schemeTitle, schemeId, language })
             .then(resolve)
@@ -228,8 +257,8 @@ class WebSocketService {
         if (isSettled) return;
         isSettled = true;
         cleanup();
-        const err = new Error('Aborted');
-        err.name = 'AbortError';
+        const err = new Error("Aborted");
+        err.name = "AbortError";
         reject(err);
       };
 
@@ -237,20 +266,22 @@ class WebSocketService {
         if (abortSignal.aborted) {
           return handleAbort();
         }
-        abortSignal.addEventListener('abort', handleAbort);
+        abortSignal.addEventListener("abort", handleAbort);
       }
 
       // Attach listeners
-      socket.on('guidance_cached', handleSuccess);
-      socket.on('guidance_completed', handleSuccess);
-      socket.on('guidance_failed', handleFailure);
+      socket.on("guidance_cached", handleSuccess);
+      socket.on("guidance_completed", handleSuccess);
+      socket.on("guidance_failed", handleFailure);
 
       // Set timeout fallback to HTTP
       timeoutHandle = setTimeout(() => {
         if (!isSettled) {
           isSettled = true;
           cleanup();
-          console.warn('[WebSocket] WS guidance timed out, falling back to HTTP...');
+          console.warn(
+            "[WebSocket] WS guidance timed out, falling back to HTTP...",
+          );
           aiApiService
             .getSchemeInstructions({ schemeTitle, schemeId, language })
             .then(resolve)
@@ -259,7 +290,7 @@ class WebSocketService {
       }, timeoutMs);
 
       // Emit request
-      socket.emit('request_guidance', {
+      socket.emit("request_guidance", {
         requestId,
         schemeTitle,
         schemeId,

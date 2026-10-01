@@ -1,21 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useAuthStore } from '../../store/auth.store';
-import { citizenApiService } from '../../services/citizen.service';
-import { recommendationApiService } from '../../services/recommendation.service';
-import { documentApiService } from '../../services/document.service';
-import { applicationApiService } from '../../services/application.service';
-import { notificationApiService } from '../../services/notification.service';
-import { wsService, WsConnectionStatus } from '../../services/websocket-client';
-import { Skeleton } from '../../components/ui/Skeleton';
-import { GovernmentHeader } from '../../components/dashboard/GovernmentHeader';
-import { DashboardSidebar } from '../../components/dashboard/DashboardSidebar';
-import { GatewayStatusCard } from '../../components/dashboard/GatewayStatusCard';
-import { CitizenCopilotHero } from '../../components/dashboard/CitizenCopilotHero';
-import { TopRecommendedSchemeCard } from '../../components/dashboard/TopRecommendedSchemeCard';
-import { QuickAccessGrid } from '../../components/dashboard/QuickAccessGrid';
-import { DashboardStatsCards } from '../../components/dashboard/DashboardStatsCards';
-import { RecentNotificationsCard } from '../../components/dashboard/RecentNotificationsCard';
+import React, { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "../../store/auth.store";
+import { citizenApiService } from "../../services/citizen.service";
+import { recommendationApiService } from "../../services/recommendation.service";
+import { documentApiService } from "../../services/document.service";
+import { applicationApiService } from "../../services/application.service";
+import { notificationApiService } from "../../services/notification.service";
+import { wsService, WsConnectionStatus } from "../../services/websocket-client";
+import { Skeleton } from "../../components/ui/Skeleton";
+import { GovernmentHeader } from "../../components/dashboard/GovernmentHeader";
+import { DashboardSidebar } from "../../components/dashboard/DashboardSidebar";
+import { GatewayStatusCard } from "../../components/dashboard/GatewayStatusCard";
+import { CitizenCopilotHero } from "../../components/dashboard/CitizenCopilotHero";
+import { TopRecommendedSchemeCard } from "../../components/dashboard/TopRecommendedSchemeCard";
+import { QuickAccessGrid } from "../../components/dashboard/QuickAccessGrid";
+import { DashboardStatsCards } from "../../components/dashboard/DashboardStatsCards";
+import { RecentNotificationsCard } from "../../components/dashboard/RecentNotificationsCard";
 
 interface Props {
   onNavigateToProfile: () => void;
@@ -39,7 +39,7 @@ export const DashboardScreen: React.FC<Props> = ({
   onNavigateToAiCopilot,
 }) => {
   const { user, accessToken } = useAuthStore();
-  const [wsStatus, setWsStatus] = useState<WsConnectionStatus>('DISCONNECTED');
+  const [wsStatus, setWsStatus] = useState<WsConnectionStatus>("DISCONNECTED");
   const [refreshing, setRefreshing] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState<boolean>(() => {
@@ -48,7 +48,7 @@ export const DashboardScreen: React.FC<Props> = ({
   });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('benefitos_sidebar_collapsed') === 'true';
+      return localStorage.getItem("benefitos_sidebar_collapsed") === "true";
     } catch {
       return false;
     }
@@ -58,7 +58,7 @@ export const DashboardScreen: React.FC<Props> = ({
     setIsSidebarCollapsed((prev) => {
       const next = !prev;
       try {
-        localStorage.setItem('benefitos_sidebar_collapsed', String(next));
+        localStorage.setItem("benefitos_sidebar_collapsed", String(next));
       } catch {}
       return next;
     });
@@ -91,13 +91,13 @@ export const DashboardScreen: React.FC<Props> = ({
   // Keyboard shortcut support: Alt+[ to toggle sidebar
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key === '[') {
+      if (e.altKey && e.key === "[") {
         e.preventDefault();
         toggleSidebarCollapse();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [toggleSidebarCollapse]);
 
   // WebSocket Subscription
@@ -114,32 +114,54 @@ export const DashboardScreen: React.FC<Props> = ({
   }, [accessToken]);
 
   // Real Data Queries
-  const { data: profileData, isLoading: isProfileLoading, refetch: refetchProfile } = useQuery({
-    queryKey: ['citizen-profile', user?.id],
+  const {
+    data: profileData,
+    isLoading: isProfileLoading,
+    isError: isProfileError,
+    refetch: refetchProfile,
+  } = useQuery({
+    queryKey: ["citizen-profile", user?.id],
     queryFn: () => citizenApiService.getProfile(),
     enabled: !!user?.id,
   });
 
-  const { data: recsData, isLoading: isRecsLoading, refetch: refetchRecs } = useQuery({
-    queryKey: ['recommendations', user?.id],
+  const {
+    data: recsData,
+    isLoading: isRecsLoading,
+    isError: isRecsError,
+    refetch: refetchRecs,
+  } = useQuery({
+    queryKey: ["recommendations", user?.id],
     queryFn: () => recommendationApiService.getRecommendations(),
     enabled: !!user?.id,
   });
 
-  const { data: docsData, refetch: refetchDocs } = useQuery({
-    queryKey: ['documents', user?.id],
+  const {
+    data: docsData,
+    isError: isDocsError,
+    refetch: refetchDocs,
+  } = useQuery({
+    queryKey: ["documents", user?.id],
     queryFn: () => documentApiService.getDocuments(),
     enabled: !!user?.id,
   });
 
-  const { data: appsData, refetch: refetchApps } = useQuery({
-    queryKey: ['applications', user?.id],
+  const {
+    data: appsData,
+    isError: isAppsError,
+    refetch: refetchApps,
+  } = useQuery({
+    queryKey: ["applications", user?.id],
     queryFn: () => applicationApiService.getApplications(),
     enabled: !!user?.id,
   });
 
-  const { data: notifsData, refetch: refetchNotifs } = useQuery({
-    queryKey: ['notifications', user?.id],
+  const {
+    data: notifsData,
+    isError: isNotifsError,
+    refetch: refetchNotifs,
+  } = useQuery({
+    queryKey: ["notifications", user?.id],
     queryFn: () => notificationApiService.getNotifications(),
     enabled: !!user?.id,
   });
@@ -162,13 +184,19 @@ export const DashboardScreen: React.FC<Props> = ({
     setRefreshing(false);
   }, [refetchProfile, refetchRecs, refetchDocs, refetchApps, refetchNotifs]);
 
-  const isLoadingInitial = isProfileLoading && isRecsLoading;
+  const isLoadingInitial = isProfileLoading || isRecsLoading;
+  const isPrimaryDataError =
+    !isLoadingInitial && (isProfileError || isRecsError);
+  const isSecondaryDataError = isDocsError || isAppsError || isNotifsError;
   const completionPct = profile?.completionPercentage || 0;
   const topScheme = recommendations[0];
-  const unreadNotifsCount = notifications.filter((n) => !n.isRead).length || (notifications.length > 0 ? notifications.length : 0);
+  const unreadNotifsCount =
+    notifications.filter((n) => !n.isRead).length ||
+    (notifications.length > 0 ? notifications.length : 0);
 
-  const citizenFullName = profile
-    ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim()
+  const citizenFullName =
+    profile ?
+      `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
     : undefined;
 
   return (
@@ -205,7 +233,9 @@ export const DashboardScreen: React.FC<Props> = ({
         />
 
         {/* Scrollable Dashboard Body */}
-        <main className={`flex-1 min-w-0 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'} flex flex-col transition-all duration-300`}>
+        <main
+          className={`flex-1 min-w-0 ${isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"} flex flex-col transition-all duration-300`}
+        >
           <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-5 sm:space-y-6">
             {/* 1. Realtime Gateway Operational Status */}
             <GatewayStatusCard
@@ -214,7 +244,7 @@ export const DashboardScreen: React.FC<Props> = ({
               onRefresh={onRefresh}
             />
 
-            {isLoadingInitial ? (
+            {isLoadingInitial ?
               <div className="space-y-5 animate-pulse">
                 <Skeleton height={140} className="rounded-2xl" />
                 <Skeleton height={120} className="rounded-2xl" />
@@ -229,8 +259,30 @@ export const DashboardScreen: React.FC<Props> = ({
                   <Skeleton height={130} className="rounded-2xl" />
                 </div>
               </div>
-            ) : (
-              <>
+            : isPrimaryDataError ?
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-100">
+                <h2 className="text-base font-bold">
+                  Dashboard data unavailable
+                </h2>
+                <p className="mt-1 text-sm text-rose-800 dark:text-rose-200">
+                  We could not load the information needed for your dashboard.
+                </p>
+                <button
+                  type="button"
+                  onClick={onRefresh}
+                  disabled={refreshing}
+                  className="mt-4 rounded-lg bg-rose-700 px-3 py-2 text-sm font-semibold text-white hover:bg-rose-800 disabled:opacity-60"
+                >
+                  {refreshing ? "Retrying..." : "Retry"}
+                </button>
+              </div>
+            : <>
+                {isSecondaryDataError && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100">
+                    Some dashboard details are temporarily unavailable. Use
+                    Refresh Data to try again.
+                  </div>
+                )}
                 {/* 2. AI Citizen Copilot Hero */}
                 <CitizenCopilotHero
                   onLaunchCopilot={onNavigateToAiCopilot || onNavigateToAi}
@@ -245,7 +297,9 @@ export const DashboardScreen: React.FC<Props> = ({
 
                 {/* 4. Quick Access Grid (4 Cards) */}
                 <QuickAccessGrid
-                  onNavigateToGovernmentServices={onNavigateToGovernmentServices}
+                  onNavigateToGovernmentServices={
+                    onNavigateToGovernmentServices
+                  }
                   onNavigateToVault={onNavigateToVault}
                   onNavigateToSchemes={onNavigateToSchemes}
                   onNavigateToApplications={onNavigateToApplications}
@@ -265,7 +319,7 @@ export const DashboardScreen: React.FC<Props> = ({
                   onNavigateToNotifications={onNavigateToProfile}
                 />
               </>
-            )}
+            }
           </div>
         </main>
       </div>
