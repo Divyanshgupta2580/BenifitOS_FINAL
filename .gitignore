@@ -60,8 +60,9 @@ apps/frontend/.expo/
 uploads/
 apps/backend/uploads/
 
-# Markdown Documentation Policy (Root README.md and docs directory are tracked)
+# Markdown Documentation Policy (Root README.md, design.md, and docs directory are tracked)
 *.md
 !README.md
+!design.md
 !docs/*.md
 !docs/**/*.md
