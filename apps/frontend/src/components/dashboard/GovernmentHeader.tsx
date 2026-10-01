@@ -14,6 +14,7 @@ import {
 
 interface GovernmentHeaderProps {
   onToggleSidebar: () => void;
+  isSidebarOpen: boolean;
   onNavigateToProfile: () => void;
   onNavigateToNotifications?: () => void;
   unreadNotificationsCount?: number;
@@ -23,6 +24,7 @@ interface GovernmentHeaderProps {
 
 export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
   onToggleSidebar,
+  isSidebarOpen,
   onNavigateToProfile,
   onNavigateToNotifications,
   unreadNotificationsCount = 0,
@@ -81,7 +83,9 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
           <button
             type="button"
             onClick={onToggleSidebar}
-            aria-label="Toggle navigation menu"
+            aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isSidebarOpen}
+            title={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
             className="p-1.5 sm:p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <Bars3Icon className="w-5 h-5 sm:w-6 sm:h-6" />
