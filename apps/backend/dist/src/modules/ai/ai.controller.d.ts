@@ -23,6 +23,7 @@ export declare class AiController {
         reply: string;
         provider: string;
         isCached: boolean | undefined;
+        sources: string[];
     }>;
     explainRecommendation(dto: ExplainRecommendationDto): Promise<{
         explanation: string;

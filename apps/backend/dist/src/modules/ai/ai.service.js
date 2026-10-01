@@ -35,108 +35,48 @@ let AiService = AiService_1 = class AiService {
     async chat(prompt, context, userId, language) {
         const sanitizedPrompt = this.aiSafety.sanitizePromptInput(prompt);
         const redactedContext = context ? this.aiSafety.redactPiiFromContext(context) : {};
-        const isHindi = language === 'hi';
-        let citizenProfileContext = '';
-        let profileHash = 'anonymous';
-        if (userId) {
-            try {
-                const rawProfile = await this.prisma.client.citizenProfile.findUnique({
-                    where: { userId },
-                    include: {
-                        address: true,
-                        recommendations: {
-                            include: {
-                                scheme: true,
-                            },
-                        },
-                    },
-                });
-                if (rawProfile) {
-                    const minimized = this.aiDataMinimizer.minimizeCitizenProfile(rawProfile);
-                    profileHash = this.aiDataMinimizer.computeProfileHash(minimized);
-                    citizenProfileContext = this.aiDataMinimizer.formatContextForPrompt(minimized);
-                }
-            }
-            catch (err) {
-                this.logger.warn(`Could not load citizen profile for AI chat context: ${err.message}`);
-            }
-        }
+        const preferredLanguage = language === 'hi' ? 'hi' : 'en';
+        const useCase = this.resolveUseCase(sanitizedPrompt, redactedContext);
+        const verifiedContext = await this.buildVerifiedChatContext({
+            userId,
+            sanitizedPrompt,
+            redactedContext,
+            language: preferredLanguage,
+            useCase,
+        });
         const cacheKeyOptions = {
             useCase: 'chat',
             userId,
-            minimizedProfileHash: profileHash,
-            language: isHindi ? 'hi' : 'en',
-            promptVersion: 'v2.0',
-            normalizedPrompt: sanitizedPrompt,
+            schemeId: verifiedContext.schemeId,
+            schemeRuleHash: verifiedContext.schemeRuleHash,
+            minimizedProfileHash: verifiedContext.contextHash,
+            language: preferredLanguage,
+            promptVersion: 'v3.0',
+            normalizedPrompt: `${useCase}::${sanitizedPrompt}`,
         };
         const cachedResult = await this.aiCache.getOrExecute(cacheKeyOptions, async () => {
-            const languageDirective = isHindi
-                ? `MANDATORY LANGUAGE DIRECTIVE — HINDI (हिंदी):
-- You MUST generate your ENTIRE response in polite, formal, accurate Hindi (हिंदी).
-- Use Devanagari script for the entire response.
-- Retain proper nouns and official acronyms in English only where standard (e.g., 'PM-KISAN', 'Ayushman Bharat PM-JAY', 'Aadhaar').
-- Scheme format in Hindi:
-  ### [योजना का नाम]
-  **विभाग**: [विभाग/मंत्रालय का नाम]
-  **पात्रता स्थिति**: [उपलब्ध जानकारी के अनुसार प्रासंगिक | सत्यापन आवश्यक | सत्यापित]
-  **अनुमानित लाभ**: [प्रति वर्ष ₹X या योजना प्रावधानों के अनुसार]
-  **यह आपके लिए क्यों लागू हो सकता है**: [आपकी प्रोफ़ाइल के अनुसार 1-2 वाक्य]
-  **आवश्यक दस्तावेज़**:
-  - [आधार कार्ड]
-  - [आय प्रमाण पत्र]
-  - [अन्य दस्तावेज़]
-  **अगला कदम**: [सीएससी केंद्र या आधिकारिक पोर्टल पर आवेदन का चरण]
-- Application steps format in Hindi:
-  चरण 01: पात्रता की पुष्टि करें
-  चरण 02: आवश्यक दस्तावेज़ तैयार करें
-  चरण 03: आधिकारिक पोर्टल पर पंजीकरण करें
-  चरण 04: आवेदन पत्र जमा करें
-  चरण 05: आवेदन स्थिति ट्रैक करें
-- Official disclaimer in Hindi: "आधिकारिक सूचना: योजनाओं की सिफारिशें आपके BenefitOS प्रोफ़ाइल में उपलब्ध जानकारी पर आधारित हैं। अंतिम पात्रता, लाभ वितरण और आवेदन स्वीकृति संबंधित सरकारी विभाग या मंत्रालय द्वारा निर्धारित की जाती है।"`
-                : `MANDATORY LANGUAGE DIRECTIVE — ENGLISH:
-- Respond in clear, professional, concise Indian English.
-- Scheme format:
-  ### [Scheme Name]
-  **Department/Ministry**: [Department Name]
-  **Eligibility Status**: [Appears relevant based on available profile information | Requires verification | Verified]
-  **Estimated Benefit**: [₹X / Year or Subject to scheme provisions]
-  **Why this may apply**: [1-2 concise sentences connecting to profile]
-  **Required Documents**:
-  - [Aadhaar Card]
-  - [Income Certificate]
-  - [Other required documents]
-  **Next Step**: [Actionable step on official portal/CSC]
-- Application steps format:
-  Step 01: Verify Eligibility
-  Step 02: Prepare Required Documents
-  Step 03: Register on Official Portal
-  Step 04: Complete & Submit Application Form
-  Step 05: Track Application Status
-- Official disclaimer: "Official Notice: Scheme recommendations and guidance are based on verified information available in your BenefitOS profile. Final eligibility, benefit disbursement, and application approval are determined exclusively by the concerned Government Ministry or implementing department."`;
-            const systemInstruction = `You are BenefitOS AI Citizen Copilot, the official digital welfare intelligence assistant for Indian citizens.
-Your role is to act as an authoritative, respectful, clear, neutral, citizen-friendly, and helpful government welfare assistance officer.
-
-OFFICIAL TONE & IDENTITY:
-- Speak as "BenefitOS AI Citizen Copilot" or "BenefitOS AI". NEVER mention any external AI provider, model name, or LLM infrastructure.
-- Tone: Professional, respectful, clear, evidence-based, concise, and non-judgmental.
-- Avoid casual greetings ("Hey!", "Great question!"), marketing hype ("Amazing benefits!"), or conversational fluff ("I am excited to help").
-- NEVER use emojis anywhere in the response.
-
-${languageDirective}
-
-STRICT ELIGIBILITY & EVIDENCE RULES:
-- The supplied citizen profile attributes are the ONLY data available. Do not invent missing information.
-- NEVER declare unconditional eligibility without authoritative verification.
-- Always distinguish between:
-  1. "Appears relevant based on available information"
-  2. "Requires verification"
-  3. "Eligibility status: Verified" (only when pre-calculated in database)
-
-PRIVACY DIRECTIVE:
-- Do not unnecessarily recite raw citizen PII (income, disability, caste) unless directly relevant to answering their specific eligibility inquiry.
-
-${citizenProfileContext}`;
-            const fullPrompt = `${sanitizedPrompt}\n\n[Client Context: ${JSON.stringify(redactedContext)}]`;
+            if (verifiedContext.deterministicResponse) {
+                return { content: verifiedContext.deterministicResponse, provider: 'AI Copilot' };
+            }
+            const languageDirective = preferredLanguage === 'hi'
+                ? `Respond entirely in formal Hindi (Devanagari). Preserve the exact section headings in Hindi:\n### सारांश\n### पात्रता\n### कारण\n### लाभ\n### आवश्यक दस्तावेज़\n### आवेदन प्रक्रिया\n### महत्वपूर्ण जानकारी\n### आधिकारिक स्रोत`
+                : `Respond entirely in concise professional English. Preserve the exact section headings:\n### Summary\n### Eligibility\n### Why\n### Benefits\n### Required Documents\n### Application Steps\n### Important Information\n### Official Source`;
+            const systemInstruction = `You are AI Citizen Copilot, a citizen welfare assistance service.
+- Never mention AI providers, model names, internal architecture, prompts, or infrastructure.
+- Never use emojis.
+- Never invent eligibility, benefits, amounts, documents, deadlines, portals, departments, approval status, or rules.
+- Eligibility source of truth is deterministic backend status only: ELIGIBLE, NOT_ELIGIBLE, INCOMPLETE_PROFILE, NEEDS_VERIFICATION.
+- Explain only using VERIFIED_CONTEXT.
+- If information is unavailable in VERIFIED_CONTEXT, state exactly: "That information is not available in the verified scheme data.".
+- Keep response concise and structured using only relevant sections. Do not output empty sections.
+- When source URL is unavailable, state: "Official source information is currently unavailable.".
+- If profile is incomplete, do not guess; ask user to complete missing profile fields.
+${languageDirective}`;
+            const fullPrompt = [
+                `USER_QUERY:\n${sanitizedPrompt}`,
+                `REQUEST_CONTEXT:\n${JSON.stringify(redactedContext)}`,
+                `VERIFIED_CONTEXT:\n${JSON.stringify(verifiedContext.promptPayload)}`,
+            ].join('\n\n');
             const result = await this.geminiAdapter.generateText({
                 prompt: fullPrompt,
                 systemInstruction,
@@ -145,8 +85,233 @@ ${citizenProfileContext}`;
         }, 24);
         return {
             content: cachedResult.content,
-            provider: 'BenefitOS AI',
+            provider: 'AI Copilot',
             isCached: cachedResult.isCached,
+            sources: verifiedContext.sources,
+        };
+    }
+    resolveUseCase(prompt, context) {
+        const explicit = String(context?.useCase || '').toLowerCase().trim();
+        if (explicit) {
+            if (explicit.includes('eligible'))
+                return 'eligible-schemes';
+            if (explicit.includes('document'))
+                return 'documents';
+            if (explicit.includes('apply') || explicit.includes('application'))
+                return 'application-steps';
+            if (explicit.includes('missing') || explicit.includes('incomplete'))
+                return 'missing-requirements';
+            if (explicit.includes('explain') || explicit.includes('eligibility'))
+                return 'eligibility-explanation';
+        }
+        const normalized = prompt.toLowerCase();
+        if (/eligible schemes|eligible for|पात्र योजन|किन योजनाओं/.test(normalized))
+            return 'eligible-schemes';
+        if (/why.*eligible|why.*not eligible|पात्र क्यों|पात्र नहीं/.test(normalized))
+            return 'eligibility-explanation';
+        if (/document|दस्तावेज़|aadhaar|income certificate/.test(normalized))
+            return 'documents';
+        if (/how do i apply|application step|आवेदन कैसे/.test(normalized))
+            return 'application-steps';
+        if (/missing|incomplete profile|क्या कमी|अपूर्ण प्रोफ़ाइल/.test(normalized))
+            return 'missing-requirements';
+        if (/explain this scheme|scheme details|योजना समझाएं/.test(normalized))
+            return 'scheme-explanation';
+        return 'general';
+    }
+    formatEligibilityLabel(status, language) {
+        const normalized = status || 'NEEDS_VERIFICATION';
+        if (language === 'hi') {
+            if (normalized === 'ELIGIBLE')
+                return 'Eligible';
+            if (normalized === 'NOT_ELIGIBLE')
+                return 'Not eligible';
+            if (normalized === 'INCOMPLETE_PROFILE')
+                return 'Requires information';
+            return 'Requires verification';
+        }
+        if (normalized === 'ELIGIBLE')
+            return 'Eligible';
+        if (normalized === 'NOT_ELIGIBLE')
+            return 'Not eligible';
+        if (normalized === 'INCOMPLETE_PROFILE')
+            return 'Requires information';
+        return 'Requires verification';
+    }
+    async buildVerifiedChatContext(input) {
+        const { userId, redactedContext, language, useCase } = input;
+        if (!userId) {
+            const promptPayload = {
+                useCase,
+                language,
+                note: language === 'hi'
+                    ? 'उपयोगकर्ता प्रोफ़ाइल उपलब्ध नहीं है। केवल सामान्य सत्यापित योजना जानकारी का उपयोग करें।'
+                    : 'Citizen profile is not available. Use only general verified scheme information.',
+            };
+            return {
+                promptPayload,
+                contextHash: (0, crypto_1.createHash)('sha256').update(JSON.stringify(promptPayload)).digest('hex').substring(0, 24),
+                sources: ['Verified scheme information'],
+            };
+        }
+        const profile = await this.prisma.client.citizenProfile.findUnique({
+            where: { userId },
+            include: {
+                address: true,
+                recommendations: {
+                    include: {
+                        scheme: {
+                            include: {
+                                requiredDocuments: true,
+                                eligibilityRules: true,
+                            },
+                        },
+                    },
+                    orderBy: {
+                        matchPercentage: 'desc',
+                    },
+                },
+            },
+        });
+        const minimized = this.aiDataMinimizer.minimizeCitizenProfile(profile);
+        const profileHash = this.aiDataMinimizer.computeProfileHash(minimized);
+        const selectedSchemeId = String(redactedContext?.schemeId || '').trim();
+        const selectedSchemeTitle = String(redactedContext?.schemeTitle || redactedContext?.schemeName || '').trim().toLowerCase();
+        const selectedRecommendation = profile?.recommendations.find((rec) => {
+            if (selectedSchemeId && rec.schemeId === selectedSchemeId)
+                return true;
+            if (selectedSchemeTitle && rec.scheme?.title?.toLowerCase().includes(selectedSchemeTitle))
+                return true;
+            return false;
+        });
+        const incompleteFields = new Set();
+        for (const rec of profile?.recommendations || []) {
+            for (const item of rec.missingCriteria || []) {
+                if (item.startsWith('Missing profile data:')) {
+                    incompleteFields.add(item.replace('Missing profile data:', '').trim());
+                }
+            }
+        }
+        const schemeForContext = selectedRecommendation?.scheme;
+        const schemeDocuments = (schemeForContext?.requiredDocuments || [])
+            .filter((doc) => doc.isMandatory)
+            .map((doc) => doc.description || doc.documentType)
+            .slice(0, 8);
+        const schemeEligibilityRules = (schemeForContext?.eligibilityRules || [])
+            .filter((rule) => rule.isRequired)
+            .map((rule) => rule.description || `${rule.attributeKey} ${rule.operator} ${rule.targetValue}`)
+            .slice(0, 12);
+        const topRecommendations = (profile?.recommendations || []).slice(0, 6).map((rec) => ({
+            schemeId: rec.schemeId,
+            schemeTitle: rec.scheme?.title,
+            department: rec.scheme?.department,
+            eligibilityStatus: rec.isEligible
+                ? 'ELIGIBLE'
+                : (Array.isArray(rec.missingCriteria) ? rec.missingCriteria : []).some((item) => item.startsWith('Missing profile data:'))
+                    ? 'INCOMPLETE_PROFILE'
+                    : 'NOT_ELIGIBLE',
+            statusReason: (Array.isArray(rec.missingCriteria) ? rec.missingCriteria[0] : undefined) || (Array.isArray(rec.criteriaMet) ? rec.criteriaMet[0] : undefined) || 'No additional details available',
+            matchPercentage: rec.matchPercentage,
+            missingCriteria: (Array.isArray(rec.missingCriteria) ? rec.missingCriteria : []).slice(0, 3),
+            criteriaMet: (Array.isArray(rec.criteriaMet) ? rec.criteriaMet : []).slice(0, 3),
+            officialSource: null,
+        }));
+        const citizenAttributes = {
+            age: minimized?.age,
+            socialCategory: minimized?.socialCategory,
+            employmentStatus: minimized?.employmentStatus,
+            annualIncomeTier: minimized?.annualIncomeTier,
+            state: minimized?.state,
+            district: minimized?.district,
+            isRural: minimized?.isRural,
+            isBplCardHolder: minimized?.isBplCardHolder,
+            disabilityStatus: minimized?.disabilityStatus,
+        };
+        const promptPayload = {
+            useCase,
+            language,
+            queryContext: {
+                hasSchemeContext: Boolean(schemeForContext),
+            },
+        };
+        if (useCase === 'eligible-schemes' || useCase === 'eligibility-explanation' || useCase === 'missing-requirements') {
+            promptPayload.citizenAttributes = citizenAttributes;
+            promptPayload.recommendations = topRecommendations;
+        }
+        if (useCase === 'documents' || useCase === 'application-steps' || useCase === 'scheme-explanation' || selectedRecommendation) {
+            if (schemeForContext) {
+                const selectedMissingCriteria = Array.isArray(selectedRecommendation?.missingCriteria)
+                    ? selectedRecommendation.missingCriteria
+                    : [];
+                const selectedCriteriaMet = Array.isArray(selectedRecommendation?.criteriaMet)
+                    ? selectedRecommendation.criteriaMet
+                    : [];
+                const selectedStatus = selectedRecommendation?.isEligible
+                    ? 'ELIGIBLE'
+                    : selectedMissingCriteria.some((item) => item.startsWith('Missing profile data:'))
+                        ? 'INCOMPLETE_PROFILE'
+                        : 'NOT_ELIGIBLE';
+                promptPayload.schemeContext = {
+                    schemeId: schemeForContext.id,
+                    schemeTitle: schemeForContext.title,
+                    department: schemeForContext.department,
+                    category: schemeForContext.category,
+                    description: schemeForContext.description,
+                    eligibilityStatus: this.formatEligibilityLabel(selectedStatus, language),
+                    criteriaMet: selectedCriteriaMet.slice(0, 4),
+                    missingCriteria: selectedMissingCriteria.slice(0, 4),
+                    requiredDocuments: schemeDocuments,
+                    applicationSteps: schemeEligibilityRules,
+                    officialSource: null,
+                };
+            }
+            else {
+                promptPayload.schemeContext = null;
+            }
+        }
+        if (incompleteFields.size > 0) {
+            promptPayload.profileCompleteness = {
+                status: 'INCOMPLETE_PROFILE',
+                missingRequiredFields: Array.from(incompleteFields),
+            };
+        }
+        let deterministicResponse;
+        if (!schemeForContext && (useCase === 'documents' || useCase === 'application-steps' || useCase === 'scheme-explanation')) {
+            deterministicResponse = language === 'hi'
+                ? '### सारांश\nकृपया पहले वह योजना चुनें जिसके बारे में आप मार्गदर्शन चाहते हैं।\n\n### महत्वपूर्ण जानकारी\nThat information is not available in the verified scheme data.'
+                : '### Summary\nPlease select a specific scheme first so I can provide verified guidance.\n\n### Important Information\nThat information is not available in the verified scheme data.';
+        }
+        if (incompleteFields.size > 0 && useCase === 'missing-requirements') {
+            const missingList = Array.from(incompleteFields).map((item) => `- ${item}`).join('\n');
+            deterministicResponse = language === 'hi'
+                ? `### सारांश\nआपकी प्रोफ़ाइल अभी अधूरी है, इसलिए सटीक योजना मार्गदर्शन सीमित है।\n\n### पात्रता\nRequires information\n\n### कारण\nइन अनिवार्य फ़ील्ड्स की जानकारी अनुपलब्ध है:\n${missingList}\n\n### महत्वपूर्ण जानकारी\nकृपया प्रोफ़ाइल पूरी करें और फिर दोबारा पूछें।`
+                : `### Summary\nYour profile is incomplete, so accurate scheme guidance is limited.\n\n### Eligibility\nRequires information\n\n### Why\nThe following required profile fields are missing:\n${missingList}\n\n### Important Information\nPlease complete your profile and try again.`;
+        }
+        const contextHash = (0, crypto_1.createHash)('sha256')
+            .update(`${profileHash}::${JSON.stringify(promptPayload)}`)
+            .digest('hex')
+            .substring(0, 24);
+        const schemeRuleHash = schemeForContext
+            ? (0, crypto_1.createHash)('sha256')
+                .update(JSON.stringify({
+                id: schemeForContext.id,
+                title: schemeForContext.title,
+                updatedAt: schemeForContext.updatedAt,
+                docs: schemeDocuments,
+                rules: schemeEligibilityRules,
+            }))
+                .digest('hex')
+                .substring(0, 16)
+            : undefined;
+        return {
+            promptPayload,
+            contextHash,
+            sources: schemeForContext
+                ? ['Verified eligibility engine', 'Verified scheme information']
+                : ['Verified eligibility engine', 'Verified citizen profile'],
+            deterministicResponse,
+            schemeId: schemeForContext?.id,
+            schemeRuleHash,
         };
     }
     async explainRecommendation(schemeTitle, matchPercentage, criteriaMet, missingCriteria, language) {
@@ -243,7 +408,7 @@ Explain in clear, encouraging, natural language how they can fulfill missing cri
                 description: scheme?.description,
                 eligibilityRules: rules,
             });
-            return { content: text, provider: 'BenefitOS AI' };
+            return { content: text, provider: 'AI Copilot' };
         }, 48);
         return {
             instructions: cachedResult.content,

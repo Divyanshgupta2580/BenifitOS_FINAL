@@ -40,11 +40,13 @@ export class AiCacheService {
   ) {}
 
   public generateCacheKey(options: CacheKeyOptions): string {
+    const userDiscriminator = options.userId ? `usr_${options.userId}` : 'anon';
     const parts = [
       options.useCase,
+      userDiscriminator,
       options.schemeId || 'none',
       options.schemeRuleHash || 'norules',
-      options.minimizedProfileHash || (options.userId ? `usr_${options.userId}` : 'anon'),
+      options.minimizedProfileHash || 'noprofilehash',
       (options.language || 'en').toLowerCase().trim(),
       options.promptVersion || 'v1.0',
       options.normalizedPrompt ? options.normalizedPrompt.toLowerCase().replace(/\s+/g, ' ').trim() : 'noprompt',

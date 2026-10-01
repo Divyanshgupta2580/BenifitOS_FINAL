@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { wsService } from '../../services/websocket-client';
+import { useLanguageStore } from '../../store/language.store';
 import { Card } from './Card';
 import { LoadingSpinner } from './LoadingSpinner';
 import { MarkdownRenderer } from './MarkdownRenderer';
@@ -20,6 +21,8 @@ interface Props {
 }
 
 export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, schemeId, defaultApplyUrl }) => {
+  const { locale } = useLanguageStore();
+  const language: 'en' | 'hi' = locale === 'hi' ? 'hi' : 'en';
   const [instructions, setInstructions] = useState<string>('');
   const [applicationUrl, setApplicationUrl] = useState<string>(defaultApplyUrl || 'https://www.india.gov.in/my-government/schemes');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -53,6 +56,7 @@ export const SchemeInstructionsSection: React.FC<Props> = ({ schemeTitle, scheme
       const res = await wsService.requestSchemeGuidance({
         schemeTitle,
         schemeId,
+        language,
         abortSignal: abortControllerRef.current.signal,
       });
       if (res && res.instructions && res.instructions.trim().length > 0) {

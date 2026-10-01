@@ -43,7 +43,7 @@ interface ParsedApplicationStep {
 
 export const StructuredAiResponseRenderer: React.FC<StructuredAiResponseProps> = ({
   content,
-  sources = ['Government Scheme Database', 'Verified Citizen Profile'],
+  sources = ['Verified scheme information'],
   timestamp,
   language,
   onActionClick,
@@ -173,7 +173,7 @@ export const StructuredAiResponseRenderer: React.FC<StructuredAiResponseProps> =
 
   return (
     <div className="w-full space-y-4">
-      {/* Official AI Header */}
+      {/* Assistant Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-200/80 dark:border-slate-800">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-blue-900 dark:bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -182,14 +182,14 @@ export const StructuredAiResponseRenderer: React.FC<StructuredAiResponseProps> =
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-blue-950 dark:text-blue-200 tracking-tight">
-                BenefitOS AI
+                AI Copilot
               </span>
               <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-blue-100 dark:bg-blue-950/80 text-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
                 {isHindi ? 'नागरिक कल्याण सहायक' : 'Citizen Welfare Assistant'}
               </span>
             </div>
             <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">
-              {isHindi ? 'राष्ट्रीय कल्याण खुफिया सेवा' : 'National Welfare Intelligence Service'}
+              {isHindi ? 'सत्यापित योजना मार्गदर्शन सेवा' : 'Verified scheme guidance service'}
             </span>
           </div>
         </div>
@@ -291,18 +291,22 @@ export const StructuredAiResponseRenderer: React.FC<StructuredAiResponseProps> =
         </div>
       )}
 
-      {/* Official Government Disclaimer Banner */}
+      {/* Trust Indicator */}
       <div className="p-3 rounded-xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 flex items-start gap-2.5">
         <InfoIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
         <p className="leading-relaxed">
-          <strong className="text-slate-800 dark:text-slate-200">
-            {isHindi ? 'आधिकारिक सूचना:' : 'Official Notice:'}
-          </strong>{' '}
+          <strong className="text-slate-800 dark:text-slate-200">{isHindi ? 'विश्वास संकेतक:' : 'Trust Indicator:'}</strong>{' '}
           {isHindi
-            ? 'योजनाओं की सिफारिशें और मार्गदर्शन आपके BenefitOS प्रोफ़ाइल में उपलब्ध सत्यापित जानकारी पर आधारित हैं। अंतिम पात्रता, लाभ वितरण और आवेदन स्वीकृति विशेष रूप से संबंधित सरकारी मंत्रालय या विभाग द्वारा निर्धारित की जाती है।'
-            : 'Scheme recommendations and guidance are based on verified information available in your BenefitOS profile. Final eligibility, benefit disbursement, and application approval are determined exclusively by the concerned Government Ministry or implementing department.'}
+            ? 'यह मार्गदर्शन सत्यापित योजना जानकारी पर आधारित है। अंतिम पात्रता और स्वीकृति संबंधित विभाग तय करता है।'
+            : 'Based on verified scheme information. Final eligibility and approval are determined by the concerned department.'}
         </p>
       </div>
+
+      {!content.toLowerCase().includes('official source') && !content.includes('आधिकारिक स्रोत') && (
+        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          {isHindi ? 'आधिकारिक स्रोत जानकारी वर्तमान में उपलब्ध नहीं है।' : 'Official source information is currently unavailable.'}
+        </div>
+      )}
 
       {/* Contextual Quick Actions */}
       <div className="pt-2 flex flex-wrap gap-2">
@@ -351,7 +355,7 @@ export const StructuredAiResponseRenderer: React.FC<StructuredAiResponseProps> =
             onClick={onNavigateToSchemes}
             className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-xs"
           >
-            {isHindi ? 'सभी योजनाएँ देखें →' : 'View All Schemes →'}
+            {isHindi ? 'सभी योजनाएँ देखें' : 'View All Schemes'}
           </button>
         )}
       </div>

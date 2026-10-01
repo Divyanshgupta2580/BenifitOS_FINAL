@@ -156,7 +156,7 @@ class WebSocketService {
     params: {
       schemeTitle: string;
       schemeId?: string;
-      language?: string;
+      language?: 'en' | 'hi';
       abortSignal?: AbortSignal;
       timeoutMs?: number;
     },
@@ -177,7 +177,7 @@ class WebSocketService {
     // Fallback directly to HTTP if WebSocket cannot connect
     if (!socket || !socket.connected) {
       console.log('[WebSocket] WS unavailable, using resilient HTTP fallback for guidance');
-      return await aiApiService.getSchemeInstructions({ schemeTitle, schemeId });
+      return await aiApiService.getSchemeInstructions({ schemeTitle, schemeId, language });
     }
 
     return new Promise<SchemeGuidanceResult>((resolve, reject) => {
@@ -218,7 +218,7 @@ class WebSocketService {
           // Fallback to HTTP on socket error
           console.warn('[WebSocket] Guidance WS failed, attempting HTTP fallback...');
           aiApiService
-            .getSchemeInstructions({ schemeTitle, schemeId })
+            .getSchemeInstructions({ schemeTitle, schemeId, language })
             .then(resolve)
             .catch(reject);
         }
@@ -252,7 +252,7 @@ class WebSocketService {
           cleanup();
           console.warn('[WebSocket] WS guidance timed out, falling back to HTTP...');
           aiApiService
-            .getSchemeInstructions({ schemeTitle, schemeId })
+            .getSchemeInstructions({ schemeTitle, schemeId, language })
             .then(resolve)
             .catch(reject);
         }
