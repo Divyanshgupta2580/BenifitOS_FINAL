@@ -71,10 +71,10 @@ async function main() {
     {
       id: 'c3333333-3333-3333-3333-333333333333',
       code: 'PM-VIDYA-SCHOLARSHIP',
-      title: 'National Merit-cum-Means Higher Education Scheme',
-      description: 'Financial assistance of Rs 48,000 per year for students from economically weaker sections to arrest dropouts.',
+      title: 'National Means-cum-Merit Scholarship Scheme (NMMSS)',
+      description: 'Scholarship of Rs 12,000 per year (Rs 48,000 total across Classes IX to XII) for meritorious students from economically weaker sections to arrest dropouts at secondary stage.',
       category: 'EDUCATION' as const,
-      department: 'Department of Higher Education',
+      department: 'Department of School Education and Literacy, Ministry of Education',
       isCentralScheme: true,
       financialBenefit: 48000.0,
       isActive: true,
@@ -89,9 +89,9 @@ async function main() {
         {
           attributeKey: 'annualIncomeINR',
           operator: 'LESS_EQUAL' as const,
-          targetValue: '500000',
+          targetValue: '350000',
           isRequired: true,
-          description: 'Annual parental income must be under Rs 5,00,000',
+          description: 'Annual parental income must be under Rs 3,50,000',
         },
       ],
       documents: [

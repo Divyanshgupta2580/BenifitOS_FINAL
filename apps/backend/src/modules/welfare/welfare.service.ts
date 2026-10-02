@@ -75,10 +75,10 @@ export class WelfareSchemeService implements OnModuleInit {
           {
             id: 'c3333333-3333-3333-3333-333333333333',
             code: 'PM-VIDYA-SCHOLARSHIP',
-            title: 'National Merit-cum-Means Higher Education Scheme',
-            description: 'Financial assistance of Rs 48,000 per year for students from economically weaker sections to arrest dropouts.',
+            title: 'National Means-cum-Merit Scholarship Scheme (NMMSS)',
+            description: 'Scholarship of Rs 12,000 per year (Rs 48,000 total across Classes IX to XII) for meritorious students from economically weaker sections to arrest dropouts at secondary stage.',
             category: 'EDUCATION' as const,
-            department: 'Department of Higher Education',
+            department: 'Department of School Education and Literacy, Ministry of Education',
             isCentralScheme: true,
             financialBenefit: 48000.0,
             sourceUrl: 'https://scholarships.gov.in',
@@ -92,7 +92,7 @@ export class WelfareSchemeService implements OnModuleInit {
             applicationProcedure: '1. Register on National Scholarship Portal (NSP). 2. Submit student Aadhaar and school verification code. 3. Provide Class VIII qualifying certificate and income proof. 4. Institute and district nodal officer verify application.',
             rules: [
               { attributeKey: 'employmentStatus', operator: 'EQUALS', targetValue: 'STUDENT', isRequired: true, description: 'Must be an enrolled student' },
-              { attributeKey: 'annualIncomeINR', operator: 'LESS_EQUAL', targetValue: '500000', isRequired: true, description: 'Annual parental income must be under Rs 5,00,000' },
+              { attributeKey: 'annualIncomeINR', operator: 'LESS_EQUAL', targetValue: '350000', isRequired: true, description: 'Annual parental income must be under Rs 3,50,000' },
             ],
             documents: [
               { documentType: 'EDUCATIONAL_CERTIFICATE' as const, isMandatory: true, description: 'Previous academic marksheet/certificate' },
