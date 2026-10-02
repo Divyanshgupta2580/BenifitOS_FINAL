@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Input } from '../../components/ui/Input';
-import { Button } from '../../components/ui/Button';
-import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
+import { AppLayout } from '../../components/layout/AppLayout';
+import { CheckCircle2Icon, AlertTriangleIcon, ArrowRightIcon } from '../../components/ui/Icons';
 
 interface Props {
   onBack: () => void;
@@ -56,80 +55,101 @@ export const DemographicsEditScreen: React.FC<Props> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
-            ← Back to Profile
-          </button>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <h1 className="text-lg font-bold text-blue-900 dark:text-blue-400">Edit Demographics & Income</h1>
+    <AppLayout activeTab="profile">
+      <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-6 space-y-6">
+        {/* Navigation */}
+        <div className="flex items-center justify-between border-b border-[#1C3127]/60 pb-4">
+          <div>
+            <button
+              onClick={onBack}
+              className="text-xs font-semibold text-mint-400 hover:underline mb-1 block"
+            >
+              ← Back to Profile
+            </button>
+            <h1 className="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
+              Edit Demographics &amp; Income
+            </h1>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-3xl mx-auto px-4 pt-6">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-6 sm:p-7 shadow-xl space-y-5">
           {statusMessage && (
             <div
-              className={`mb-6 p-3.5 rounded-xl border text-xs font-semibold ${
+              className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
                 statusMessage.type === 'success'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
-                  : 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                  ? 'bg-emerald-950/80 border border-emerald-500/40 text-mint-300'
+                  : 'bg-rose-950/80 border border-rose-900/60 text-rose-300'
               }`}
             >
-              {statusMessage.text}
+              {statusMessage.type === 'success' ? (
+                <CheckCircle2Icon className="w-4 h-4 text-mint-400 shrink-0" />
+              ) : (
+                <AlertTriangleIcon className="w-4 h-4 text-rose-400 shrink-0" />
+              )}
+              <span>{statusMessage.text}</span>
             </div>
           )}
 
           <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="First Name" value={firstName} onChangeText={setFirstName} required />
-              <Input label="Last Name" value={lastName} onChangeText={setLastName} required />
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">First Name</label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Last Name</label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="Date of Birth" type="date" value={dob} onChangeText={setDob} required />
-              
-              <div className="flex flex-col">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Gender</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Date of Birth</label>
+                <input
+                  type="date"
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Gender</label>
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50 focus:border-blue-700 dark:focus:border-blue-500"
+                  className="w-full px-3 py-3 bg-[#080C0A] border border-[#1C3127] text-white rounded-xl text-xs sm:text-sm focus:outline-none focus:border-mint-500"
                 >
-                  <option value="MALE">MALE</option>
-                  <option value="FEMALE">FEMALE</option>
-                  <option value="TRANSGENDER">TRANSGENDER</option>
-                  <option value="OTHER">OTHER</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="TRANSGENDER">Transgender</option>
+                  <option value="OTHER">Other</option>
                 </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex flex-col">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Marital Status</label>
-                <select
-                  value={maritalStatus}
-                  onChange={(e) => setMaritalStatus(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50 focus:border-blue-700 dark:focus:border-blue-500"
-                >
-                  <option value="SINGLE">SINGLE</option>
-                  <option value="MARRIED">MARRIED</option>
-                  <option value="DIVORCED">DIVORCED</option>
-                  <option value="WIDOWED">WIDOWED</option>
-                </select>
-              </div>
-
-              <div className="flex flex-col">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Social Category</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Social Category</label>
                 <select
                   value={socialCategory}
                   onChange={(e) => setSocialCategory(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50 focus:border-blue-700 dark:focus:border-blue-500"
+                  className="w-full px-3 py-3 bg-[#080C0A] border border-[#1C3127] text-white rounded-xl text-xs sm:text-sm focus:outline-none focus:border-mint-500"
                 >
-                  <option value="GENERAL">GENERAL</option>
+                  <option value="GENERAL">General</option>
                   <option value="OBC">OBC</option>
                   <option value="SC">SC</option>
                   <option value="ST">ST</option>
@@ -137,73 +157,48 @@ export const DemographicsEditScreen: React.FC<Props> = ({ onBack }) => {
                 </select>
               </div>
 
-              <div className="flex flex-col">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Employment Status</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Employment Status</label>
                 <select
                   value={employmentStatus}
                   onChange={(e) => setEmploymentStatus(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50 focus:border-blue-700 dark:focus:border-blue-500"
+                  className="w-full px-3 py-3 bg-[#080C0A] border border-[#1C3127] text-white rounded-xl text-xs sm:text-sm focus:outline-none focus:border-mint-500"
                 >
-                  <option value="EMPLOYED">EMPLOYED</option>
-                  <option value="UNEMPLOYED">UNEMPLOYED</option>
-                  <option value="SELF_EMPLOYED">SELF_EMPLOYED</option>
-                  <option value="STUDENT">STUDENT</option>
-                  <option value="RETIRED">RETIRED</option>
-                  <option value="FARMER">FARMER</option>
-                  <option value="DAILY_WAGE">DAILY_WAGE</option>
+                  <option value="EMPLOYED">Salaried / Employed</option>
+                  <option value="SELF_EMPLOYED">Self Employed</option>
+                  <option value="FARMER">Farmer</option>
+                  <option value="DAILY_WAGE">Daily Wage Laborer</option>
+                  <option value="STUDENT">Student</option>
+                  <option value="UNEMPLOYED">Unemployed</option>
+                  <option value="RETIRED">Retired</option>
                 </select>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Input label="Annual Income (INR)" type="number" value={income} onChangeText={setIncome} required />
-              
-              <div className="flex flex-col">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Disability Type</label>
-                <select
-                  value={disabilityType}
-                  onChange={(e) => setDisabilityType(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50 focus:border-blue-700 dark:focus:border-blue-500"
-                >
-                  <option value="NONE">NONE</option>
-                  <option value="VISUAL">VISUAL</option>
-                  <option value="HEARING">HEARING</option>
-                  <option value="LOCOMOTOR">LOCOMOTOR</option>
-                  <option value="INTELLECTUAL">INTELLECTUAL</option>
-                  <option value="MULTIPLE">MULTIPLE</option>
-                  <option value="OTHER">OTHER</option>
-                </select>
-              </div>
-
-              <Input label="Disability (%)" type="number" value={disabilityPercent} onChangeText={setDisabilityPercent} />
-            </div>
-
-            {/* BPL Toggle Checkbox */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/70 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <div>
-                <label htmlFor="bpl-toggle" className="text-xs font-bold text-slate-900 dark:text-slate-100 block cursor-pointer">
-                  Below Poverty Line (BPL) Card Holder?
-                </label>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">Enable if holding valid state/central BPL ration card.</span>
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Household Annual Income (₹ / Year)</label>
               <input
-                id="bpl-toggle"
-                type="checkbox"
-                checked={isBpl}
-                onChange={(e) => setIsBpl(e.target.checked)}
-                className="w-5 h-5 text-blue-900 dark:text-blue-500 rounded border-slate-300 dark:border-slate-700 focus:ring-blue-500 cursor-pointer"
+                type="number"
+                value={income}
+                onChange={(e) => setIncome(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
               />
             </div>
 
-            {isBpl && <Input label="BPL Card Number" value={bplCardNumber} onChangeText={setBplCardNumber} />}
-
-            <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <Button type="submit" title="Save Demographics" isLoading={isUpdating} className="flex-1 py-3" />
-              <Button type="button" title="Cancel" variant="outline" onClick={onBack} className="px-6" />
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isUpdating}
+                className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs sm:text-sm shadow-md transition-all"
+              >
+                <span>{isUpdating ? 'Saving Profile...' : 'Save Demographics'}</span>
+                <ArrowRightIcon className="w-4 h-4 stroke-[2.5]" />
+              </button>
             </div>
           </form>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };

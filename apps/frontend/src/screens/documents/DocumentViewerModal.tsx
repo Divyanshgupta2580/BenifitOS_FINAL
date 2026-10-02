@@ -1,11 +1,10 @@
 import React from 'react';
-import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { DocumentTextIcon } from '../../components/ui/Icons';
-import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import { DocumentTextIcon, ArrowLeftIcon, SparklesIcon, DownloadIcon, AlertTriangleIcon, CheckCircle2Icon } from '../../components/ui/Icons';
 import { useDocument } from '../../hooks/useDocument';
+import { AppLayout } from '../../components/layout/AppLayout';
 
 interface Props {
   documentId: string;
@@ -17,18 +16,45 @@ export const DocumentViewerModal: React.FC<Props> = ({ documentId, onBack, onRun
   const { document: doc, isLoading, isError, refetch } = useDocument(documentId);
 
   if (isLoading) {
-    return <LoadingSpinner message="Retrieving Secure Presigned Document Metadata..." />;
+    return (
+      <AppLayout activeTab="vault">
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <LoadingSpinner message="Retrieving secure presigned document metadata..." />
+        </div>
+      </AppLayout>
+    );
   }
 
   if (isError || !doc) {
     return (
-      <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center p-6 text-center transition-colors">
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full shadow-xs">
-          <p className="text-sm font-semibold text-rose-600 dark:text-rose-400 mb-4">Could not load document preview from server.</p>
-          <Button title="Retry" onClick={() => refetch()} className="w-full mb-2 py-2.5" />
-          <Button title="Back" variant="outline" onClick={onBack} className="w-full py-2.5" />
+      <AppLayout activeTab="vault">
+        <div className="w-full max-w-md mx-auto py-16 px-4">
+          <div className="bg-[#0E1712] p-8 rounded-3xl border border-rose-900/40 shadow-2xl text-center">
+            <div className="w-12 h-12 rounded-2xl bg-rose-950/60 border border-rose-800/50 flex items-center justify-center mx-auto mb-4 text-rose-400">
+              <AlertTriangleIcon className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-semibold text-rose-300 mb-6">
+              Could not load document preview from the citizen vault.
+            </p>
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="w-full py-2.5 px-4 rounded-xl font-bold text-xs bg-mint-500 hover:bg-mint-400 text-forest-950 shadow-md transition-all"
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={onBack}
+                className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs bg-forest-950/80 hover:bg-forest-900 text-slate-300 border border-[#1C3127] transition-all"
+              >
+                Back to Vault
+              </button>
+            </div>
+          </div>
         </div>
-      </main>
+      </AppLayout>
     );
   }
 
@@ -36,7 +62,7 @@ export const DocumentViewerModal: React.FC<Props> = ({ documentId, onBack, onRun
     if (doc.storagePath && doc.storagePath.startsWith('http')) {
       window.open(doc.storagePath, '_blank');
     } else {
-      alert(`Initiating download for ${doc.fileName}...`);
+      alert(`Initiating secure download for ${doc.fileName}...`);
     }
   };
 
@@ -44,61 +70,110 @@ export const DocumentViewerModal: React.FC<Props> = ({ documentId, onBack, onRun
   const isPdf = doc.mimeType === 'application/pdf' || doc.fileName?.endsWith('.pdf');
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
-            ← Close Viewer
+    <AppLayout activeTab="vault">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-6">
+        {/* Navigation Bar */}
+        <div className="flex items-center justify-between border-b border-[#1C3127]/60 pb-4">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-mint-400 hover:text-mint-300 transition-colors"
+          >
+            <ArrowLeftIcon className="w-4 h-4" />
+            <span>Back to Citizen Vault</span>
           </button>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400">{doc.fileName}</span>
-          </div>
+          <span className="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-forest-950 border border-[#1C3127] text-slate-300">
+            {doc.fileName}
+          </span>
         </div>
-      </header>
 
-      <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
-        <Card>
-          <div className="flex justify-between items-center mb-4">
-            <Badge label={doc.documentType} variant="primary" />
-            <Badge label={doc.verificationStatus} variant={doc.verificationStatus === 'VERIFIED' ? 'success' : 'warning'} />
+        {/* Document Viewer Container */}
+        <div className="rounded-3xl bg-[#0E1712] border border-[#1C3127]/80 p-6 sm:p-8 shadow-2xl space-y-6">
+          {/* Header Metadata */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Badge label={doc.documentType} variant="primary" />
+              <Badge
+                label={doc.verificationStatus}
+                variant={doc.verificationStatus === 'VERIFIED' ? 'success' : 'warning'}
+              />
+            </div>
+            <span className="text-xs text-slate-400 font-mono">
+              {(doc.fileSize / 1024).toFixed(1)} KB • {doc.mimeType || 'binary/octet'}
+            </span>
           </div>
 
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">{doc.fileName}</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
-            {doc.mimeType} • {(doc.fileSize / 1024).toFixed(1)} KB • Path: {doc.storagePath}
-          </p>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
+              {doc.fileName}
+            </h1>
+            <p className="text-xs text-slate-400 mt-1 font-mono break-all">
+              Path: {doc.storagePath}
+            </p>
+          </div>
 
-          {/* Web Preview Container */}
-          <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 min-h-[320px] flex items-center justify-center mb-6 overflow-hidden">
+          {/* Secure Web Preview */}
+          <div className="bg-[#080C0A] rounded-2xl p-4 border border-[#1C3127] min-h-[340px] flex items-center justify-center overflow-hidden">
             {isImage && doc.storagePath?.startsWith('http') ? (
-              <img src={doc.storagePath} alt={doc.fileName} className="max-h-[500px] object-contain rounded-lg" />
+              <img
+                src={doc.storagePath}
+                alt={doc.fileName}
+                className="max-h-[500px] object-contain rounded-xl shadow-lg"
+              />
             ) : isPdf && doc.storagePath?.startsWith('http') ? (
-              <iframe src={doc.storagePath} title={doc.fileName} className="w-full h-[500px] rounded-lg border-0" />
+              <iframe
+                src={doc.storagePath}
+                title={doc.fileName}
+                className="w-full h-[500px] rounded-xl border-0"
+              />
             ) : (
-              <div className="text-center p-8">
-                <DocumentTextIcon className="w-12 h-12 text-slate-500 dark:text-slate-400 mb-3 mx-auto" />
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Secure Web Presigned Preview Ready</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Ref: {doc.storagePath}</p>
+              <div className="text-center p-8 space-y-3">
+                <div className="w-16 h-16 rounded-2xl bg-forest-950/80 border border-[#1C3127] flex items-center justify-center mx-auto text-mint-400 shadow-inner">
+                  <DocumentTextIcon className="w-8 h-8" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white font-heading">
+                    Encrypted Presigned Preview Ready
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto font-mono text-[11px] truncate">
+                    Ref: {doc.storagePath}
+                  </p>
+                </div>
               </div>
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button title="Download File" onClick={handleDownload} variant="secondary" className="flex-1 py-2.5 font-bold" />
+          {/* Action Row */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="flex-1 py-3 px-4 rounded-xl font-bold text-xs bg-forest-950/90 hover:bg-forest-900 text-slate-200 border border-[#1C3127] flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <DownloadIcon className="w-4 h-4 text-slate-300" />
+              <span>Download Encrypted File</span>
+            </button>
             {onRunOcr && (
-              <Button
-                title="Run AI Vision OCR Extraction"
+              <button
+                type="button"
                 onClick={() => onRunOcr(doc.id)}
-                variant="outline"
-                className="flex-1 py-2.5 font-bold"
-              />
+                className="flex-1 py-3 px-4 rounded-xl font-black text-xs bg-gradient-to-r from-mint-500 to-emerald-400 hover:from-mint-400 hover:to-emerald-300 text-forest-950 shadow-lg shadow-mint-500/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <SparklesIcon className="w-4 h-4 text-forest-950" />
+                <span>Run AI Vision OCR Extraction</span>
+              </button>
             )}
           </div>
-        </Card>
+        </div>
 
-        <Button title="Close Viewer" variant="outline" onClick={onBack} className="w-full py-2.5" />
-      </main>
-    </div>
+        {/* Back Button */}
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-full py-3 px-6 rounded-2xl font-bold text-xs bg-forest-950 hover:bg-forest-900 text-slate-300 border border-[#1C3127] transition-all cursor-pointer"
+        >
+          ← Close Document Viewer
+        </button>
+      </div>
+    </AppLayout>
   );
 };

@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import { ArrowLeftIcon, SparklesIcon, AlertTriangleIcon, CheckCircle2Icon, FileTextIcon, ShieldCheckIcon } from '../../components/ui/Icons';
 import { useOcrResult } from '../../hooks/useOcrResult';
 import { useProcessOcr } from '../../hooks/useProcessOcr';
 import { useDocument } from '../../hooks/useDocument';
+import { AppLayout } from '../../components/layout/AppLayout';
 
 interface Props {
   documentId: string;
@@ -56,108 +54,167 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
   const isHighConfidence = ocrResult && ocrResult.confidenceScore >= 0.85;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
-            ← Back to Vault
+    <AppLayout activeTab="vault">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-6">
+        {/* Navigation Bar */}
+        <div className="flex items-center justify-between border-b border-[#1C3127]/60 pb-4">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-mint-400 hover:text-mint-300 transition-colors"
+          >
+            <ArrowLeftIcon className="w-4 h-4" />
+            <span>Back to Vault</span>
           </button>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <h1 className="text-lg font-bold text-blue-900 dark:text-blue-400">AI Vision OCR & Document Verification</h1>
-          </div>
+          <span className="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-forest-950 border border-[#1C3127] text-slate-300">
+            OCR Verification Suite
+          </span>
         </div>
-      </header>
 
-      <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
+        {/* Status Alerts */}
         {statusMessage && (
           <div
-            className={`p-3.5 rounded-xl border text-xs font-semibold ${
+            className={`p-4 rounded-2xl border text-xs font-semibold flex items-center gap-3 ${
               statusMessage.type === 'success'
-                ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
-                : 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-200 shadow-lg'
+                : 'bg-rose-950/80 border-rose-800/60 text-rose-200 shadow-lg'
             }`}
           >
-            {statusMessage.text}
+            {statusMessage.type === 'success' ? (
+              <CheckCircle2Icon className="w-5 h-5 text-mint-400 shrink-0" />
+            ) : (
+              <AlertTriangleIcon className="w-5 h-5 text-rose-400 shrink-0" />
+            )}
+            <span>{statusMessage.text}</span>
           </div>
         )}
 
         {/* Document Header Card */}
-        <Card>
-          <div className="flex justify-between items-center mb-3">
+        <div className="rounded-3xl bg-[#0E1712] border border-[#1C3127]/80 p-6 sm:p-7 shadow-xl space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <Badge label={doc?.documentType || 'DOCUMENT'} variant="primary" />
-            <Badge label={doc?.verificationStatus || 'PENDING'} variant={doc?.verificationStatus === 'VERIFIED' ? 'success' : 'warning'} />
+            <Badge
+              label={doc?.verificationStatus || 'PENDING'}
+              variant={doc?.verificationStatus === 'VERIFIED' ? 'success' : 'warning'}
+            />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">{doc?.fileName || `Document #${documentId.slice(0, 8)}`}</h2>
-          
-          <Button
-            title={isProcessing ? 'Processing BenefitOS Vision Scan...' : 'Run Vision OCR Scan'}
-            onClick={handleRunOcr}
-            isLoading={isProcessing}
-            variant="secondary"
-            className="w-full py-2.5 font-bold"
-          />
-        </Card>
 
-        {isLoading && <LoadingSpinner message="Fetching OCR Results..." />}
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
+              {doc?.fileName || `Document #${documentId.slice(0, 8)}`}
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">
+              AI Vision OCR parses official stamps, QR codes, biometric signatures, and printed text.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleRunOcr}
+            disabled={isProcessing}
+            className="w-full py-3 px-6 rounded-2xl font-black text-xs bg-gradient-to-r from-mint-500 to-emerald-400 hover:from-mint-400 hover:to-emerald-300 text-forest-950 shadow-lg shadow-mint-500/10 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <SparklesIcon className="w-4 h-4 text-forest-950" />
+            <span>{isProcessing ? 'Processing BenefitOS Vision Scan...' : 'Run Vision OCR Scan'}</span>
+          </button>
+        </div>
+
+        {isLoading && (
+          <div className="min-h-[200px] flex items-center justify-center">
+            <LoadingSpinner message="Fetching OCR inspection results..." />
+          </div>
+        )}
 
         {ocrResult ? (
           <>
             {/* Confidence Badge */}
-            <div className="bg-blue-900 dark:bg-blue-950 text-white rounded-2xl p-6 shadow-md border border-blue-800 flex justify-between items-center">
+            <div className="rounded-3xl bg-gradient-to-br from-[#0D2418] via-[#0E1712] to-[#0A120E] border border-emerald-500/40 p-6 shadow-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <span className="text-xs uppercase tracking-wider text-blue-200 font-medium block">BenefitOS Vision Verification Score</span>
+                <span className="text-[11px] uppercase tracking-wider text-emerald-400 font-bold block mb-1">
+                  BenefitOS Vision Verification Score
+                </span>
                 <span className="text-3xl font-black text-white">{confidencePct}%</span>
               </div>
               <Badge
-                label={isHighConfidence ? 'HIGH CONFIDENCE' : 'MANUAL REVIEW REQUIRED'}
+                label={isHighConfidence ? 'HIGH CONFIDENCE' : 'MANUAL AUDIT REQUIRED'}
                 variant={isHighConfidence ? 'success' : 'warning'}
               />
             </div>
 
             {/* Editable Extracted Fields */}
-            <Card>
-              <h3 className="text-base font-bold text-blue-900 dark:text-blue-400 mb-1">Extracted Document Attributes</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Verify and edit any field before submitting to verification audit.</p>
+            <div className="rounded-3xl bg-[#0E1712] border border-[#1C3127]/80 p-6 sm:p-7 shadow-xl space-y-4">
+              <div>
+                <h2 className="text-base font-bold text-white font-heading">
+                  Extracted Document Attributes
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Verify and edit key entity attributes before finalizing vault ingestion.
+                </p>
+              </div>
 
               {Object.keys(editableFields).length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {Object.entries(editableFields).map(([key, val]) => (
-                    <Input
-                      key={key}
-                      label={key.toUpperCase().replace(/_/g, ' ')}
-                      value={val}
-                      onChangeText={(text: string) => handleFieldChange(key, text)}
-                    />
+                    <div key={key} className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                        {key.replace(/_/g, ' ')}
+                      </label>
+                      <input
+                        type="text"
+                        value={val}
+                        onChange={(e) => handleFieldChange(key, e.target.value)}
+                        className="w-full bg-[#080C0A] border border-[#1C3127] focus:border-mint-400 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none transition-all"
+                      />
+                    </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-500 dark:text-slate-400 italic">No structured fields extracted from document image.</p>
+                <p className="text-xs text-slate-500 italic">
+                  No structured fields extracted from document image.
+                </p>
               )}
-            </Card>
+            </div>
 
             {/* Raw Text Viewer */}
-            <Card>
-              <h3 className="text-base font-bold text-blue-900 dark:text-blue-400 mb-2">Raw Extracted OCR Text</h3>
-              <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
+            <div className="rounded-3xl bg-[#0E1712] border border-[#1C3127]/80 p-6 sm:p-7 shadow-xl space-y-3">
+              <h3 className="text-sm font-bold text-white font-heading">
+                Raw Extracted OCR Text Buffer
+              </h3>
+              <div className="bg-[#080C0A] p-4 rounded-2xl border border-[#1C3127] font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
                 {ocrResult.rawText}
               </div>
-            </Card>
+            </div>
 
-            <Button title="Confirm & Verify Document Attributes" onClick={handleConfirmVerification} className="w-full py-3 font-bold" />
+            {/* Confirm Button */}
+            <button
+              type="button"
+              onClick={handleConfirmVerification}
+              className="w-full py-4 px-6 rounded-2xl font-black text-sm bg-gradient-to-r from-mint-500 to-emerald-400 hover:from-mint-400 hover:to-emerald-300 text-forest-950 shadow-xl shadow-mint-500/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <CheckCircle2Icon className="w-5 h-5 text-forest-950" />
+              <span>Confirm &amp; Verify Document Attributes</span>
+            </button>
           </>
         ) : (
           !isLoading && (
-            <Card>
-              <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                No OCR extraction result available yet. Click "Run Vision OCR Scan" to initiate AI vision processing.
+            <div className="rounded-3xl bg-[#0E1712] border border-[#1C3127]/80 p-8 text-center text-slate-400 text-xs shadow-lg space-y-2">
+              <FileTextIcon className="w-8 h-8 text-slate-500 mx-auto" />
+              <p>No OCR extraction result available yet.</p>
+              <p className="text-[11px] text-slate-500">
+                Click "Run Vision OCR Scan" above to initiate AI vision processing.
               </p>
-            </Card>
+            </div>
           )
         )}
 
-        <Button title="Back to Vault" variant="outline" onClick={onBack} className="w-full py-2.5" />
-      </main>
-    </div>
+        {/* Back Button */}
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-full py-3 px-6 rounded-2xl font-bold text-xs bg-forest-950 hover:bg-forest-900 text-slate-300 border border-[#1C3127] transition-all cursor-pointer"
+        >
+          ← Return to Vault
+        </button>
+      </div>
+    </AppLayout>
   );
 };

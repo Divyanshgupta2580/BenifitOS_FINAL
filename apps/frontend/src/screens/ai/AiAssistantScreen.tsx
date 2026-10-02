@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '../../components/ui/Button';
 import { useAiChat, ChatMessage } from '../../hooks/useAiChat';
-import { LightbulbIcon, BotIcon, RefreshIcon } from '../../components/ui/Icons';
-import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import { LightbulbIcon, ArrowRightIcon, AlertTriangleIcon } from '../../components/ui/Icons';
 import { StructuredAiResponseRenderer } from '../../components/ai/StructuredAiResponseRenderer';
+import { AppLayout } from '../../components/layout/AppLayout';
 
 interface Props {
   onBack?: () => void;
@@ -43,50 +42,51 @@ export const AiAssistantScreen: React.FC<Props> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between transition-colors">
-      {/* Header */}
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+    <AppLayout activeTab="copilot">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-5 sm:py-6 flex-1 flex flex-col justify-between space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#1C3127]/60 pb-4">
           <div className="flex items-center gap-3">
             {onBack && (
-              <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
+              <button
+                onClick={onBack}
+                className="text-xs font-semibold text-mint-400 hover:underline"
+              >
                 ← Back
               </button>
             )}
             <div>
-              <h1 className="text-base font-bold text-blue-900 dark:text-blue-100 leading-tight">AI Citizen Copilot</h1>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Official Digital Welfare Intelligence</span>
+              <h1 className="text-xl font-bold text-white font-heading leading-tight">
+                AI Citizen Assistant
+              </h1>
+              <span className="text-[11px] text-emerald-400/80 block">
+                Official Digital Welfare Intelligence
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <button
-              onClick={clearChat}
-              className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:underline px-2 py-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/50"
-            >
-              Clear Chat
-            </button>
-          </div>
+          <button
+            onClick={clearChat}
+            className="text-xs font-semibold text-rose-400 hover:text-rose-300 px-3 py-1 rounded-lg border border-rose-900/60 bg-rose-950/40 hover:bg-rose-900/40 transition-colors"
+          >
+            Clear Chat
+          </button>
         </div>
-      </header>
 
-      {/* Main Chat Container */}
-      <main className="max-w-4xl w-full mx-auto flex-1 px-4 py-6 flex flex-col justify-between space-y-4">
         {/* Suggested Prompts Chips */}
-        <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-2 px-1">
+        <div className="bg-[#0E1712] p-3.5 rounded-2xl border border-[#1C3127]/80 shadow-md">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 px-1">
             Suggested Guidance Prompts:
           </span>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
             {suggestedPrompts.map((p, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handlePromptSelect(p)}
                 disabled={isLoading}
-                className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:border-blue-300 dark:hover:border-blue-500 hover:text-blue-900 dark:hover:text-blue-300 whitespace-nowrap transition-colors flex items-center gap-1.5"
+                className="px-3.5 py-1.5 rounded-full bg-forest-950/80 border border-[#1C3127] text-xs font-semibold text-mint-300 hover:text-white hover:border-mint-500/40 whitespace-nowrap transition-all flex items-center gap-1.5"
               >
-                <LightbulbIcon className="w-3.5 h-3.5 text-amber-500" />
+                <LightbulbIcon className="w-3.5 h-3.5 text-amber-400" />
                 <span>{p}</span>
               </button>
             ))}
@@ -94,7 +94,7 @@ export const AiAssistantScreen: React.FC<Props> = ({
         </div>
 
         {/* Message History */}
-        <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm overflow-y-auto space-y-5 max-h-[520px]">
+        <div className="flex-1 bg-[#0E1712] rounded-2xl p-4 sm:p-5 border border-[#1C3127]/80 shadow-lg overflow-y-auto space-y-5 min-h-[360px] max-h-[500px] custom-scrollbar">
           {messages.map((item: ChatMessage) => {
             const isUser = item.sender === 'user';
             return (
@@ -102,36 +102,22 @@ export const AiAssistantScreen: React.FC<Props> = ({
                 <div
                   className={`w-full ${
                     isUser
-                      ? 'max-w-[85%] sm:max-w-[70%] p-4 rounded-2xl bg-blue-900 dark:bg-blue-700 text-white border border-blue-900 dark:border-blue-700 rounded-br-none shadow-xs text-sm leading-relaxed ml-auto'
-                      : 'max-w-full p-4 sm:p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-850/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-bl-none shadow-xs'
+                      ? 'max-w-[85%] sm:max-w-[70%] p-4 rounded-2xl bg-[#0B3B2B] text-white border border-mint-500/30 rounded-br-none text-sm ml-auto shadow-md'
+                      : 'max-w-full p-4 sm:p-5 rounded-2xl bg-[#080C0A] border border-[#1C3127] rounded-bl-none shadow-md'
                   }`}
                 >
                   {isUser ? (
                     <div>
                       <p className="whitespace-pre-wrap">{item.text}</p>
                       <div className="mt-1 text-right">
-                        <span className="text-[10px] text-blue-200">{item.timestamp}</span>
+                        <span className="text-[10px] text-mint-300/80">{item.timestamp}</span>
                       </div>
-                    </div>
-                  ) : item.isError ? (
-                    <div className="space-y-2">
-                      <p className="text-xs font-semibold text-rose-700 dark:text-rose-300">
-                        {item.text}
-                      </p>
-                      <button
-                        onClick={retryLastMessage}
-                        className="text-xs font-bold text-rose-700 dark:text-rose-400 underline flex items-center gap-1"
-                      >
-                        <RefreshIcon className="w-3.5 h-3.5" />
-                        <span>Retry Request</span>
-                      </button>
                     </div>
                   ) : (
                     <StructuredAiResponseRenderer
                       content={item.text}
-                      sources={['Government Database', 'Citizen Profile']}
                       timestamp={item.timestamp}
-                      onActionClick={(actionQuery) => sendMessage(actionQuery)}
+                      onActionClick={(query) => sendMessage(query)}
                       onNavigateToSchemes={onNavigateToSchemes}
                       onNavigateToVault={onNavigateToVault}
                       onNavigateToApplications={onNavigateToApplications}
@@ -144,13 +130,13 @@ export const AiAssistantScreen: React.FC<Props> = ({
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 flex items-center gap-3">
-                <svg className="animate-spin h-4 w-4 text-blue-900 dark:text-blue-400" viewBox="0 0 24 24" fill="none">
+              <div className="bg-emerald-950/60 border border-emerald-500/30 rounded-2xl p-4 flex items-center gap-3">
+                <svg className="animate-spin h-5 w-5 text-mint-400" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300 animate-pulse">
-                  Preparing your guidance...
+                <span className="text-xs font-medium text-mint-200">
+                  Synthesizing verified welfare response...
                 </span>
               </div>
             </div>
@@ -158,25 +144,26 @@ export const AiAssistantScreen: React.FC<Props> = ({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Form Bar */}
-        <form onSubmit={handleSend} className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex gap-3 items-center">
+        {/* Input Bar */}
+        <form onSubmit={handleSend} className="bg-[#0E1712] p-3 rounded-2xl border border-[#1C3127]/80 shadow-xl flex gap-2 items-center">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Ask AI about schemes, documents, or eligibility..."
+            placeholder="Type your welfare question here..."
             disabled={isLoading}
-            className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-850"
+            className="flex-1 bg-[#080C0A] border border-[#1C3127] rounded-xl px-4 py-3 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-mint-500 focus:ring-1 focus:ring-mint-500 transition-all"
           />
-          <Button
+          <button
             type="submit"
-            title="Send"
-            isLoading={isLoading}
             disabled={!inputText.trim() || isLoading}
-            className="px-6 py-2.5 font-bold"
-          />
+            className="px-5 sm:px-6 py-3 rounded-xl bg-mint-400 hover:bg-mint-300 disabled:opacity-50 text-forest-950 font-bold text-xs sm:text-sm shadow-md transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <span>Send</span>
+            <ArrowRightIcon className="w-4 h-4 stroke-[2.5]" />
+          </button>
         </form>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };

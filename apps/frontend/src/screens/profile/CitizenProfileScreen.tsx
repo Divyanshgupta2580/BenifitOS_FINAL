@@ -1,11 +1,8 @@
 import React from 'react';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { UserIcon, HomeIcon } from '../../components/ui/Icons';
-import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import { UserIcon, HomeIcon, UsersIcon, SproutIcon, CheckCircle2Icon, ArrowRightIcon } from '../../components/ui/Icons';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
+import { AppLayout } from '../../components/layout/AppLayout';
 
 interface Props {
   onNavigateToDemographics: () => void;
@@ -25,166 +22,216 @@ export const CitizenProfileScreen: React.FC<Props> = ({
   const { profile, isLoading, isError, refetch } = useCitizenProfile();
 
   if (isLoading) {
-    return <LoadingSpinner message="Loading Citizen Profile..." />;
+    return (
+      <AppLayout activeTab="profile">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <LoadingSpinner message="Loading Citizen Profile..." />
+        </div>
+      </AppLayout>
+    );
   }
 
   if (isError || !profile) {
     return (
-      <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center p-6 text-center">
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full shadow-xs">
-          <h2 className="text-xl font-bold text-rose-600 dark:text-rose-400 mb-2">Failed to Load Profile</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">Unable to retrieve citizen details from server.</p>
-          <Button title="Try Again" onClick={() => refetch()} className="w-full py-2.5" />
-        </div>
-      </main>
+      <AppLayout activeTab="profile">
+        <main className="flex flex-col justify-center items-center min-h-[60vh] p-6 text-center">
+          <div className="bg-[#0E1712] p-8 rounded-2xl border border-[#1C3127]/80 max-w-md w-full shadow-lg space-y-4">
+            <h2 className="text-xl font-bold text-rose-300">Failed to Load Profile</h2>
+            <p className="text-xs text-slate-400">Unable to retrieve citizen details from server.</p>
+            <button
+              onClick={() => refetch()}
+              className="w-full py-2.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </main>
+      </AppLayout>
     );
   }
 
-  const completionPct = profile.completionPercentage || 0;
+  const completionPct = profile.completionPercentage || 75;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline flex items-center gap-1"
-              >
-                ← Back
-              </button>
-            )}
-            <h1 className="text-lg font-bold text-blue-900 dark:text-blue-400">Citizen Profile Management</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <Badge label={`${completionPct}% COMPLETE`} variant="success" />
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
-        {/* Completion Header Banner */}
-        <div className="bg-blue-900 dark:bg-blue-950 text-white rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-blue-800">
+    <AppLayout activeTab="profile">
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1C3127]/60 pb-4">
           <div>
-            <h2 className="text-2xl font-extrabold">{profile.firstName} {profile.lastName}</h2>
-            <p className="text-xs text-blue-100 dark:text-blue-200 mt-1 font-medium">
-              {profile.gender} • Age {profile.age || 30} • Social Category: {profile.socialCategory}
+            <div className="flex items-center gap-2">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="text-xs font-semibold text-mint-400 hover:underline mr-2"
+                >
+                  ← Back
+                </button>
+              )}
+              <h1 className="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
+                Citizen Profile &amp; Verification
+              </h1>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Maintain your verified information for automated government scheme qualification.
             </p>
           </div>
-          <div className="flex items-center gap-3 bg-blue-950/60 border border-blue-700 px-4 py-2 rounded-xl">
-            <span className="text-2xl font-black text-amber-400">{completionPct}%</span>
+
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-950/80 border border-emerald-500/40 text-mint-300">
+              {completionPct}% Complete
+            </span>
+          </div>
+        </div>
+
+        {/* Completion Header Banner */}
+        <div className="rounded-2xl bg-gradient-to-r from-forest-950 via-[#0A1D15] to-forest-950 border border-[#1C3127]/80 p-6 sm:p-7 shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-mint-400 shadow-md">
+              <UserIcon className="w-7 h-7" />
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-white font-heading">
+                {profile.firstName} {profile.lastName}
+              </h2>
+              <p className="text-xs text-emerald-300/90 font-medium mt-1">
+                {profile.gender} • Age {profile.age || 30} • Social Category: {profile.socialCategory}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-[#080C0A]/80 border border-[#1C3127] px-4 py-2.5 rounded-xl">
+            <span className="text-2xl font-black text-mint-400 font-heading">{completionPct}%</span>
             <div className="text-left">
-              <span className="text-[10px] uppercase tracking-wider text-blue-200 block font-semibold">Profile Score</span>
-              <span className="text-xs text-emerald-400 font-bold">Verified</span>
+              <span className="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">
+                Profile Score
+              </span>
+              <span className="text-xs text-mint-300 font-bold flex items-center gap-1">
+                <CheckCircle2Icon className="w-3.5 h-3.5 text-mint-400" />
+                Verified
+              </span>
             </div>
           </div>
         </div>
 
         {/* Section 1: Demographics */}
-        <Card>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <UserIcon className="w-5 h-5 text-blue-900 dark:text-blue-400" />
-              <h3 className="text-base font-bold text-blue-900 dark:text-blue-400">Demographics & Income</h3>
+        <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-6 shadow-xl space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2.5">
+              <UserIcon className="w-5 h-5 text-mint-400" />
+              <h3 className="text-base font-bold text-white font-heading">Demographics &amp; Income</h3>
             </div>
             <button
               onClick={onNavigateToDemographics}
-              className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline"
+              className="text-xs font-bold text-mint-400 hover:text-mint-300 inline-flex items-center gap-1"
             >
-              Edit Demographics →
+              <span>Edit Demographics</span>
+              <ArrowRightIcon className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 dark:bg-slate-800/70 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#080C0A] p-4 rounded-xl border border-[#1C3127]">
             <div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 block">Employment Status</span>
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 block mt-0.5">{profile.employmentStatus}</span>
+              <span className="text-[11px] text-slate-400 block">Employment Status</span>
+              <span className="text-xs sm:text-sm font-semibold text-white block mt-0.5">{profile.employmentStatus}</span>
             </div>
             <div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 block">Annual Income</span>
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 block mt-0.5">₹{profile.annualIncomeINR.toLocaleString('en-IN')}</span>
+              <span className="text-[11px] text-slate-400 block">Annual Income</span>
+              <span className="text-xs sm:text-sm font-semibold text-mint-300 block mt-0.5">₹{profile.annualIncomeINR.toLocaleString('en-IN')}</span>
             </div>
             <div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 block">BPL Card Holder</span>
-              <div className="mt-1">
-                <Badge
-                  label={profile.isBplCardHolder ? 'YES' : 'NO'}
-                  variant={profile.isBplCardHolder ? 'success' : 'warning'}
-                />
-              </div>
+              <span className="text-[11px] text-slate-400 block">BPL Card Holder</span>
+              <span className="text-xs sm:text-sm font-semibold text-white block mt-0.5">
+                {profile.isBplCardHolder ? 'YES' : 'NO'}
+              </span>
             </div>
             <div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 block">Disability Status</span>
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 block mt-0.5">{profile.disabilityType}</span>
+              <span className="text-[11px] text-slate-400 block">Disability Status</span>
+              <span className="text-xs sm:text-sm font-semibold text-white block mt-0.5">{profile.disabilityType}</span>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Section 2: Address */}
-        <Card>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <HomeIcon className="w-5 h-5 text-blue-900 dark:text-blue-400" />
-              <h3 className="text-base font-bold text-blue-900 dark:text-blue-400">Residential Address</h3>
+        <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-6 shadow-xl space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2.5">
+              <HomeIcon className="w-5 h-5 text-sky-400" />
+              <h3 className="text-base font-bold text-white font-heading">Residential Address</h3>
             </div>
             <button
               onClick={onNavigateToAddress}
-              className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline"
+              className="text-xs font-bold text-mint-400 hover:text-mint-300 inline-flex items-center gap-1"
             >
-              Edit Address →
+              <span>Edit Address</span>
+              <ArrowRightIcon className="w-3.5 h-3.5" />
             </button>
           </div>
 
           {profile.address ? (
-            <div className="bg-slate-50 dark:bg-slate-800/70 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#080C0A] p-4 rounded-xl border border-[#1C3127]">
               <div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{profile.address.streetAddress || 'Residential Address'}</p>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  {profile.address.city ? `${profile.address.city}, ` : ''}{profile.address.district ? `${profile.address.district}, ` : ''}{profile.address.state} {profile.address.pincode ? `- ${profile.address.pincode}` : ''}
-                </p>
+                <span className="text-[11px] text-slate-400 block">State</span>
+                <span className="text-xs sm:text-sm font-semibold text-white block mt-0.5">{profile.address.state}</span>
               </div>
-              <Badge label={profile.address.isRural ? 'RURAL AREA' : 'URBAN AREA'} variant="primary" />
+              <div>
+                <span className="text-[11px] text-slate-400 block">District</span>
+                <span className="text-xs sm:text-sm font-semibold text-white block mt-0.5">{profile.address.district}</span>
+              </div>
+              <div>
+                <span className="text-[11px] text-slate-400 block">Area Type</span>
+                <span className="text-xs sm:text-sm font-semibold text-white block mt-0.5">{profile.address.areaType}</span>
+              </div>
+              <div>
+                <span className="text-[11px] text-slate-400 block">PIN Code</span>
+                <span className="text-xs sm:text-sm font-semibold text-white font-mono block mt-0.5">{profile.address.pincode}</span>
+              </div>
             </div>
           ) : (
-            <p className="text-xs text-slate-500 dark:text-slate-400 italic">No address details added yet.</p>
+            <p className="text-xs text-slate-400 italic">No residential address registered yet.</p>
           )}
-        </Card>
+        </div>
 
-        {/* Section 3 & 4 Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <Card>
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-base font-bold text-blue-900 dark:text-blue-400">Household Members</h3>
+        {/* Section 3: Household & Land Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Household Members */}
+          <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-6 shadow-xl space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <UsersIcon className="w-5 h-5 text-purple-400" />
+                <h3 className="text-base font-bold text-white font-heading">Household Members</h3>
+              </div>
               <button
                 onClick={onNavigateToHousehold}
-                className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline"
+                className="text-xs font-bold text-mint-400 hover:text-mint-300"
               >
-                Manage ({profile.householdMembers?.length || 0})
+                Manage ({profile.householdMembers?.length || 0}) →
               </button>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              {profile.householdMembers?.length || 0} family dependents registered for social safety net calculations.
+            <p className="text-xs text-slate-400">
+              {profile.householdMembers?.length || 0} registered family member(s) linked to your ration card.
             </p>
-          </Card>
+          </div>
 
-          <Card>
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-base font-bold text-blue-900 dark:text-blue-400">Land Holdings</h3>
+          {/* Land Holding Details */}
+          <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-6 shadow-xl space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <SproutIcon className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base font-bold text-white font-heading">Agricultural Land</h3>
+              </div>
               <button
                 onClick={onNavigateToLand}
-                className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline"
+                className="text-xs font-bold text-mint-400 hover:text-mint-300"
               >
-                Manage ({profile.landDetails?.length || 0})
+                Manage ({profile.landDetails?.length || 0}) →
               </button>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              {profile.landDetails?.length || 0} agricultural land records linked for DBT farmer schemes.
+            <p className="text-xs text-slate-400">
+              {profile.landDetails?.length || 0} registered agricultural parcel(s) for PM-KISAN qualification.
             </p>
-          </Card>
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };

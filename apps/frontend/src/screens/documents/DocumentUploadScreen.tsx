@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Button } from '../../components/ui/Button';
-import { DocumentTextIcon } from '../../components/ui/Icons';
-import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import { DocumentTextIcon, CheckCircle2Icon, AlertTriangleIcon, ArrowRightIcon } from '../../components/ui/Icons';
 import { useUploadDocument } from '../../hooks/useUploadDocument';
+import { AppLayout } from '../../components/layout/AppLayout';
 
 const TYPES = [
   { id: 'BIRTH_CERTIFICATE', label: 'Birth Certificate' },
@@ -49,7 +48,7 @@ export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
     setStatusMessage(null);
 
     if (!selectedFile) {
-      setStatusMessage({ type: 'error', text: 'Please select a file to upload.' });
+      setStatusMessage({ type: 'error', text: 'Please select a document file to upload.' });
       return;
     }
 
@@ -64,7 +63,7 @@ export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
 
       setStatusMessage({
         type: 'success',
-        text: 'Document verified',
+        text: 'Document verified & uploaded',
         uploadedName: selectedTypeLabel,
         detectedName: detectedLabel,
         status: 'Verified',
@@ -72,7 +71,7 @@ export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
       setTimeout(onBack, 1500);
     } catch (err: any) {
       const selectedTypeLabel = TYPES.find((t) => t.id === docType)?.label || docType;
-      let errMsg = err.message || `Incorrect document. Please upload your ${selectedTypeLabel}.`;
+      let errMsg = err.message || `Incorrect document format. Please upload a valid ${selectedTypeLabel}.`;
       if (typeof err?.response?.data?.message === 'string') {
         errMsg = err.response.data.message;
       }
@@ -84,103 +83,113 @@ export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
-            ← Back to Vault
-          </button>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <h1 className="text-lg font-bold text-blue-900 dark:text-blue-400">Upload Document</h1>
+    <AppLayout activeTab="vault">
+      <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-6 space-y-6">
+        {/* Navigation */}
+        <div className="flex items-center justify-between border-b border-[#1C3127]/60 pb-4">
+          <div>
+            <button
+              onClick={onBack}
+              className="text-xs font-semibold text-mint-400 hover:underline mb-1 block"
+            >
+              ← Back to Vault
+            </button>
+            <h1 className="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
+              Upload Citizen Document
+            </h1>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Securely upload identity or eligibility certificates for automated OCR verification.
+            </p>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+        {/* Upload Form Card */}
+        <form
+          onSubmit={handleUpload}
+          className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-6 sm:p-7 shadow-xl space-y-5"
+        >
+          {/* Document Type Selection */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+              Document Category
+            </label>
+            <select
+              value={docType}
+              onChange={(e) => setDocType(e.target.value)}
+              className="w-full p-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500 focus:ring-1 focus:ring-mint-500"
+            >
+              {TYPES.map((t) => (
+                <option key={t.id} value={t.id} className="bg-[#080C0A] text-white">
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Drag and Drop / File Input Zone */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+              Document File (PDF, PNG, JPG up to 10 MB)
+            </label>
+            <label className="border-2 border-dashed border-[#1C3127] hover:border-mint-500/50 bg-[#080C0A] rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all group text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-forest-950 border border-[#1C3127] flex items-center justify-center text-mint-400 group-hover:scale-105 transition-transform">
+                <DocumentTextIcon className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm font-bold text-white group-hover:text-mint-300 transition-colors">
+                  {selectedFile ? selectedFile.name : 'Click or drag document to upload'}
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  {selectedFile
+                    ? `${(selectedFile.size / 1024).toFixed(1)} KB`
+                    : 'Supported: PDF, JPEG, PNG (Max 10 MB)'}
+                </p>
+              </div>
+              <input
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {/* Status Message */}
           {statusMessage && (
             <div
-              className={`mb-6 p-4 rounded-xl border text-xs ${
+              className={`p-4 rounded-xl text-xs font-semibold flex items-start gap-2.5 ${
                 statusMessage.type === 'success'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300'
-                  : 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
+                  ? 'bg-emerald-950/80 border border-emerald-500/40 text-mint-300'
+                  : 'bg-rose-950/80 border border-rose-900/60 text-rose-300'
               }`}
             >
-              <p className="font-bold text-sm mb-1">{statusMessage.text}</p>
-              {statusMessage.type === 'success' && (
-                <div className="mt-2 space-y-0.5 text-xs text-emerald-800 dark:text-emerald-300">
-                  <p><span className="font-semibold">Uploaded:</span> {statusMessage.uploadedName}</p>
-                  <p><span className="font-semibold">Detected:</span> {statusMessage.detectedName}</p>
-                  <p><span className="font-semibold">Status:</span> {statusMessage.status}</p>
-                </div>
+              {statusMessage.type === 'success' ? (
+                <CheckCircle2Icon className="w-4 h-4 text-mint-400 shrink-0 mt-0.5" />
+              ) : (
+                <AlertTriangleIcon className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
               )}
+              <div>
+                <p className="font-bold">{statusMessage.text}</p>
+                {statusMessage.uploadedName && (
+                  <p className="mt-1 text-[11px] text-slate-300">
+                    Target: {statusMessage.uploadedName} • OCR Result: {statusMessage.detectedName}
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
-          <form onSubmit={handleUpload} className="space-y-6">
-            {/* Category Select */}
-            <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-2">
-                1. Select Document Category
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {TYPES.map((t) => {
-                  const isSelected = docType === t.id;
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => setDocType(t.id)}
-                      className={`p-3 rounded-xl border text-xs font-semibold text-center transition-all ${
-                        isSelected
-                          ? 'border-blue-900 dark:border-blue-700 bg-blue-50/70 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 shadow-xs'
-                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      {t.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Web File Input Dropzone */}
-            <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-2">
-                2. Choose File (PDF, JPEG, PNG • Max 10MB)
-              </label>
-              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100/80 dark:hover:bg-slate-800 transition-colors relative cursor-pointer">
-                <input
-                  type="file"
-                  accept=".pdf,.jpeg,.png,.jpg"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <div className="flex flex-col items-center gap-2">
-                  <DocumentTextIcon className="w-10 h-10 text-blue-900 dark:text-blue-400" />
-                  {selectedFile ? (
-                    <div>
-                      <p className="text-sm font-bold text-blue-900 dark:text-blue-300">{selectedFile.name}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{(selectedFile.size / 1024).toFixed(1)} KB</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-xs font-bold text-slate-700 dark:text-slate-200">Click to browse or drag file here</p>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Supports .pdf, .jpg, .jpeg, .png</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <Button type="submit" title="Upload Document to Vault" isLoading={isUploading} className="flex-1 py-3 font-bold" />
-              <Button type="button" title="Cancel" variant="outline" onClick={onBack} className="px-6" />
-            </div>
-          </form>
-        </div>
-      </main>
-    </div>
+          {/* Submit Action Button */}
+          <button
+            type="submit"
+            disabled={isUploading || !selectedFile}
+            className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-mint-400 hover:bg-mint-300 disabled:opacity-50 text-forest-950 font-bold text-xs sm:text-sm shadow-md transition-all"
+          >
+            <span>{isUploading ? 'Uploading & Processing OCR...' : 'Upload & Verify Document'}</span>
+            <ArrowRightIcon className="w-4 h-4 stroke-[2.5]" />
+          </button>
+        </form>
+      </div>
+    </AppLayout>
   );
 };

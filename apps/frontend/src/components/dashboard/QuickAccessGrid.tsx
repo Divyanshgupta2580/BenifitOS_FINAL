@@ -1,57 +1,61 @@
 import React from 'react';
 import {
-  BuildingIcon,
-  FolderIcon,
-  LandmarkIcon,
+  UserIcon,
+  DocumentTextIcon,
   ClipboardListIcon,
-  ChevronRightIcon,
+  FolderIcon,
+  ArrowRightIcon,
 } from '../ui/Icons';
 
 interface QuickAccessGridProps {
-  onNavigateToGovernmentServices: () => void;
-  onNavigateToVault: () => void;
+  onNavigateToProfile: () => void;
   onNavigateToSchemes: () => void;
   onNavigateToApplications: () => void;
+  onNavigateToVault: () => void;
 }
 
 export const QuickAccessGrid: React.FC<QuickAccessGridProps> = ({
-  onNavigateToGovernmentServices,
-  onNavigateToVault,
+  onNavigateToProfile,
   onNavigateToSchemes,
   onNavigateToApplications,
+  onNavigateToVault,
 }) => {
   const cards = [
     {
-      id: 'govt-hub',
-      title: 'Govt Hub',
-      subtitle: 'Central & State Government Links',
-      icon: <BuildingIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />,
-      iconBg: 'bg-blue-100 dark:bg-blue-900/50',
-      onClick: onNavigateToGovernmentServices,
+      id: 'profile',
+      title: 'My Profile',
+      description: 'Keep your information up to date for better scheme recommendations.',
+      icon: <UserIcon className="w-5 h-5 text-mint-400" />,
+      iconBoxBg: 'bg-emerald-950/90 border border-emerald-500/30 text-mint-400',
+      arrowBg: 'hover:bg-emerald-900/60',
+      onClick: onNavigateToProfile,
     },
     {
-      id: 'doc-vault',
-      title: 'Doc Vault',
-      subtitle: 'Secure Document Storage',
-      icon: <FolderIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
-      iconBg: 'bg-emerald-100 dark:bg-emerald-900/50',
-      onClick: onNavigateToVault,
-    },
-    {
-      id: 'all-schemes',
-      title: 'All Schemes',
-      subtitle: 'Browse All Welfare Schemes',
-      icon: <LandmarkIcon className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
-      iconBg: 'bg-amber-100 dark:bg-amber-900/50',
+      id: 'schemes',
+      title: 'Eligible Schemes',
+      description: 'View government schemes you qualify for.',
+      icon: <DocumentTextIcon className="w-5 h-5 text-sky-400" />,
+      iconBoxBg: 'bg-sky-950/90 border border-sky-500/30 text-sky-400',
+      arrowBg: 'hover:bg-sky-900/60',
       onClick: onNavigateToSchemes,
     },
     {
       id: 'applications',
-      title: 'Applications',
-      subtitle: 'Track & Manage Applications',
-      icon: <ClipboardListIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />,
-      iconBg: 'bg-purple-100 dark:bg-purple-900/50',
+      title: 'My Applications',
+      description: 'Track and manage your scheme applications.',
+      icon: <ClipboardListIcon className="w-5 h-5 text-purple-400" />,
+      iconBoxBg: 'bg-purple-950/90 border border-purple-500/30 text-purple-400',
+      arrowBg: 'hover:bg-purple-900/60',
       onClick: onNavigateToApplications,
+    },
+    {
+      id: 'vault',
+      title: 'My Documents',
+      description: 'Store and manage your important documents securely.',
+      icon: <FolderIcon className="w-5 h-5 text-amber-400" />,
+      iconBoxBg: 'bg-amber-950/90 border border-amber-500/30 text-amber-400',
+      arrowBg: 'hover:bg-amber-900/60',
+      onClick: onNavigateToVault,
     },
   ];
 
@@ -62,28 +66,32 @@ export const QuickAccessGrid: React.FC<QuickAccessGridProps> = ({
           key={card.id}
           type="button"
           onClick={card.onClick}
-          className="group w-full text-left p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700/70 transition-all flex items-center justify-between gap-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="group text-left p-4 rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 hover:border-mint-500/40 hover:bg-[#121E18] transition-all duration-200 flex items-center justify-between gap-3 shadow-lg focus:outline-none focus:ring-2 focus:ring-mint-500"
         >
-          <div className="flex items-center gap-3 min-w-0">
-            {/* Icon Container */}
+          {/* Left Icon + Text */}
+          <div className="flex items-center gap-3.5 min-w-0">
+            {/* Colored Icon Tile */}
             <div
-              className={`w-10 h-10 rounded-xl ${card.iconBg} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform`}
+              className={`w-11 h-11 rounded-xl ${card.iconBoxBg} flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-xs`}
             >
               {card.icon}
             </div>
 
-            {/* Title & Subtitle */}
+            {/* Title & Description */}
             <div className="min-w-0">
-              <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+              <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-mint-300 transition-colors font-heading leading-tight truncate">
                 {card.title}
               </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                {card.subtitle}
+              <p className="text-[11px] text-slate-400/90 line-clamp-2 leading-tight mt-0.5">
+                {card.description}
               </p>
             </div>
           </div>
 
-          <ChevronRightIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+          {/* Right Arrow Action Circle */}
+          <div className="w-7 h-7 rounded-full bg-forest-900/80 border border-[#1C3127] flex items-center justify-center text-slate-400 group-hover:text-mint-300 group-hover:border-mint-500/40 group-hover:translate-x-0.5 transition-all shrink-0">
+            <ArrowRightIcon className="w-3.5 h-3.5" />
+          </div>
         </button>
       ))}
     </div>

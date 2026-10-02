@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
-import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { useRecommendations } from '../../hooks/useRecommendations';
 import { SchemeRecommendationItem } from '../../services/recommendation.service';
 import {
-  CheckCircleIcon,
+  CheckCircle2Icon,
   AlertTriangleIcon,
-  XCircleIcon,
   ArrowRightIcon,
+  LandmarkIcon,
 } from '../../components/ui/Icons';
+import { AppLayout } from '../../components/layout/AppLayout';
 
 interface Props {
   onSelectRecommendation: (id: string) => void;
@@ -29,16 +26,34 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
 
   const eligibleCount = recommendations.filter((r) => r.isEligible).length;
-  const incompleteCount = recommendations.filter((r) => !r.isEligible && (r.eligibilityStatus === 'INCOMPLETE_PROFILE' || (r.missingProfileFields && r.missingProfileFields.length > 0))).length;
-  const notEligibleCount = recommendations.filter((r) => !r.isEligible && (r.eligibilityStatus === 'NOT_ELIGIBLE' || (!r.missingProfileFields || r.missingProfileFields.length === 0))).length;
+  const incompleteCount = recommendations.filter(
+    (r) =>
+      !r.isEligible &&
+      (r.eligibilityStatus === 'INCOMPLETE_PROFILE' ||
+        (r.missingProfileFields && r.missingProfileFields.length > 0))
+  ).length;
+  const notEligibleCount = recommendations.filter(
+    (r) =>
+      !r.isEligible &&
+      (r.eligibilityStatus === 'NOT_ELIGIBLE' ||
+        (!r.missingProfileFields || r.missingProfileFields.length === 0))
+  ).length;
 
   const filteredRecs = recommendations.filter((r) => {
     if (filter === 'ELIGIBLE') return r.isEligible;
     if (filter === 'INCOMPLETE_PROFILE') {
-      return !r.isEligible && (r.eligibilityStatus === 'INCOMPLETE_PROFILE' || (r.missingProfileFields && r.missingProfileFields.length > 0));
+      return (
+        !r.isEligible &&
+        (r.eligibilityStatus === 'INCOMPLETE_PROFILE' ||
+          (r.missingProfileFields && r.missingProfileFields.length > 0))
+      );
     }
     if (filter === 'NOT_ELIGIBLE') {
-      return !r.isEligible && (r.eligibilityStatus === 'NOT_ELIGIBLE' || (!r.missingProfileFields || r.missingProfileFields.length === 0));
+      return (
+        !r.isEligible &&
+        (r.eligibilityStatus === 'NOT_ELIGIBLE' ||
+          (!r.missingProfileFields || r.missingProfileFields.length === 0))
+      );
     }
     return true;
   });
@@ -55,48 +70,53 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {onBack && (
-              <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
-                ← Back
-              </button>
-            )}
-            <h1 className="text-base sm:text-lg font-bold text-blue-900 dark:text-blue-100">
-              Scheme Eligibility Engine
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 hidden sm:inline">
-              {recommendations.length} Schemes Analyzed
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
-        {/* Header & Filter Bar */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <AppLayout activeTab="schemes">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1C3127]/60 pb-4">
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              Deterministic Eligibility Evaluation
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Evaluated strictly against verified citizen demographics and official scheme rules.
+            <div className="flex items-center gap-2">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="text-xs font-semibold text-mint-400 hover:underline mr-2"
+                >
+                  ← Back
+                </button>
+              )}
+              <h1 className="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
+                Scheme Recommendations &amp; Eligibility Engine
+              </h1>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Deterministic rule evaluation matched against your verified citizen profile.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
+          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-forest-950 border border-[#1C3127] text-mint-300">
+            {recommendations.length} Schemes Analyzed
+          </span>
+        </div>
+
+        {/* Filter Bar */}
+        <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-4 shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-white font-heading">
+              Eligibility Status Filter
+            </h2>
+            <p className="text-[11px] text-slate-400">
+              Select qualification criteria
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setFilter('ELIGIBLE')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                 filter === 'ELIGIBLE'
-                  ? 'bg-emerald-800 dark:bg-emerald-700 border-emerald-800 dark:border-emerald-700 text-white shadow-xs'
-                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
+                  ? 'bg-emerald-950/90 border-emerald-500/50 text-mint-300 shadow-xs'
+                  : 'bg-forest-950/60 border-[#1C3127] text-slate-400 hover:text-white'
               }`}
             >
               Eligible ({eligibleCount})
@@ -104,10 +124,10 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => setFilter('INCOMPLETE_PROFILE')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                 filter === 'INCOMPLETE_PROFILE'
-                  ? 'bg-amber-800 dark:bg-amber-700 border-amber-800 dark:border-amber-700 text-white shadow-xs'
-                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
+                  ? 'bg-amber-950/90 border-amber-500/50 text-amber-300 shadow-xs'
+                  : 'bg-forest-950/60 border-[#1C3127] text-slate-400 hover:text-white'
               }`}
             >
               Incomplete Profile ({incompleteCount})
@@ -115,21 +135,21 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => setFilter('NOT_ELIGIBLE')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                 filter === 'NOT_ELIGIBLE'
-                  ? 'bg-rose-800 dark:bg-rose-700 border-rose-800 dark:border-rose-700 text-white shadow-xs'
-                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
+                  ? 'bg-rose-950/90 border-rose-900/60 text-rose-300 shadow-xs'
+                  : 'bg-forest-950/60 border-[#1C3127] text-slate-400 hover:text-white'
               }`}
             >
-              Requirements Not Met ({notEligibleCount})
+              Not Eligible ({notEligibleCount})
             </button>
             <button
               type="button"
               onClick={() => setFilter('ALL')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                 filter === 'ALL'
-                  ? 'bg-blue-900 dark:bg-blue-700 border-blue-900 dark:border-blue-700 text-white shadow-xs'
-                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
+                  ? 'bg-[#0B3B2B] border-mint-500/50 text-mint-300 shadow-xs'
+                  : 'bg-forest-950/60 border-[#1C3127] text-slate-400 hover:text-white'
               }`}
             >
               All ({recommendations.length})
@@ -138,146 +158,122 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
         </div>
 
         {/* Floating Compare Bar */}
-        {selectedForCompare.length > 1 && (
-          <div className="bg-slate-900 text-white p-4 rounded-xl shadow-md border border-slate-700 flex justify-between items-center animate-fade-in">
-            <span className="text-xs font-bold text-slate-200">
-              {selectedForCompare.length} Schemes Selected for Side-by-Side Analysis
-            </span>
-            <Button
-              title="Compare Schemes →"
-              variant="secondary"
-              size="sm"
-              onClick={() => onCompareRecommendations(selectedForCompare)}
-            />
+        {selectedForCompare.length > 0 && (
+          <div className="p-4 rounded-2xl bg-[#0B3B2B] border border-mint-500/40 shadow-xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-2">
+            <div className="text-xs text-white">
+              <span className="font-bold">{selectedForCompare.length}</span> of 3 schemes selected for comparison
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSelectedForCompare([])}
+                className="px-3 py-1 rounded-xl bg-forest-950 text-xs font-semibold text-slate-300 hover:text-white"
+              >
+                Clear
+              </button>
+              <button
+                onClick={() => onCompareRecommendations(selectedForCompare)}
+                disabled={selectedForCompare.length < 2}
+                className="px-4 py-1.5 rounded-xl bg-mint-400 hover:bg-mint-300 disabled:opacity-50 text-forest-950 text-xs font-bold shadow-md"
+              >
+                Compare ({selectedForCompare.length}) →
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Recommendations Grid */}
+        {/* Recommendations List Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Skeleton height={160} className="rounded-xl" />
-            <Skeleton height={160} className="rounded-xl" />
+            <Skeleton height={180} className="rounded-2xl" />
+            <Skeleton height={180} className="rounded-2xl" />
           </div>
         ) : isError ? (
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center">
-            <p className="text-sm text-rose-600 dark:text-rose-400 font-semibold mb-4">
-              Unable to calculate scheme recommendations.
-            </p>
+          <div className="rounded-2xl bg-[#160D10] border border-rose-900/60 p-8 text-center space-y-3">
+            <p className="text-sm font-semibold text-rose-300">Unable to load recommendations engine.</p>
             <button
               onClick={() => refetch()}
-              className="px-4 py-2 bg-blue-900 dark:bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
+              className="px-4 py-2 bg-rose-800 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors"
             >
-              Retry Rules Engine
+              Retry
             </button>
           </div>
         ) : filteredRecs.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center text-slate-500 dark:text-slate-400 italic text-sm">
-            {filter === 'ELIGIBLE'
-              ? 'No schemes currently satisfy 100% of eligibility rules with your current profile. Check "Incomplete Profile" to update missing fields.'
-              : 'No schemes match the selected filter category.'}
+          <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-10 text-center flex flex-col items-center space-y-2">
+            <LandmarkIcon className="w-8 h-8 text-slate-500" />
+            <p className="text-sm font-bold text-white">No schemes in this category</p>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              Change the filter above or update your citizen profile to see additional scheme matches.
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredRecs.map((item: SchemeRecommendationItem) => {
-              const isSelected = selectedForCompare.includes(item.id);
-              const title = item.scheme?.title || item.title || `Scheme #${item.schemeId.slice(0, 8)}`;
-              const category = item.scheme?.category || item.category || 'WELFARE';
-              const isIncomplete = !item.isEligible && (item.eligibilityStatus === 'INCOMPLETE_PROFILE' || (item.missingProfileFields && item.missingProfileFields.length > 0));
-              const isFailed = !item.isEligible && !isIncomplete;
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+            {filteredRecs.map((rec: SchemeRecommendationItem) => {
+              const scheme = rec.scheme || (rec as any);
+              const isSelected = selectedForCompare.includes(rec.id);
 
               return (
-                <Card
-                  key={item.id}
-                  onClick={() => onSelectRecommendation(item.id)}
-                  className="cursor-pointer hover:border-blue-700 dark:hover:border-blue-500 transition-all flex flex-col justify-between"
+                <div
+                  key={rec.id}
+                  onClick={() => onSelectRecommendation(rec.id)}
+                  className="group rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 hover:border-mint-500/40 p-5 shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-4"
                 >
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <label
-                        onClick={(e) => toggleSelectForCompare(item.id, e)}
-                        className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300"
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-xs font-mono font-bold text-amber-400">
+                        {scheme.code || 'GOV-SCHEME'}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          rec.isEligible
+                            ? 'bg-emerald-950/80 border border-emerald-500/40 text-mint-300'
+                            : 'bg-amber-950/80 border border-amber-500/40 text-amber-300'
+                        }`}
                       >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {}}
-                          className="w-4 h-4 text-blue-900 dark:text-blue-500 rounded border-slate-300 dark:border-slate-700 focus:ring-blue-500"
-                        />
-                        <span>{item.scheme?.code || item.code || 'SCHEME'}</span>
-                      </label>
-                      <Badge label={category} variant="primary" />
+                        {rec.isEligible ? (
+                          <CheckCircle2Icon className="w-3 h-3 text-mint-400" />
+                        ) : (
+                          <AlertTriangleIcon className="w-3 h-3 text-amber-400" />
+                        )}
+                        <span>{rec.isEligible ? `${rec.matchPercentage}% Match` : 'Action Required'}</span>
+                      </span>
                     </div>
 
-                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-3 leading-snug">
-                      {title}
-                    </h3>
-
-                    <div className="bg-slate-50 dark:bg-slate-800/70 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center mb-3">
-                      <div>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block uppercase font-medium">
-                          Eligibility Score
-                        </span>
-                        <span className={`text-base font-extrabold ${item.isEligible ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                          {item.matchPercentage}%
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block uppercase font-medium">
-                          Est. Benefit
-                        </span>
-                        <span className="text-base font-extrabold text-blue-900 dark:text-blue-300">
-                          ₹{item.estimatedBenefit.toLocaleString('en-IN')}
-                        </span>
-                      </div>
+                    <div>
+                      <h3 className="text-base font-bold text-white group-hover:text-mint-300 transition-colors font-heading leading-snug">
+                        {scheme.title || rec.title}
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        {scheme.description || (rec as any).description}
+                      </p>
                     </div>
-
-                    {/* Status Reason Notice */}
-                    {item.statusReason && !item.isEligible && (
-                      <div className="mb-3 p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] text-slate-600 dark:text-slate-400">
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">Note: </span>
-                        <span>{item.statusReason}</span>
-                      </div>
-                    )}
                   </div>
 
-                  <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
-                        item.isEligible
-                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                          : isIncomplete
-                          ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                          : 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                  <div className="pt-3 border-t border-[#1C3127]/60 flex items-center justify-between gap-2 text-xs">
+                    <button
+                      type="button"
+                      onClick={(e) => toggleSelectForCompare(rec.id, e)}
+                      className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all ${
+                        isSelected
+                          ? 'bg-[#0B3B2B] border-mint-500 text-mint-300'
+                          : 'bg-forest-950 border-[#1C3127] text-slate-400 hover:text-white'
                       }`}
                     >
-                      {item.isEligible ? (
-                        <>
-                          <CheckCircleIcon className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                          <span>ELIGIBLE</span>
-                        </>
-                      ) : isIncomplete ? (
-                        <>
-                          <AlertTriangleIcon className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                          <span>INCOMPLETE PROFILE</span>
-                        </>
-                      ) : (
-                        <>
-                          <XCircleIcon className="w-3 h-3 text-rose-600 dark:text-rose-400" />
-                          <span>NOT ELIGIBLE</span>
-                        </>
-                      )}
-                    </span>
-                    <span className="text-xs font-bold text-blue-900 dark:text-blue-400 hover:underline flex items-center gap-1">
-                      <span>View Reasoning</span>
-                      <ArrowRightIcon className="w-3.5 h-3.5" />
-                    </span>
+                      {isSelected ? '✓ Selected' : '+ Compare'}
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-mint-300">
+                        ₹{rec.estimatedBenefit.toLocaleString('en-IN')} / Yr
+                      </span>
+                      <ArrowRightIcon className="w-3.5 h-3.5 text-slate-500 group-hover:text-mint-300 group-hover:translate-x-0.5 transition-all" />
+                    </div>
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };

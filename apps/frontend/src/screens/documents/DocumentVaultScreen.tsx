@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { Button } from '../../components/ui/Button';
 import { Skeleton } from '../../components/ui/Skeleton';
-import { FolderIcon } from '../../components/ui/Icons';
-import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import { FolderIcon, PlusIcon, TrashIcon, CheckCircle2Icon, AlertTriangleIcon, ArrowRightIcon } from '../../components/ui/Icons';
 import { useDocuments } from '../../hooks/useDocuments';
 import { useDeleteDocument } from '../../hooks/useDeleteDocument';
 import { DocumentItem } from '../../services/document.service';
+import { AppLayout } from '../../components/layout/AppLayout';
 
 const DOC_TYPES = [
   { id: 'ALL', label: 'All Vault Docs' },
@@ -51,27 +48,40 @@ export const DocumentVaultScreen: React.FC<Props> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {onBack && (
-              <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
-                ← Back
-              </button>
-            )}
-            <h1 className="text-lg font-bold text-blue-900 dark:text-blue-400">Document Vault</h1>
+    <AppLayout activeTab="vault">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1C3127]/60 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  className="text-xs font-semibold text-mint-400 hover:underline mr-2"
+                >
+                  ← Back
+                </button>
+              )}
+              <h1 className="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
+                Document Vault
+              </h1>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              Your important government documents are encrypted, organized, and verified.
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <Button title="+ Upload Document" onClick={onNavigateToUpload} size="sm" variant="secondary" />
-          </div>
-        </div>
-      </header>
 
-      <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
+          <button
+            onClick={onNavigateToUpload}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs sm:text-sm shadow-md transition-all self-start sm:self-auto"
+          >
+            <PlusIcon className="w-4 h-4 stroke-[2.5]" />
+            <span>Upload Document</span>
+          </button>
+        </div>
+
         {/* Category Chips Bar */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex gap-2 overflow-x-auto scrollbar-none">
+        <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-4 shadow-lg flex gap-2 overflow-x-auto custom-scrollbar">
           {DOC_TYPES.map((type) => {
             const isSelected = selectedType === type.id;
             return (
@@ -79,10 +89,10 @@ export const DocumentVaultScreen: React.FC<Props> = ({
                 key={type.id}
                 type="button"
                 onClick={() => setSelectedType(type.id)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors border ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
                   isSelected
-                    ? 'bg-blue-900 dark:bg-blue-700 border-blue-900 dark:border-blue-700 text-white shadow-xs'
-                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
+                    ? 'bg-[#0B3B2B] border-mint-500/50 text-mint-300 shadow-xs'
+                    : 'bg-forest-950/60 border-[#1C3127] text-slate-400 hover:text-white hover:border-forest-700'
                 }`}
               >
                 {type.label}
@@ -94,81 +104,123 @@ export const DocumentVaultScreen: React.FC<Props> = ({
         {/* Document Cards Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Skeleton height={140} className="rounded-xl" />
-            <Skeleton height={140} className="rounded-xl" />
+            <Skeleton height={140} className="rounded-2xl" />
+            <Skeleton height={140} className="rounded-2xl" />
           </div>
         ) : isError ? (
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center">
-            <p className="text-sm text-rose-600 dark:text-rose-400 font-semibold mb-4">Unable to load document vault.</p>
+          <div className="rounded-2xl bg-[#160D10] border border-rose-900/60 p-8 text-center space-y-3">
+            <p className="text-sm font-semibold text-rose-300">Unable to load document vault.</p>
             <button
               onClick={() => refetch()}
-              className="px-4 py-2 bg-blue-900 dark:bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
+              className="px-4 py-2 bg-rose-800 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors"
             >
               Retry Vault Sync
             </button>
           </div>
         ) : filteredDocs.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center flex flex-col items-center">
-            <FolderIcon className="w-10 h-10 text-slate-400 mb-2" />
-            <p className="text-sm text-slate-500 dark:text-slate-400 italic mb-4">No documents found in vault for selected filter.</p>
-            <Button title="Upload First Document" onClick={onNavigateToUpload} />
+          <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-10 text-center flex flex-col items-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-forest-950 border border-[#1C3127] flex items-center justify-center text-amber-400">
+              <FolderIcon className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">No documents found in vault</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Upload your ID proofs, land records, or certificates to unlock automatic scheme eligibility.
+              </p>
+            </div>
+            <button
+              onClick={onNavigateToUpload}
+              className="px-4 py-2 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 text-xs font-bold transition-colors"
+            >
+              Upload First Document
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
             {filteredDocs.map((item: DocumentItem) => {
               const isVerified = item.verificationStatus === 'VERIFIED';
               const isRejected = item.verificationStatus === 'REJECTED';
-              const statusVariant = isVerified ? 'success' : isRejected ? 'danger' : 'warning';
 
               return (
-                <Card key={item.id} className="flex flex-col justify-between">
+                <div
+                  key={item.id}
+                  className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 hover:border-mint-500/40 p-5 shadow-lg transition-all duration-200 flex flex-col justify-between space-y-4"
+                >
                   <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <Badge label={item.documentType} variant="primary" />
-                      <Badge label={item.verificationStatus} variant={statusVariant} />
+                    <div className="flex justify-between items-center gap-2 mb-3">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-forest-950 border border-[#1C3127] text-slate-300">
+                        {item.documentType.replace(/_/g, ' ')}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          isVerified
+                            ? 'bg-emerald-950/80 border border-emerald-500/40 text-mint-300'
+                            : isRejected
+                            ? 'bg-rose-950/80 border border-rose-900/60 text-rose-300'
+                            : 'bg-amber-950/80 border border-amber-500/40 text-amber-300'
+                        }`}
+                      >
+                        {isVerified && <CheckCircle2Icon className="w-3 h-3 text-mint-400" />}
+                        {isRejected && <AlertTriangleIcon className="w-3 h-3 text-rose-400" />}
+                        <span>{item.verificationStatus}</span>
+                      </span>
                     </div>
 
                     <h3
                       onClick={() => onPreviewDocument(item.id)}
-                      className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1 hover:text-blue-900 dark:hover:text-blue-400 cursor-pointer"
+                      className="text-base font-bold text-white hover:text-mint-300 cursor-pointer transition-colors font-heading leading-snug"
                     >
                       {item.fileName}
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                      {(item.fileSize / 1024).toFixed(1)} KB • {item.mimeType} • Uploaded {new Date(item.uploadedAt).toLocaleDateString()}
+                    <p className="text-xs text-slate-400 mt-1">
+                      {(item.fileSize / 1024).toFixed(1)} KB • {item.mimeType} • Uploaded{' '}
+                      {new Date(item.uploadedAt).toLocaleDateString()}
                     </p>
                   </div>
 
                   {deleteConfirmId === item.id ? (
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-rose-50 dark:bg-rose-950/60 p-2 rounded-lg border border-rose-200 dark:border-rose-800">
-                      <span className="text-xs font-bold text-rose-800 dark:text-rose-300">Confirm deletion?</span>
+                    <div className="pt-3 border-t border-[#1C3127]/60 flex items-center justify-between bg-rose-950/40 p-3 rounded-xl border border-rose-900/60">
+                      <span className="text-xs font-bold text-rose-300">Confirm deletion?</span>
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleDeleteConfirmed(item.id)}
-                          className="px-2.5 py-1 bg-rose-600 text-white rounded text-xs font-bold hover:bg-rose-700"
+                          className="px-3 py-1 bg-rose-700 text-white rounded-lg text-xs font-bold hover:bg-rose-600 transition-colors"
                         >
                           Yes, Delete
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(null)}
-                          className="px-2.5 py-1 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded text-xs font-bold hover:bg-slate-300"
+                          className="px-3 py-1 bg-forest-900 text-slate-300 rounded-lg text-xs font-bold hover:bg-forest-800 transition-colors"
                         >
                           Cancel
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
-                      <Button title="Preview Document" onClick={() => onPreviewDocument(item.id)} size="sm" variant="outline" />
-                      <Button title="Delete" onClick={() => setDeleteConfirmId(item.id)} size="sm" variant="destructive" />
+                    <div className="pt-3 border-t border-[#1C3127]/60 flex items-center justify-between gap-2">
+                      <button
+                        onClick={() => onPreviewDocument(item.id)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-forest-950 border border-[#1C3127] text-xs font-semibold text-slate-200 hover:text-white hover:border-mint-500/40 transition-all"
+                      >
+                        <span>Preview Document</span>
+                        <ArrowRightIcon className="w-3 h-3 text-mint-400" />
+                      </button>
+
+                      <button
+                        onClick={() => setDeleteConfirmId(item.id)}
+                        className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
+                        title="Delete document"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
                     </div>
                   )}
-                </Card>
+                </div>
               );
             })}
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };

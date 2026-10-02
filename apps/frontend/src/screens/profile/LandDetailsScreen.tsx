@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
-import { Card } from '../../components/ui/Card';
-import { Input } from '../../components/ui/Input';
-import { Button } from '../../components/ui/Button';
-import { SproutIcon } from '../../components/ui/Icons';
-import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
+import { AppLayout } from '../../components/layout/AppLayout';
+import { SproutIcon, CheckCircle2Icon, AlertTriangleIcon, ArrowRightIcon } from '../../components/ui/Icons';
 
 interface Props {
   onBack: () => void;
@@ -67,96 +64,153 @@ export const LandDetailsScreen: React.FC<Props> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
-            ← Back to Profile
-          </button>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <h1 className="text-lg font-bold text-blue-900 dark:text-blue-400">Manage Land Holdings</h1>
+    <AppLayout activeTab="profile">
+      <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-6 space-y-6">
+        {/* Navigation */}
+        <div className="flex items-center justify-between border-b border-[#1C3127]/60 pb-4">
+          <div>
+            <button
+              onClick={onBack}
+              className="text-xs font-semibold text-mint-400 hover:underline mb-1 block"
+            >
+              ← Back to Profile
+            </button>
+            <h1 className="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
+              Manage Agricultural Land Holdings
+            </h1>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Land ownership records for PM-KISAN and agrarian subsidy schemes.
+            </p>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
-        {/* Land Records List */}
-        <Card>
-          <h2 className="text-base font-bold text-blue-900 dark:text-blue-400 mb-3">Registered Land Records</h2>
+        {/* Land Records List Card */}
+        <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-6 shadow-xl space-y-4">
+          <div className="flex items-center gap-2">
+            <SproutIcon className="w-5 h-5 text-mint-400" />
+            <h2 className="text-base font-bold text-white font-heading">
+              Registered Land Records ({lands.length})
+            </h2>
+          </div>
+
           {lands.length > 0 ? (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="divide-y divide-[#1C3127]/60">
               {lands.map((l) => (
                 <div key={l.id} className="py-3 flex justify-between items-center">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-sm font-bold text-white">
                       {l.landSizeAcres} Acres ({l.landType})
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-400 mt-0.5">
                       Survey / Khasra No: {l.surveyNumber || 'N/A'} • {l.district}, {l.state}
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
-                    <SproutIcon className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
-                    <span>Farmer Record</span>
+                  <span className="text-xs font-bold text-mint-300 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/30">
+                    Verified
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 dark:text-slate-400 italic">No agricultural land records added yet.</p>
+            <p className="text-xs text-slate-400 italic">No land parcels registered yet.</p>
           )}
-        </Card>
+        </div>
 
         {/* Add Land Form */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <h2 className="text-base font-bold text-blue-900 dark:text-blue-400 mb-4">Add Agricultural Land Holding</h2>
+        <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-6 shadow-xl space-y-5">
+          <h2 className="text-base font-bold text-white font-heading">Add Land Parcel Record</h2>
 
           {statusMessage && (
             <div
-              className={`mb-4 p-3 rounded-lg border text-xs font-semibold ${
+              className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
                 statusMessage.type === 'success'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
-                  : 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                  ? 'bg-emerald-950/80 border border-emerald-500/40 text-mint-300'
+                  : 'bg-rose-950/80 border border-rose-900/60 text-rose-300'
               }`}
             >
-              {statusMessage.text}
+              {statusMessage.type === 'success' ? (
+                <CheckCircle2Icon className="w-4 h-4 text-mint-400 shrink-0" />
+              ) : (
+                <AlertTriangleIcon className="w-4 h-4 text-rose-400 shrink-0" />
+              )}
+              <span>{statusMessage.text}</span>
             </div>
           )}
 
           <form onSubmit={handleAddLand} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="Land Size (Acres)" type="number" step="0.01" value={sizeAcres} onChangeText={setSizeAcres} placeholder="e.g. 2.5" required />
-              
-              <div className="flex flex-col">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Land Type</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Land Size (Acres)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g. 2.5"
+                  value={sizeAcres}
+                  onChange={(e) => setSizeAcres(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Land Irrigation Type</label>
                 <select
                   value={landType}
                   onChange={(e) => setLandType(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50 focus:border-blue-700 dark:focus:border-blue-500"
+                  className="w-full px-3 py-3 bg-[#080C0A] border border-[#1C3127] text-white rounded-xl text-xs sm:text-sm focus:outline-none focus:border-mint-500"
                 >
-                  <option value="IRRIGATED">IRRIGATED</option>
-                  <option value="UNIRRIGATED">UNIRRIGATED</option>
-                  <option value="BARREN">BARREN</option>
-                  <option value="ORCHARD">ORCHARD</option>
+                  <option value="IRRIGATED">Irrigated (सिंचित)</option>
+                  <option value="UNIRRIGATED">Unirrigated (असिंचित)</option>
+                  <option value="BARREN">Barren / Waste (बंजर)</option>
                 </select>
               </div>
             </div>
 
-            <Input label="Survey / Khasra Number" value={surveyNo} onChangeText={setSurveyNo} placeholder="e.g. 142/A" />
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Survey / Khasra Number</label>
+              <input
+                type="text"
+                placeholder="e.g. 142/A"
+                value={surveyNo}
+                onChange={(e) => setSurveyNo(e.target.value)}
+                className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+              />
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="District" value={district} onChangeText={setDistrict} required />
-              <Input label="State" value={state} onChangeText={setState} required />
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">District</label>
+                <input
+                  type="text"
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">State</label>
+                <input
+                  type="text"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" title="Add Land Record" isLoading={isUpdating} className="flex-1 py-2.5" />
-              <Button type="button" title="Back" variant="outline" onClick={onBack} className="px-6" />
-            </div>
+            <button
+              type="submit"
+              disabled={isUpdating}
+              className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs sm:text-sm shadow-md transition-all"
+            >
+              <span>+ Register Land Parcel</span>
+            </button>
           </form>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };

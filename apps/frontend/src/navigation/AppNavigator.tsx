@@ -175,7 +175,7 @@ export const AppNavigator: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#080C0A] transition-colors">
         <LoadingSpinner message="Initializing BenefitOS Web Platform..." />
       </div>
     );

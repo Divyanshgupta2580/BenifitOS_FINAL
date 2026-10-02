@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Card } from '../../components/ui/Card';
-import { Input } from '../../components/ui/Input';
-import { Button } from '../../components/ui/Button';
-import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
+import { AppLayout } from '../../components/layout/AppLayout';
+import { UsersIcon, CheckCircle2Icon, AlertTriangleIcon, ArrowRightIcon } from '../../components/ui/Icons';
 
 interface Props {
   onBack: () => void;
@@ -67,105 +65,158 @@ export const HouseholdMembersScreen: React.FC<Props> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
-            ← Back to Profile
-          </button>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <h1 className="text-lg font-bold text-blue-900 dark:text-blue-400">Manage Household Members</h1>
+    <AppLayout activeTab="profile">
+      <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-6 space-y-6">
+        {/* Navigation */}
+        <div className="flex items-center justify-between border-b border-[#1C3127]/60 pb-4">
+          <div>
+            <button
+              onClick={onBack}
+              className="text-xs font-semibold text-mint-400 hover:underline mb-1 block"
+            >
+              ← Back to Profile
+            </button>
+            <h1 className="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
+              Household Members
+            </h1>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Add family members to qualify for household welfare &amp; ration benefits.
+            </p>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
-        {/* Member List */}
-        <Card>
-          <h2 className="text-base font-bold text-blue-900 dark:text-blue-400 mb-3">Registered Family Members</h2>
+        {/* Member List Card */}
+        <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-6 shadow-xl space-y-4">
+          <div className="flex items-center gap-2">
+            <UsersIcon className="w-5 h-5 text-mint-400" />
+            <h2 className="text-base font-bold text-white font-heading">
+              Registered Family Members ({members.length})
+            </h2>
+          </div>
+
           {members.length > 0 ? (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            <div className="divide-y divide-[#1C3127]/60">
               {members.map((m) => (
                 <div key={m.id} className="py-3 flex justify-between items-center">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{m.fullName}</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <h3 className="text-sm font-bold text-white">{m.fullName}</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
                       {m.relation} • Age {m.age} • {m.gender}
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-md border border-amber-200 dark:border-amber-800">
+                  <span className="text-xs font-black text-mint-300 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/30">
                     ₹{m.annualIncomeINR.toLocaleString('en-IN')} / Yr
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-slate-500 dark:text-slate-400 italic">No family dependents added yet.</p>
+            <p className="text-xs text-slate-400 italic">No family members registered yet.</p>
           )}
-        </Card>
+        </div>
 
         {/* Add Member Form */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <h2 className="text-base font-bold text-blue-900 dark:text-blue-400 mb-4">Add Dependent Member</h2>
+        <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-6 shadow-xl space-y-5">
+          <h2 className="text-base font-bold text-white font-heading">Add New Family Member</h2>
 
           {statusMessage && (
             <div
-              className={`mb-4 p-3 rounded-lg border text-xs font-semibold ${
+              className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
                 statusMessage.type === 'success'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
-                  : 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                  ? 'bg-emerald-950/80 border border-emerald-500/40 text-mint-300'
+                  : 'bg-rose-950/80 border border-rose-900/60 text-rose-300'
               }`}
             >
-              {statusMessage.text}
+              {statusMessage.type === 'success' ? (
+                <CheckCircle2Icon className="w-4 h-4 text-mint-400 shrink-0" />
+              ) : (
+                <AlertTriangleIcon className="w-4 h-4 text-rose-400 shrink-0" />
+              )}
+              <span>{statusMessage.text}</span>
             </div>
           )}
 
           <form onSubmit={handleAddMember} className="space-y-4">
-            <Input label="Full Name" value={fullName} onChangeText={setFullName} placeholder="e.g. Sunita Devi" required />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Full Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Priya Sharma"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex flex-col">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Relation</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Relationship</label>
                 <select
                   value={relation}
                   onChange={(e) => setRelation(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50 focus:border-blue-700 dark:focus:border-blue-500"
+                  className="w-full px-3 py-3 bg-[#080C0A] border border-[#1C3127] text-white rounded-xl text-xs sm:text-sm focus:outline-none focus:border-mint-500"
                 >
-                  <option value="SPOUSE">SPOUSE</option>
-                  <option value="CHILD">CHILD</option>
-                  <option value="PARENT">PARENT</option>
-                  <option value="SIBLING">SIBLING</option>
-                  <option value="OTHER">OTHER</option>
+                  <option value="SPOUSE">Spouse</option>
+                  <option value="SON">Son</option>
+                  <option value="DAUGHTER">Daughter</option>
+                  <option value="FATHER">Father</option>
+                  <option value="MOTHER">Mother</option>
+                  <option value="BROTHER">Brother</option>
+                  <option value="SISTER">Sister</option>
+                  <option value="OTHER">Other</option>
                 </select>
               </div>
+            </div>
 
-              <Input label="Age" type="number" value={age} onChangeText={setAge} required />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Age</label>
+                <input
+                  type="number"
+                  placeholder="24"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
 
-              <div className="flex flex-col">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Gender</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Gender</label>
                 <select
                   value={gender}
                   onChange={(e) => setGender(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-950/50 focus:border-blue-700 dark:focus:border-blue-500"
+                  className="w-full px-3 py-3 bg-[#080C0A] border border-[#1C3127] text-white rounded-xl text-xs sm:text-sm focus:outline-none focus:border-mint-500"
                 >
-                  <option value="FEMALE">FEMALE</option>
-                  <option value="MALE">MALE</option>
-                  <option value="TRANSGENDER">TRANSGENDER</option>
-                  <option value="OTHER">OTHER</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="MALE">Male</option>
+                  <option value="OTHER">Other</option>
                 </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Income (₹ / Yr)</label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={income}
+                  onChange={(e) => setIncome(e.target.value)}
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
               </div>
             </div>
 
-            <Input label="Annual Income (INR)" type="number" value={income} onChangeText={setIncome} />
-
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" title="Add Household Member" isLoading={isUpdating} className="flex-1 py-2.5" />
-              <Button type="button" title="Back" variant="outline" onClick={onBack} className="px-6" />
-            </div>
+            <button
+              type="submit"
+              disabled={isUpdating}
+              className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs sm:text-sm shadow-md transition-all"
+            >
+              <span>+ Add Household Member</span>
+            </button>
           </form>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };

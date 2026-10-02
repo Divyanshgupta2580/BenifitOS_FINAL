@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Input } from '../../components/ui/Input';
-import { Button } from '../../components/ui/Button';
-import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
+import { AppLayout } from '../../components/layout/AppLayout';
+import { CheckCircle2Icon, AlertTriangleIcon, ArrowRightIcon } from '../../components/ui/Icons';
 
 interface Props {
   onBack: () => void;
@@ -61,69 +60,114 @@ export const AddressEditScreen: React.FC<Props> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-12 transition-colors">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 shadow-xs">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={onBack} className="text-xs font-semibold text-blue-900 dark:text-blue-400 hover:underline">
-            ← Back to Profile
-          </button>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            <h1 className="text-lg font-bold text-blue-900 dark:text-blue-400">Edit Residential Address</h1>
+    <AppLayout activeTab="profile">
+      <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-5 sm:py-6 space-y-6">
+        {/* Navigation */}
+        <div className="flex items-center justify-between border-b border-[#1C3127]/60 pb-4">
+          <div>
+            <button
+              onClick={onBack}
+              className="text-xs font-semibold text-mint-400 hover:underline mb-1 block"
+            >
+              ← Back to Profile
+            </button>
+            <h1 className="text-xl sm:text-2xl font-black text-white font-heading tracking-tight">
+              Edit Residential Address
+            </h1>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-2xl mx-auto px-4 pt-6">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-6 sm:p-7 shadow-xl space-y-5">
           {statusMessage && (
             <div
-              className={`mb-6 p-3.5 rounded-xl border text-xs font-semibold ${
+              className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
                 statusMessage.type === 'success'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
-                  : 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                  ? 'bg-emerald-950/80 border border-emerald-500/40 text-mint-300'
+                  : 'bg-rose-950/80 border border-rose-900/60 text-rose-300'
               }`}
             >
-              {statusMessage.text}
+              {statusMessage.type === 'success' ? (
+                <CheckCircle2Icon className="w-4 h-4 text-mint-400 shrink-0" />
+              ) : (
+                <AlertTriangleIcon className="w-4 h-4 text-rose-400 shrink-0" />
+              )}
+              <span>{statusMessage.text}</span>
             </div>
           )}
 
           <form onSubmit={handleSave} className="space-y-4">
-            <Input label="Street Address" value={streetAddress} onChangeText={setStreetAddress} required />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="City / Village" value={city} onChangeText={setCity} required />
-              <Input label="District" value={district} onChangeText={setDistrict} required />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="State" value={state} onChangeText={setState} required />
-              <Input label="Pincode" value={pincode} onChangeText={setPincode} maxLength={6} required />
-            </div>
-
-            <div className="p-4 bg-slate-50 dark:bg-slate-800/70 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
-              <div>
-                <label htmlFor="rural-toggle" className="text-xs font-bold text-slate-900 dark:text-slate-100 block cursor-pointer">
-                  Rural Resident Category
-                </label>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">Enable if residing in gram panchayat / rural district area.</span>
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">Street Address</label>
               <input
-                id="rural-toggle"
-                type="checkbox"
-                checked={isRural}
-                onChange={(e) => setIsRural(e.target.checked)}
-                className="w-5 h-5 text-blue-900 dark:text-blue-500 rounded border-slate-300 dark:border-slate-700 focus:ring-blue-500 cursor-pointer"
+                type="text"
+                value={streetAddress}
+                onChange={(e) => setStreetAddress(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
               />
             </div>
 
-            <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <Button type="submit" title="Save Address" isLoading={isUpdating} className="flex-1 py-3" />
-              <Button type="button" title="Cancel" variant="outline" onClick={onBack} className="px-6" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">City / Village</label>
+                <input
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">District</label>
+                <input
+                  type="text"
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">State</label>
+                <input
+                  type="text"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">PIN Code</label>
+                <input
+                  type="text"
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm font-mono text-white focus:outline-none focus:border-mint-500"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isUpdating}
+                className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs sm:text-sm shadow-md transition-all"
+              >
+                <span>{isUpdating ? 'Saving Address...' : 'Save Address'}</span>
+                <ArrowRightIcon className="w-4 h-4 stroke-[2.5]" />
+              </button>
             </div>
           </form>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
