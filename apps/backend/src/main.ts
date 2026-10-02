@@ -77,7 +77,7 @@ async function bootstrap() {
   // Enable shutdown hooks
   app.enableShutdownHooks();
 
-  const port = process.env.PORT || 4000;
+  const port = Number(process.env.PORT) || 4000;
   const host = process.env.HOST || '0.0.0.0';
   await app.listen(port, host);
   logger.log(`🚀 BenefitOS Backend Engine running on http://${host}:${port}/${prefix}`);
