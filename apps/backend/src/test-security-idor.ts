@@ -333,7 +333,8 @@ async function runSecurityAuditTests() {
   // TEST 5: IDOR Protection on OCR Pipeline
   // -------------------------------------------------------------
   console.log('\n5. Testing IDOR Protection on OCR Pipeline...');
-  const ocrService = new OcrPipelineService(docRepo, geminiAdapter, storageAdapter, prismaMock);
+  const classService = new DocumentClassificationService();
+  const ocrService = new OcrPipelineService(docRepo, geminiAdapter, storageAdapter, classService, prismaMock);
 
   let userBOcrBlocked = false;
   try {

@@ -15,6 +15,18 @@ export declare class DocumentController {
         };
         classification: any;
     }>;
+    confirmDocument(userId: string, id: string, confirmedFields: Record<string, any>): Promise<{
+        message: string;
+        document: {
+            id: string;
+            documentType: DocumentType;
+            displayName: string;
+            fileName: string;
+            fileSize: number;
+            verificationStatus: import("../../domain/document/document.entity").VerificationStatus;
+        };
+        confirmedData: Record<string, any>;
+    }>;
     getDocuments(userId: string): Promise<{
         count: number;
         documents: {

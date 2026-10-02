@@ -24,6 +24,12 @@ var DocumentType;
     DocumentType["AADHAAR"] = "AADHAAR";
     DocumentType["DRIVING_LICENSE"] = "DRIVING_LICENSE";
     DocumentType["VOTER_ID"] = "VOTER_ID";
+    DocumentType["INCOME_CERTIFICATE"] = "INCOME_CERTIFICATE";
+    DocumentType["RATION_CARD"] = "RATION_CARD";
+    DocumentType["LAND_RECORD"] = "LAND_RECORD";
+    DocumentType["BANK_PASSBOOK"] = "BANK_PASSBOOK";
+    DocumentType["PAN_CARD"] = "PAN_CARD";
+    DocumentType["OTHER"] = "OTHER";
 })(DocumentType || (exports.DocumentType = DocumentType = {}));
 exports.DOCUMENT_TYPE_DISPLAY_NAMES = {
     [DocumentType.BIRTH_CERTIFICATE]: 'Birth Certificate',
@@ -33,6 +39,12 @@ exports.DOCUMENT_TYPE_DISPLAY_NAMES = {
     [DocumentType.AADHAAR]: 'Aadhaar Card',
     [DocumentType.DRIVING_LICENSE]: 'Driving Licence',
     [DocumentType.VOTER_ID]: 'Voter ID',
+    [DocumentType.INCOME_CERTIFICATE]: 'Income Certificate',
+    [DocumentType.RATION_CARD]: 'Ration Card / NFSA Card',
+    [DocumentType.LAND_RECORD]: 'Land Record / Khasra-Khatauni',
+    [DocumentType.BANK_PASSBOOK]: 'Bank Account Passbook',
+    [DocumentType.PAN_CARD]: 'PAN Card',
+    [DocumentType.OTHER]: 'Supporting Document',
 };
 var SchemeVerificationStatus;
 (function (SchemeVerificationStatus) {
@@ -57,6 +69,7 @@ var BenefitType;
     BenefitType["SCHOLARSHIP"] = "SCHOLARSHIP";
     BenefitType["HEALTH_COVER"] = "HEALTH_COVER";
     BenefitType["SUBSIDIZED_LOAN"] = "SUBSIDIZED_LOAN";
+    BenefitType["COLLATERAL_FREE_LOAN"] = "COLLATERAL_FREE_LOAN";
     BenefitType["MONTHLY_PENSION"] = "MONTHLY_PENSION";
     BenefitType["SUBSIDY"] = "SUBSIDY";
     BenefitType["OTHER"] = "OTHER";

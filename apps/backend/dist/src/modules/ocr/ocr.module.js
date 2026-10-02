@@ -14,6 +14,7 @@ const gemini_ai_adapter_1 = require("../../infrastructure/ai/gemini-ai.adapter")
 const local_storage_adapter_1 = require("../../infrastructure/storage/local-storage.adapter");
 const document_repository_1 = require("../../infrastructure/database/repositories/document.repository");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
+const document_classification_service_1 = require("../document/document-classification.service");
 let OcrModule = class OcrModule {
 };
 exports.OcrModule = OcrModule;
@@ -24,6 +25,7 @@ exports.OcrModule = OcrModule = __decorate([
             ocr_service_1.OcrPipelineService,
             gemini_ai_adapter_1.GeminiAiAdapter,
             local_storage_adapter_1.LocalStorageAdapter,
+            document_classification_service_1.DocumentClassificationService,
             prisma_service_1.PrismaService,
             { provide: 'IDocumentRepository', useClass: document_repository_1.DocumentRepositoryImpl },
         ],

@@ -112,13 +112,12 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
     const model = this.getModelName();
     if (!this.aiClient) {
       const bufferText = fileBuffer ? fileBuffer.toString('utf-8') : '';
-      const rawText = bufferText.length > 5 && !bufferText.includes('\u0000')
-        ? bufferText
-        : `[Fallback OCR Raw Text for ${expectedDocType}]`;
+      const isReadableText = bufferText.length > 5 && !bufferText.includes('\u0000');
+      const rawText = isReadableText ? bufferText : '';
       return {
         rawText,
-        confidenceScore: 0.95,
-        extractedFields: { docType: expectedDocType, verifiedStatus: 'MOCK_SUCCESS' },
+        confidenceScore: isReadableText ? 0.85 : 0.0,
+        extractedFields: { docType: expectedDocType, providerStatus: isReadableText ? 'TEXT_STREAM_PARSED' : 'OFFLINE_UNCONFIGURED' },
       };
     }
     try {
@@ -155,12 +154,18 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
         confidenceScore: 0.92,
         extractedFields,
       };
-    } catch (err) {
+    } catch (err: any) {
       this.logger.error(`Gemini Vision OCR extraction failed: ${err.message}`);
+      const bufferText = fileBuffer ? fileBuffer.toString('utf-8') : '';
+      const isReadableText = bufferText.length > 5 && !bufferText.includes('\u0000');
       return {
-        rawText: 'OCR extraction failure.',
-        confidenceScore: 0.0,
-        extractedFields: {},
+        rawText: isReadableText ? bufferText : '',
+        confidenceScore: isReadableText ? 0.85 : 0.0,
+        extractedFields: {
+          docType: expectedDocType,
+          providerStatus: isReadableText ? 'TEXT_STREAM_FALLBACK' : 'OFFLINE_UNCONFIGURED',
+          error: err.message,
+        },
       };
     }
   }

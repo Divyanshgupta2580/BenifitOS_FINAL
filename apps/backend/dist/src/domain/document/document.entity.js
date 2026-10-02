@@ -47,7 +47,6 @@ class DocumentEntity extends domain_entity_base_1.BaseDomainEntity {
     }
     setOcrResult(ocr) {
         this._ocrResult = ocr;
-        this._verificationStatus = VerificationStatus.VERIFIED;
         this._updatedAt = new Date();
     }
 }

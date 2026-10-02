@@ -38,7 +38,7 @@ export class DocumentController {
     const result = await this.documentService.uploadDocument(userId, documentType, file);
     const doc = result.document!;
     return {
-      message: 'Document verified and stored successfully.',
+      message: 'Document uploaded and processed. Please review and confirm extracted attributes.',
       document: {
         id: doc.id,
         documentType: doc.documentType,
@@ -48,6 +48,27 @@ export class DocumentController {
         verificationStatus: doc.verificationStatus,
       },
       classification: result.classification,
+    };
+  }
+
+  @Post(':id/confirm')
+  async confirmDocument(
+    @CurrentUser('sub') userId: string,
+    @Param('id') id: string,
+    @Body('confirmedFields') confirmedFields: Record<string, any>,
+  ) {
+    const result = await this.documentService.confirmDocument(userId, id, confirmedFields || {});
+    return {
+      message: result.message,
+      document: {
+        id: result.document.id,
+        documentType: result.document.documentType,
+        displayName: DOCUMENT_TYPE_DISPLAY_NAMES[result.document.documentType] || result.document.documentType,
+        fileName: result.document.fileName,
+        fileSize: result.document.fileSize,
+        verificationStatus: result.document.verificationStatus,
+      },
+      confirmedData: result.confirmedData,
     };
   }
 

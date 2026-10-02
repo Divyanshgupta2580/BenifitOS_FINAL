@@ -41,8 +41,12 @@ let DocumentService = DocumentService_1 = class DocumentService {
         if (!validTypes.includes(requiredDocumentType)) {
             throw new common_1.BadRequestException(`Unsupported document type. Supported types: ${validTypes.join(', ')}`);
         }
-        const fileBuffer = file.buffer || Buffer.from('');
-        this.validateFileSignature(fileBuffer, file.mimetype);
+        const fileBuffer = file?.buffer || Buffer.from('');
+        this.validateFileSignature(fileBuffer, file?.mimetype || '');
+        const MAX_FILE_SIZE = 10 * 1024 * 1024;
+        if (file.size > MAX_FILE_SIZE || fileBuffer.length > MAX_FILE_SIZE) {
+            throw new common_1.BadRequestException('File size exceeds maximum allowed limit of 10 MB.');
+        }
         const ocrRes = await this.geminiAdapter.extractDocumentData(fileBuffer, file.mimetype, requiredDocumentType);
         const textContent = ocrRes.rawText || fileBuffer.toString('utf-8');
         const classification = this.classificationService.classifyDocumentContent(textContent, requiredDocumentType);
@@ -89,7 +93,7 @@ let DocumentService = DocumentService_1 = class DocumentService {
             fileSize: file.size,
             mimeType: file.mimetype,
             storagePath: uploadRes.storagePath,
-            verificationStatus: document_entity_1.VerificationStatus.VERIFIED,
+            verificationStatus: document_entity_1.VerificationStatus.PENDING,
         });
         const savedDoc = await this.documentRepo.save(doc);
         await this.prisma.client.ocrResult.upsert({
@@ -98,12 +102,20 @@ let DocumentService = DocumentService_1 = class DocumentService {
                 documentId: savedDoc.id,
                 rawText: ocrRes.rawText,
                 confidenceScore: classification.confidence,
-                extractedData: classification.extractedFields || {},
+                extractedData: {
+                    ...(classification.extractedFields || {}),
+                    ocrStatus: 'PENDING_CONFIRMATION',
+                    userConfirmed: false,
+                },
             },
             update: {
                 rawText: ocrRes.rawText,
                 confidenceScore: classification.confidence,
-                extractedData: classification.extractedFields || {},
+                extractedData: {
+                    ...(classification.extractedFields || {}),
+                    ocrStatus: 'PENDING_CONFIRMATION',
+                    userConfirmed: false,
+                },
             },
         });
         if (existingDocs && existingDocs.length > 0) {
@@ -126,7 +138,7 @@ let DocumentService = DocumentService_1 = class DocumentService {
             classification: {
                 detectedType: classification.detectedType,
                 confidence: classification.confidence,
-                status: 'ACCEPTED',
+                status: 'PENDING_CONFIRMATION',
                 displayName: scheme_entity_1.DOCUMENT_TYPE_DISPLAY_NAMES[classification.detectedType],
             },
         };
@@ -137,7 +149,7 @@ let DocumentService = DocumentService_1 = class DocumentService {
         }
         const isPdf = buffer.length >= 4 && buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
         const isJpg = buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
-        const isPng = buffer.length >= 8 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47;
+        const isPng = buffer.length >= 8 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47 && buffer[4] === 0x0d && buffer[5] === 0x0a && buffer[6] === 0x1a && buffer[7] === 0x0a;
         const isWebp = buffer.length >= 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP';
         const normalizedMime = (mimeType || '').toLowerCase();
         let valid = false;
@@ -164,6 +176,36 @@ let DocumentService = DocumentService_1 = class DocumentService {
             throw new common_1.NotFoundException(`Document with ID '${id}' not found or access denied.`);
         }
         return doc;
+    }
+    async confirmDocument(userId, id, confirmedFields) {
+        const doc = await this.documentRepo.findById(id);
+        if (!doc || doc.userId !== userId) {
+            throw new common_1.NotFoundException(`Document with ID '${id}' not found or access denied.`);
+        }
+        const ocrRecord = await this.prisma.client.ocrResult.findUnique({
+            where: { documentId: id },
+        });
+        const existingExtracted = ocrRecord?.extractedData || {};
+        const updatedExtracted = {
+            ...existingExtracted,
+            userConfirmedFields: confirmedFields,
+            ocrStatus: 'CONFIRMED',
+            userConfirmed: true,
+            confirmedAt: new Date().toISOString(),
+        };
+        if (ocrRecord) {
+            await this.prisma.client.ocrResult.update({
+                where: { documentId: id },
+                data: { extractedData: updatedExtracted },
+            });
+        }
+        doc.updateVerificationStatus(document_entity_1.VerificationStatus.PENDING);
+        const updatedDoc = await this.documentRepo.update(doc);
+        return {
+            message: 'Extracted attributes confirmed by citizen. Awaiting administrative verification.',
+            document: updatedDoc,
+            confirmedData: updatedExtracted,
+        };
     }
     async deleteDocument(userId, id) {
         const doc = await this.documentRepo.findById(id);

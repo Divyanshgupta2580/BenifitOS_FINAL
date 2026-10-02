@@ -34,6 +34,10 @@ let OcrController = class OcrController {
             result,
         };
     }
+    async confirmOcr(userId, documentId, confirmedFields) {
+        const result = await this.ocrService.confirmOcrResult(userId, documentId, confirmedFields || {});
+        return result;
+    }
 };
 exports.OcrController = OcrController;
 __decorate([
@@ -52,6 +56,15 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], OcrController.prototype, "getOcrResult", null);
+__decorate([
+    (0, common_1.Post)('confirm/:documentId'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('documentId')),
+    __param(2, (0, common_1.Body)('confirmedFields')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], OcrController.prototype, "confirmOcr", null);
 exports.OcrController = OcrController = __decorate([
     (0, common_1.Controller)('ocr'),
     __metadata("design:paramtypes", [ocr_service_1.OcrPipelineService])

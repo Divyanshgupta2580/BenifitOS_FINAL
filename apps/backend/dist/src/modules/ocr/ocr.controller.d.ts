@@ -8,6 +8,7 @@ export declare class OcrController {
             documentId: string;
             confidenceScore: number;
             extractedFields: Record<string, any>;
+            ocrStatus: string;
         };
     }>;
     getOcrResult(userId: string, documentId: string): Promise<{
@@ -19,5 +20,16 @@ export declare class OcrController {
             extractedData: Record<string, any>;
             processedAt: string;
         };
+    }>;
+    confirmOcr(userId: string, documentId: string, confirmedFields: Record<string, any>): Promise<{
+        message: string;
+        documentId: string;
+        confirmedData: {
+            userConfirmedFields: Record<string, any>;
+            ocrStatus: string;
+            userConfirmed: boolean;
+            confirmedAt: string;
+        };
+        verificationStatus: string;
     }>;
 }

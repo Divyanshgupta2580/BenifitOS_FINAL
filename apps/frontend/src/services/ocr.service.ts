@@ -21,4 +21,8 @@ export const ocrApiService = {
   async getOcrResult(documentId: string): Promise<OcrResponse> {
     return await apiClient.get<any, OcrResponse>(`/ocr/${documentId}`);
   },
+
+  async confirmOcr(documentId: string, confirmedFields: Record<string, any>): Promise<{ message: string; documentId: string; confirmedData: any; verificationStatus: string }> {
+    return await apiClient.post(`/ocr/confirm/${documentId}`, { confirmedFields });
+  },
 };

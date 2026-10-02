@@ -74,7 +74,6 @@ export class DocumentEntity extends BaseDomainEntity<DocumentProps> {
 
   public setOcrResult(ocr: OcrResultProps): void {
     this._ocrResult = ocr;
-    this._verificationStatus = VerificationStatus.VERIFIED;
     this._updatedAt = new Date();
   }
 }

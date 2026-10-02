@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Badge } from '../../components/ui/Badge';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { ArrowLeftIcon, SparklesIcon, AlertTriangleIcon, CheckCircle2Icon, FileTextIcon, ShieldCheckIcon } from '../../components/ui/Icons';
+import { ArrowLeftIcon, SparklesIcon, AlertTriangleIcon, CheckCircle2Icon, FileTextIcon } from '../../components/ui/Icons';
 import { useOcrResult } from '../../hooks/useOcrResult';
 import { useProcessOcr } from '../../hooks/useProcessOcr';
 import { useDocument } from '../../hooks/useDocument';
+import { ocrApiService } from '../../services/ocr.service';
 import { AppLayout } from '../../components/layout/AppLayout';
 
 interface Props {
@@ -13,18 +14,21 @@ interface Props {
 }
 
 export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
-  const { document: doc } = useDocument(documentId);
+  const { document: doc, refetch: refetchDoc } = useDocument(documentId);
   const { ocrResult, isLoading, isError, refetch } = useOcrResult(documentId);
   const { processOcr, isProcessing } = useProcessOcr();
 
   const [editableFields, setEditableFields] = useState<Record<string, string>>({});
   const [hasInitializedFields, setHasInitializedFields] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   if (ocrResult?.extractedData && !hasInitializedFields) {
     const initial: Record<string, string> = {};
     Object.entries(ocrResult.extractedData).forEach(([key, val]) => {
-      initial[key] = typeof val === 'object' ? JSON.stringify(val) : String(val);
+      if (key !== 'ocrStatus' && key !== 'userConfirmed' && key !== 'confirmedAt' && key !== 'userConfirmedFields') {
+        initial[key] = typeof val === 'object' ? JSON.stringify(val) : String(val);
+      }
     });
     setEditableFields(initial);
     setHasInitializedFields(true);
@@ -36,6 +40,7 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
       await processOcr(documentId);
       setHasInitializedFields(false);
       refetch();
+      refetchDoc();
     } catch (err: any) {
       setStatusMessage({ type: 'error', text: err.message || 'Vision OCR scan could not complete.' });
     }
@@ -45,13 +50,30 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
     setEditableFields((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleConfirmVerification = () => {
-    setStatusMessage({ type: 'success', text: 'Extracted fields saved to citizen document vault!' });
-    setTimeout(onBack, 1200);
+  const handleConfirmVerification = async () => {
+    setStatusMessage(null);
+    setIsConfirming(true);
+    try {
+      await ocrApiService.confirmOcr(documentId, editableFields);
+      setStatusMessage({
+        type: 'success',
+        text: 'Extracted attributes confirmed by citizen. Document saved in vault (Pending Administrative Verification).',
+      });
+      refetch();
+      refetchDoc();
+      setTimeout(onBack, 1500);
+    } catch (err: any) {
+      setStatusMessage({
+        type: 'error',
+        text: err.message || 'Failed to save confirmed document attributes. Please try again.',
+      });
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   const confidencePct = ocrResult ? (ocrResult.confidenceScore * 100).toFixed(1) : '0.0';
-  const isHighConfidence = ocrResult && ocrResult.confidenceScore >= 0.85;
+  const isHighConfidence = ocrResult && ocrResult.confidenceScore >= 0.8;
 
   return (
     <AppLayout activeTab="vault">
@@ -103,7 +125,7 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
               {doc?.fileName || `Document #${documentId.slice(0, 8)}`}
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              AI Vision OCR parses official stamps, QR codes, biometric signatures, and printed text.
+              AI Vision OCR parses official document headers, printed numbers, and text fields for citizen confirmation.
             </p>
           </div>
 
@@ -114,7 +136,7 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
             className="w-full py-3 px-6 rounded-2xl font-black text-xs bg-gradient-to-r from-mint-500 to-emerald-400 hover:from-mint-400 hover:to-emerald-300 text-forest-950 shadow-lg shadow-mint-500/10 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
           >
             <SparklesIcon className="w-4 h-4 text-forest-950" />
-            <span>{isProcessing ? 'Processing BenefitOS Vision Scan...' : 'Run Vision OCR Scan'}</span>
+            <span>{isProcessing ? 'Processing Vision OCR Extraction...' : 'Run / Re-run Vision OCR Scan'}</span>
           </button>
         </div>
 
@@ -130,12 +152,12 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
             <div className="rounded-3xl bg-gradient-to-br from-[#0D2418] via-[#0E1712] to-[#0A120E] border border-emerald-500/40 p-6 shadow-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <span className="text-[11px] uppercase tracking-wider text-emerald-400 font-bold block mb-1">
-                  BenefitOS Vision Verification Score
+                  Vision OCR Confidence Score
                 </span>
                 <span className="text-3xl font-black text-white">{confidencePct}%</span>
               </div>
               <Badge
-                label={isHighConfidence ? 'HIGH CONFIDENCE' : 'MANUAL AUDIT REQUIRED'}
+                label={isHighConfidence ? 'HIGH CONFIDENCE' : 'REVIEW REQUIRED'}
                 variant={isHighConfidence ? 'success' : 'warning'}
               />
             </div>
@@ -147,7 +169,7 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
                   Extracted Document Attributes
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Verify and edit key entity attributes before finalizing vault ingestion.
+                  Review and correct any attributes before saving to your citizen vault.
                 </p>
               </div>
 
@@ -180,7 +202,7 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
                 Raw Extracted OCR Text Buffer
               </h3>
               <div className="bg-[#080C0A] p-4 rounded-2xl border border-[#1C3127] font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
-                {ocrResult.rawText}
+                {ocrResult.rawText || '[No raw text extracted]'}
               </div>
             </div>
 
@@ -188,10 +210,11 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
             <button
               type="button"
               onClick={handleConfirmVerification}
-              className="w-full py-4 px-6 rounded-2xl font-black text-sm bg-gradient-to-r from-mint-500 to-emerald-400 hover:from-mint-400 hover:to-emerald-300 text-forest-950 shadow-xl shadow-mint-500/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              disabled={isConfirming}
+              className="w-full py-4 px-6 rounded-2xl font-black text-sm bg-gradient-to-r from-mint-500 to-emerald-400 hover:from-mint-400 hover:to-emerald-300 text-forest-950 shadow-xl shadow-mint-500/10 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
             >
               <CheckCircle2Icon className="w-5 h-5 text-forest-950" />
-              <span>Confirm &amp; Save Extracted Attributes</span>
+              <span>{isConfirming ? 'Saving Confirmed Attributes...' : 'Confirm & Save Extracted Attributes'}</span>
             </button>
           </>
         ) : (
@@ -200,7 +223,7 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
               <FileTextIcon className="w-8 h-8 text-slate-500 mx-auto" />
               <p>No OCR extraction result available yet.</p>
               <p className="text-[11px] text-slate-500">
-                Click "Run Vision OCR Scan" above to initiate AI vision processing.
+                Click "Run / Re-run Vision OCR Scan" above to initiate vision processing.
               </p>
             </div>
           )

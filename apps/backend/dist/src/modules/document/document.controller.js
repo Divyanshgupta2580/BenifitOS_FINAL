@@ -33,7 +33,7 @@ let DocumentController = class DocumentController {
         const result = await this.documentService.uploadDocument(userId, documentType, file);
         const doc = result.document;
         return {
-            message: 'Document verified and stored successfully.',
+            message: 'Document uploaded and processed. Please review and confirm extracted attributes.',
             document: {
                 id: doc.id,
                 documentType: doc.documentType,
@@ -43,6 +43,21 @@ let DocumentController = class DocumentController {
                 verificationStatus: doc.verificationStatus,
             },
             classification: result.classification,
+        };
+    }
+    async confirmDocument(userId, id, confirmedFields) {
+        const result = await this.documentService.confirmDocument(userId, id, confirmedFields || {});
+        return {
+            message: result.message,
+            document: {
+                id: result.document.id,
+                documentType: result.document.documentType,
+                displayName: scheme_entity_1.DOCUMENT_TYPE_DISPLAY_NAMES[result.document.documentType] || result.document.documentType,
+                fileName: result.document.fileName,
+                fileSize: result.document.fileSize,
+                verificationStatus: result.document.verificationStatus,
+            },
+            confirmedData: result.confirmedData,
         };
     }
     async getDocuments(userId) {
@@ -101,6 +116,15 @@ __decorate([
     __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], DocumentController.prototype, "uploadDocument", null);
+__decorate([
+    (0, common_1.Post)(':id/confirm'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)('confirmedFields')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], DocumentController.prototype, "confirmDocument", null);
 __decorate([
     (0, common_1.Get)(),
     __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body } from '@nestjs/common';
 import { OcrPipelineService } from './ocr.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -21,5 +21,15 @@ export class OcrController {
     return {
       result,
     };
+  }
+
+  @Post('confirm/:documentId')
+  async confirmOcr(
+    @CurrentUser('sub') userId: string,
+    @Param('documentId') documentId: string,
+    @Body('confirmedFields') confirmedFields: Record<string, any>,
+  ) {
+    const result = await this.ocrService.confirmOcrResult(userId, documentId, confirmedFields || {});
+    return result;
   }
 }

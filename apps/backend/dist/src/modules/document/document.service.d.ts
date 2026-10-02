@@ -20,5 +20,10 @@ export declare class DocumentService {
     validateFileSignature(buffer: Buffer, mimeType: string): void;
     getUserDocuments(userId: string): Promise<DocumentEntity[]>;
     getDocumentById(userId: string, id: string): Promise<DocumentEntity>;
+    confirmDocument(userId: string, id: string, confirmedFields: Record<string, any>): Promise<{
+        message: string;
+        document: DocumentEntity;
+        confirmedData: Record<string, any>;
+    }>;
     deleteDocument(userId: string, id: string): Promise<void>;
 }
