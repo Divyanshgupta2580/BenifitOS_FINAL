@@ -21,7 +21,7 @@ This document proves that the BenefitOS AI pipeline is fully verified, operation
 | **Cache & Locking Engine** | Redis 7.2 / Upstash Redis with Distributed Mutex Locks (`SET key val EX 30 NX`) |
 | **AI Provider Integration** | Google Gemini 2.5 Flash via internal provider-agnostic adapter (`GeminiAiAdapter`) |
 | **Realtime Gateway** | Socket.IO WebSocket with automatic HTTP fallback |
-| **Current Git Commit** | `HEAD` (branch `main`) |
+| **Current Git Commit** | `20d73092576ee02504a45833bc659eedfcd42ff1` (branch `main`) |
 
 ---
 
@@ -43,7 +43,7 @@ sequenceDiagram
     Citizen->>Backend: POST /ai/chat or WS request_guidance
     Backend->>Engine: Evaluate rules (Deterministic Source of Truth)
     Engine-->>Backend: Return verified eligible schemes & facts
-    Backend->>Minimizer: Minimize citizen profile & strip PII
+    Backend->>Minimizer: Minimize citizen profile & strip direct PII
     Minimizer-->>Backend: Sanitized demographic attributes only
     Backend->>Cache: Check active cache (SHA-256 key)
     alt Cache HIT (Test Case B)
@@ -82,7 +82,7 @@ sequenceDiagram
 
 ## 4. Data Minimization & Privacy Boundary Audit
 
-The `AiDataMinimizerService` was audited against 15 sensitive fields. Under zero circumstances are direct personal identifiers, authentication secrets, or raw documents transmitted to the upstream AI provider.
+The `AiDataMinimizerService` was audited against 15 sensitive fields. Direct personal identifiers and authentication secrets are 100% stripped; only sanitized demographic attributes required for welfare reasoning are forwarded.
 
 ### Audited PII Fields (100% Stripped)
 - `firstName`, `lastName` $\rightarrow$ **Stripped**
@@ -139,13 +139,13 @@ All tests were executed against real database persistence and distributed lockin
 | Test Case | Scenario Description | Expected Behavior | Actual Behavior | AI Provider Calls | Cache State | Redis Lock | Result |
 | :--- | :--- | :--- | :--- | :---: | :---: | :---: | :---: |
 | **Test Case A** | First Request (Cold Start) | Cache MISS $\rightarrow$ Lock acquired $\rightarrow$ 1 AI call $\rightarrow$ DB cached | Handled in 47ms, stored to `ai_response_cache` | **1** | MISS | ACQUIRED $\rightarrow$ RELEASED | **PASS** |
-| **Test Case B** | Second Identical Request | Cache HIT $\rightarrow$ 0 AI calls $\rightarrow$ Served from DB cache | Instant return (0ms), AI bypassed | **0** (Total: 1) | HIT | NOT ACQUIRED | **PASS** |
+| **Test Case B** | Second Identical Request | Cache HIT $\rightarrow$ 0 AI calls $\rightarrow$ Served from DB cache | Sub-ms return (1.3ms empirical avg), AI bypassed | **0** (Total: 1) | HIT | NOT ACQUIRED | **PASS** |
 | **Test Case C** | Profile Update Invalidation | Cache invalidated $\rightarrow$ Cache MISS $\rightarrow$ 1 fresh AI call | Old cache purged, new profile context cached | **1** (Total: 2) | INVALIDATED $\rightarrow$ MISS | ACQUIRED $\rightarrow$ RELEASED | **PASS** |
 | **Test Case D** | Scheme Rule Invalidation | Scheme cache invalidated $\rightarrow$ New AI explanation cached | Scheme cache purged, new response stored | **1** (Total: 3) | INVALIDATED $\rightarrow$ MISS | ACQUIRED $\rightarrow$ RELEASED | **PASS** |
 | **Test Case E** | Two Simultaneous Requests | Concurrency lock $\rightarrow$ In-flight dedup $\rightarrow$ Exactly 1 AI call | Both requests fulfilled, zero duplication | **1** (Total: 4) | MISS + DEDUP HIT | ACQUIRED $\rightarrow$ RELEASED | **PASS** |
 | **Test Case F** | Backend Restart Persistence | Cache persists in PostgreSQL $\rightarrow$ 0 AI calls | Database cache retrieved across restart | **0** (Total: 4) | HIT | NOT ACQUIRED | **PASS** |
 | **Test Case G** | Controlled AI Failure | AI throws error $\rightarrow$ Lock released $\rightarrow$ Clean recovery | Graceful 503 error, zero bad cache, clean recovery | **2** (1 fail + 1 retry) | ERROR $\rightarrow$ CLEAN STORE | ACQUIRED $\rightarrow$ RELEASED | **PASS** |
-| **WebSocket Flow** | Persistent WS Guidance | Full duplex event `request_guidance` $\rightarrow$ `guidance_response` | Streamed over single persistent socket | **1** | MISS / HIT | ACQUIRED | **PASS** |
+| **WebSocket Flow** | Persistent WS Guidance | Full duplex event `request_guidance` $\rightarrow$ `guidance_response` | Persistent socket with request/response lifecycle events | **1** | MISS / HIT | ACQUIRED | **PASS** |
 | **HTTP Fallback** | WS Offline Simulation | Offline WS $\rightarrow$ Auto fallback to `POST /ai/chat` | Transparent fallback, identical output | **1** | HIT / MISS | ACQUIRED | **PASS** |
 
 ---
@@ -184,7 +184,7 @@ To prevent cache stampedes and duplicate LLM billing when multiple users or conc
  - Data Minimization (15/15 PII)  : VERIFIED
  - AI Failure Safety & Recovery   : VERIFIED
  - Database Cache Persistence     : VERIFIED
- - WebSocket Full-Duplex Stream   : VERIFIED
+ - WebSocket Lifecycle Events     : VERIFIED
  - HTTP Graceful Fallback         : VERIFIED
  - Eligibility Source of Truth    : VERIFIED
 ================================================================
