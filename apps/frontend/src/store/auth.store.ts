@@ -71,3 +71,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 }));
+
+// Cross-tab synchronization via StorageEvent
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'accessToken' || event.key === 'user' || event.key === null) {
+      useAuthStore.getState().loadAuthFromStorage();
+    }
+  });
+}
+

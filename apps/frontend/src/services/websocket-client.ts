@@ -125,6 +125,12 @@ class WebSocketService {
         console.log("[WebSocket] Disconnected from Realtime Gateway:", reason);
       });
 
+      this.socket.on("error", (err: any) => {
+        this.isConnecting = false;
+        this.setStatus("ERROR");
+        console.warn("[WebSocket] Server error event:", err);
+      });
+
       this.socket.on("connect_error", (error) => {
         this.isConnecting = false;
         this.setStatus("ERROR");
@@ -156,6 +162,31 @@ class WebSocketService {
       this.setStatus("ERROR");
       console.warn("[WebSocket] Connection initialization failed:", err);
       return null;
+    }
+  }
+
+  async reauthenticate(newToken?: string): Promise<boolean> {
+    const token = newToken || (await storageService.getItem("accessToken"));
+    if (!token) {
+      this.disconnect();
+      return false;
+    }
+    if (this.socket && this.socket.connected) {
+      return new Promise((resolve) => {
+        this.socket!.emit("reauthenticate", { token }, (response: any) => {
+          if (response?.status === "AUTHENTICATED") {
+            this.setStatus("CONNECTED");
+            resolve(true);
+          } else {
+            this.setStatus("ERROR");
+            resolve(false);
+          }
+        });
+        setTimeout(() => resolve(false), 5000);
+      });
+    } else {
+      const socket = await this.connect();
+      return Boolean(socket && socket.connected);
     }
   }
 

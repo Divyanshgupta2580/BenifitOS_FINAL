@@ -198,15 +198,20 @@ export class AuthService {
       throw new Error('JWT configuration missing. Server cannot issue tokens.');
     }
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const accessToken = this.jwtService.sign(payload, {
-      secret: accessSecret,
-      expiresIn: (process.env.JWT_EXPIRATION || '15m') as any,
-    });
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: refreshSecret,
-      expiresIn: (process.env.JWT_REFRESH_EXPIRATION || '7d') as any,
-    });
+    const accessToken = this.jwtService.sign(
+      { sub: user.id, email: user.email, role: user.role, jti: randomUUID() },
+      {
+        secret: accessSecret,
+        expiresIn: (process.env.JWT_EXPIRATION || '15m') as any,
+      },
+    );
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id, email: user.email, role: user.role, jti: randomUUID() },
+      {
+        secret: refreshSecret,
+        expiresIn: (process.env.JWT_REFRESH_EXPIRATION || '7d') as any,
+      },
+    );
 
     return { accessToken, refreshToken };
   }

@@ -180,12 +180,11 @@ let AuthService = AuthService_1 = class AuthService {
         if (!accessSecret || !refreshSecret) {
             throw new Error('JWT configuration missing. Server cannot issue tokens.');
         }
-        const payload = { sub: user.id, email: user.email, role: user.role };
-        const accessToken = this.jwtService.sign(payload, {
+        const accessToken = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role, jti: (0, crypto_1.randomUUID)() }, {
             secret: accessSecret,
             expiresIn: (process.env.JWT_EXPIRATION || '15m'),
         });
-        const refreshToken = this.jwtService.sign(payload, {
+        const refreshToken = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role, jti: (0, crypto_1.randomUUID)() }, {
             secret: refreshSecret,
             expiresIn: (process.env.JWT_REFRESH_EXPIRATION || '7d'),
         });

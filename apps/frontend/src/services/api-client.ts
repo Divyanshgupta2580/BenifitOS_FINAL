@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { storageService } from './storage.service';
+import { wsService } from './websocket-client';
 
 const getApiBaseUrl = (): string => {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
@@ -98,6 +99,12 @@ apiClient.interceptors.response.use(
 
             processQueue(null, newAccessToken);
             isRefreshing = false;
+
+            // Automatically re-authenticate any active WebSocket connection with the new token
+            try {
+              wsService.reauthenticate(newAccessToken).catch(() => {});
+            } catch {}
+
             return apiClient(originalRequest);
           } else {
             throw new Error('Refresh failed to return a new access token.');
@@ -107,6 +114,9 @@ apiClient.interceptors.response.use(
           isRefreshing = false;
           await storageService.removeItem('accessToken');
           await storageService.removeItem('access_token');
+          try {
+            wsService.disconnect();
+          } catch {}
           if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
             window.location.href = '/login';
           }
