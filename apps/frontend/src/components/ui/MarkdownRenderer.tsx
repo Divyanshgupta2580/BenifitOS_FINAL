@@ -148,7 +148,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
     // Horizontal Rule
     if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
       flushList(`flush-${i}`);
-      elements.push(<hr key={`hr-${i}`} className="my-4 border-slate-200 dark:border-slate-800" />);
+      elements.push(<hr key={`hr-${i}`} className="my-3 border-slate-200 dark:border-slate-800" />);
       continue;
     }
 
@@ -156,7 +156,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
     if (trimmed.startsWith('# ')) {
       flushList(`flush-${i}`);
       elements.push(
-        <h1 key={`h1-${i}`} className="text-base font-black text-blue-950 dark:text-blue-300 mt-4 mb-2">
+        <h1 key={`h1-${i}`} className="text-base font-black text-slate-900 dark:text-mint-300 mt-3.5 mb-1.5 font-heading">
           {renderInline(trimmed.substring(2))}
         </h1>
       );
@@ -165,7 +165,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
     if (trimmed.startsWith('## ')) {
       flushList(`flush-${i}`);
       elements.push(
-        <h2 key={`h2-${i}`} className="text-sm font-extrabold text-blue-900 dark:text-blue-400 mt-3.5 mb-1.5">
+        <h2 key={`h2-${i}`} className="text-sm font-extrabold text-slate-900 dark:text-mint-400 mt-3 mb-1 font-heading">
           {renderInline(trimmed.substring(3))}
         </h2>
       );
@@ -174,7 +174,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
     if (trimmed.startsWith('### ')) {
       flushList(`flush-${i}`);
       elements.push(
-        <h3 key={`h3-${i}`} className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide mt-3 mb-1">
+        <h3 key={`h3-${i}`} className="text-xs font-bold text-slate-900 dark:text-emerald-400 uppercase tracking-wider mt-3 mb-1 font-heading">
           {renderInline(trimmed.substring(4))}
         </h3>
       );
@@ -183,7 +183,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
     if (trimmed.startsWith('#### ')) {
       flushList(`flush-${i}`);
       elements.push(
-        <h4 key={`h4-${i}`} className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-2 mb-1">
+        <h4 key={`h4-${i}`} className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-2 mb-1 font-heading">
           {renderInline(trimmed.substring(5))}
         </h4>
       );
@@ -197,7 +197,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
       elements.push(
         <div
           key={`quote-${i}`}
-          className="p-3 my-2.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border-l-4 border-blue-600 dark:border-blue-400 text-xs text-blue-900 dark:text-blue-200"
+          className="p-3 my-2 rounded-xl bg-emerald-950/40 border-l-4 border-mint-500 text-xs text-mint-200"
         >
           {renderInline(quoteText)}
         </div>
@@ -230,7 +230,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, cla
     // Standard Paragraph
     flushList(`flush-${i}`);
     elements.push(
-      <p key={`p-${i}`} className="text-xs leading-relaxed text-slate-700 dark:text-slate-300 my-1.5">
+      <p key={`p-${i}`} className="text-xs leading-relaxed text-slate-700 dark:text-slate-300 my-1">
         {renderInline(trimmed)}
       </p>
     );

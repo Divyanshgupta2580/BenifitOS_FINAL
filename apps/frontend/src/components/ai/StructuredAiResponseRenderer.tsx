@@ -12,6 +12,7 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from '../ui/Icons';
+import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
 interface StructuredAiResponseProps {
   content: string;
@@ -215,8 +216,8 @@ export const StructuredAiResponseRenderer: React.FC<StructuredAiResponseProps> =
 
       {/* Intro Summary Text */}
       {introText && (
-        <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed space-y-2 bg-blue-50/50 dark:bg-blue-950/20 p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/40">
-          <p className="whitespace-pre-wrap">{introText}</p>
+        <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed bg-emerald-950/20 p-3.5 rounded-xl border border-emerald-900/30">
+          <MarkdownRenderer content={introText} />
         </div>
       )}
 
@@ -225,7 +226,7 @@ export const StructuredAiResponseRenderer: React.FC<StructuredAiResponseProps> =
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-2 px-1">
             <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <SparklesIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <SparklesIcon className="w-4 h-4 text-emerald-500 dark:text-mint-400" />
               <span>
                 {isHindi
                   ? `प्रासंगिक कल्याणकारी योजनाएँ (${parsedSchemes.length})`
@@ -265,7 +266,7 @@ export const StructuredAiResponseRenderer: React.FC<StructuredAiResponseProps> =
                 key={idx}
                 className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-start gap-3.5"
               >
-                <div className="w-8 h-8 rounded-lg bg-blue-900 dark:bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-emerald-900 dark:bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0">
                   {step.stepNumber}
                 </div>
                 <div className="flex-1 min-w-0 space-y-1">
@@ -286,8 +287,8 @@ export const StructuredAiResponseRenderer: React.FC<StructuredAiResponseProps> =
 
       {/* Fallback Clean General Text if no structured schemes */}
       {parsedSchemes.length === 0 && parsedSteps.length === 0 && !introText && (
-        <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
-          {content}
+        <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+          <MarkdownRenderer content={content} />
         </div>
       )}
 
