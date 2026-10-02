@@ -43,7 +43,7 @@ export const DashboardStatsCards: React.FC<DashboardStatsCardsProps> = ({
 
         <div className="mt-5 pt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
           <span className="text-slate-500 dark:text-slate-400 font-medium">
-            Uploaded &amp; OCR Verified Files
+            Uploaded Documents
           </span>
           <span className="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 group-hover:underline">
             <span>View All</span>

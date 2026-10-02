@@ -22,8 +22,8 @@ export const ActionsForYouSection: React.FC<ActionsForYouSectionProps> = ({
   onUploadDocuments,
   onCheckApplications,
   onExploreSchemes,
-  profileCompletionPercentage = 75,
-  pendingDocumentsCount = 1,
+  profileCompletionPercentage = 0,
+  pendingDocumentsCount = 0,
 }) => {
   const actions = [
     {

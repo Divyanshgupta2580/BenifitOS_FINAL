@@ -72,7 +72,7 @@ export const CitizenProfileScreen: React.FC<Props> = ({
               </h1>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Maintain your verified information for automated government scheme qualification.
+              Maintain your demographic profile for automated government scheme qualification.
             </p>
           </div>
 
@@ -107,7 +107,7 @@ export const CitizenProfileScreen: React.FC<Props> = ({
               </span>
               <span className="text-xs text-mint-300 font-bold flex items-center gap-1">
                 <CheckCircle2Icon className="w-3.5 h-3.5 text-mint-400" />
-                Verified
+                {completionPct === 100 ? 'Complete' : 'In Progress'}
               </span>
             </div>
           </div>

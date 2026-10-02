@@ -105,8 +105,8 @@ export const LandDetailsScreen: React.FC<Props> = ({ onBack }) => {
                       Survey / Khasra No: {l.surveyNumber || 'N/A'} • {l.district}, {l.state}
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-mint-300 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/30">
-                    Verified
+                  <span className="text-xs font-medium text-slate-300 bg-forest-950 px-2.5 py-1 rounded-lg border border-[#1C3127]">
+                    Self-Reported
                   </span>
                 </div>
               ))}

@@ -22,7 +22,7 @@ const QUICK_ACTIONS = {
     { label: 'How do I apply?', query: 'How do I apply for this scheme?', useCase: 'application-steps' },
     { label: 'Explain this scheme', query: 'Explain this scheme.', useCase: 'scheme-explanation' },
     { label: 'What am I missing?', query: 'What profile information is missing for accurate guidance?', useCase: 'missing-requirements' },
-    { label: 'Help me understand my benefits', query: 'Help me understand my verified benefits.', useCase: 'general' },
+    { label: 'Help me understand my benefits', query: 'Help me understand my eligible benefits.', useCase: 'general' },
   ],
   hi: [
     { label: 'मेरी पात्र योजनाएँ बताएं', query: 'मैं किन योजनाओं के लिए पात्र हूँ?', useCase: 'eligible-schemes' },
@@ -31,7 +31,7 @@ const QUICK_ACTIONS = {
     { label: 'आवेदन कैसे करें?', query: 'मैं इस योजना के लिए आवेदन कैसे करूँ?', useCase: 'application-steps' },
     { label: 'इस योजना की जानकारी दें', query: 'इस योजना की जानकारी दें।', useCase: 'scheme-explanation' },
     { label: 'क्या जानकारी अधूरी है?', query: 'सटीक मार्गदर्शन के लिए मेरी कौन सी जानकारी अधूरी है?', useCase: 'missing-requirements' },
-    { label: 'मेरे लाभ समझाएं', query: 'मेरे सत्यापित लाभ समझाएं।', useCase: 'general' },
+    { label: 'मेरे लाभ समझाएं', query: 'मेरे पात्र लाभ समझाएं।', useCase: 'general' },
   ],
 };
 
@@ -135,8 +135,8 @@ export const AiCopilotScreen: React.FC<Props> = ({
             </div>
             <p className="text-xs text-slate-400 mt-1">
               {isHindi
-                ? 'सत्यापित योजना और पात्रता डेटा पर आधारित नागरिक कल्याण सहायता'
-                : 'Intelligent welfare advisor powered by deterministic verified scheme data'}
+                ? 'योजना और पात्रता डेटा पर आधारित नागरिक कल्याण सहायता'
+                : 'Intelligent welfare advisor powered by deterministic scheme eligibility data'}
             </p>
           </div>
 
@@ -254,7 +254,7 @@ export const AiCopilotScreen: React.FC<Props> = ({
                   ) : (
                     <StructuredAiResponseRenderer
                       content={item.text}
-                      sources={item.sources || ['Verified scheme information']}
+                      sources={item.sources || ['Official scheme catalog']}
                       timestamp={item.timestamp}
                       language={language}
                       onActionClick={(actionQuery) =>
@@ -293,7 +293,7 @@ export const AiCopilotScreen: React.FC<Props> = ({
                   />
                 </svg>
                 <span className="text-xs font-medium text-mint-200">
-                  {isHindi ? 'मार्गदर्शन तैयार किया जा रहा है...' : 'Synthesizing verified guidance...'}
+                  {isHindi ? 'मार्गदर्शन तैयार किया जा रहा है...' : 'Synthesizing welfare guidance...'}
                 </span>
               </div>
             </div>

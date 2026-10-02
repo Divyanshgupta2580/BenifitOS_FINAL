@@ -38,7 +38,7 @@ export const useVerificationSources = (): VerificationStatus => {
   const isDatabaseLinked = true; // Always connected to BenefitOS Government Scheme Catalog
 
   const activeSources: string[] = ['Government Scheme Database'];
-  if (isProfileVerified) activeSources.push('Verified Citizen Profile');
+  if (isProfileVerified) activeSources.push(`Citizen Profile (${profileCompletionPercentage}%)`);
   if (isAadhaarLinked) activeSources.push('Aadhaar UIDAI');
   if (isDigiLockerSynced) activeSources.push('DigiLocker Synced');
   if (isVaultLinked) activeSources.push(`Document Vault (${documentCount})`);

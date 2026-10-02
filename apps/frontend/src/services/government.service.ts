@@ -1,6 +1,6 @@
 import { apiClient } from './api-client';
 
-export type ServiceStatus = 'CONNECTED' | 'NOT_CONNECTED' | 'VERIFIED' | 'PENDING' | 'EXPIRED' | 'MOCKED' | 'NOT_CONFIGURED';
+export type ServiceStatus = 'CONNECTED' | 'NOT_CONNECTED' | 'VERIFIED' | 'PENDING_VERIFICATION' | 'NOT_VERIFIED' | 'UNAVAILABLE';
 export type ConnectionHealth = 'HEALTHY' | 'DEGRADED' | 'DISCONNECTED';
 
 export interface GovernmentServiceItem {
@@ -21,10 +21,9 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'AADHAAR',
     name: 'Aadhaar UIDAI Gateway',
     category: 'IDENTITY',
-    status: 'MOCKED',
-    lastSynced: 'Sandbox Mock Mode',
-    health: 'HEALTHY',
-    description: 'Unique Identification Authority of India e-KYC sandbox adapter',
+    status: 'NOT_CONNECTED',
+    health: 'DISCONNECTED',
+    description: 'Unique Identification Authority of India e-KYC identity gateway',
     icon: 'id-card',
   },
   {
@@ -32,10 +31,9 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'DIGILOCKER',
     name: 'DigiLocker National Vault',
     category: 'DOCUMENTS',
-    status: 'MOCKED',
-    lastSynced: 'Sandbox Mock Mode',
-    health: 'HEALTHY',
-    description: 'Ministry of Electronics & IT Digital Document Repository sandbox adapter',
+    status: 'NOT_CONNECTED',
+    health: 'DISCONNECTED',
+    description: 'Ministry of Electronics & IT Digital Document Repository gateway',
     icon: 'folder',
   },
   {
@@ -43,7 +41,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'ABHA',
     name: 'ABHA Ayushman Bharat Health Account',
     category: 'HEALTH',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'National Health Authority Digital Health Identity ID (Integration pending external credentials)',
     icon: 'health',
@@ -53,7 +51,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'PM_KISAN',
     name: 'PM-KISAN Samman Nidhi Portal',
     category: 'AGRICULTURE',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'Direct Benefit Transfer Agricultural Landholder Account portal',
     icon: 'agriculture',
@@ -63,7 +61,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'E_SHRAM',
     name: 'e-Shram National Database',
     category: 'LABOUR',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'Ministry of Labour Unorganised Workers Identification Portal',
     icon: 'labour',
@@ -73,7 +71,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'UMANG',
     name: 'UMANG Unified Mobile App',
     category: 'IDENTITY',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'Unified Mobile Application for New-age Governance Gateway',
     icon: 'mobile',
@@ -83,7 +81,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'PASSPORT',
     name: 'Passport Seva Kendra Portal',
     category: 'CIVIL',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'Consular Passport & Visa Division Integration Portal',
     icon: 'passport',
@@ -93,7 +91,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'VOTER_ID',
     name: 'NVSP Voter ID ECI Portal',
     category: 'IDENTITY',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'Election Commission of India EPIC Electoral Verification',
     icon: 'voter',
@@ -103,7 +101,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'PAN',
     name: 'NSDL Income Tax PAN Portal',
     category: 'IDENTITY',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'Permanent Account Number Tax Identity Verification',
     icon: 'card',
@@ -113,7 +111,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'DRIVING_LICENCE',
     name: 'Parivahan Sarathi DL Registry',
     category: 'CIVIL',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'Ministry of Road Transport & Highways DL Portal',
     icon: 'vehicle',
@@ -123,7 +121,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'INCOME_CERT',
     name: 'State Revenue Income Registry',
     category: 'DOCUMENTS',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'State E-District Revenue Income Certificate Portal',
     icon: 'document',
@@ -133,7 +131,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'CASTE_CERT',
     name: 'State Caste & Tribe Registry',
     category: 'DOCUMENTS',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'Social Welfare Caste Certificate Verification Gateway',
     icon: 'building',
@@ -143,7 +141,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'DOMICILE_CERT',
     name: 'State Residence Domicile Registry',
     category: 'DOCUMENTS',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'E-District Native Domicile & Residence Registry',
     icon: 'home',
@@ -153,7 +151,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'BIRTH_CERT',
     name: 'Civil Registration Birth System',
     category: 'CIVIL',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'Vital Statistics Birth Registration Certificate Registry',
     icon: 'child',
@@ -163,7 +161,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     code: 'DEATH_CERT',
     name: 'Civil Registration Death System',
     category: 'CIVIL',
-    status: 'NOT_CONFIGURED',
+    status: 'UNAVAILABLE',
     health: 'DISCONNECTED',
     description: 'Vital Statistics Death Registration Certificate Portal',
     icon: 'registry',
@@ -172,16 +170,6 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
 
 export const governmentApiService = {
   async getIntegrationStatus(): Promise<GovernmentServiceItem[]> {
-    try {
-      const dbtRes: any = await apiClient.get('/integrations/dbt/status?aadhaarHash=DEFAULT_HASH');
-      if (dbtRes && dbtRes.status) {
-        return INITIAL_GOVERNMENT_SERVICES.map((s) =>
-          s.code === 'PM_KISAN' ? { ...s, lastSynced: new Date().toISOString().replace('T', ' ').substring(0, 16) } : s
-        );
-      }
-    } catch {
-      // Fallback cleanly to verified baseline items
-    }
     return INITIAL_GOVERNMENT_SERVICES;
   },
 

@@ -110,7 +110,7 @@ export const RecommendationExplanationScreen: React.FC<Props> = ({ recommendatio
 
           <div className="relative z-10 p-5 rounded-2xl bg-forest-950/70 border border-[#1C3127] text-sm text-slate-200 leading-relaxed space-y-3">
             <p>
-              Based on your verified annual household income (₹
+              Based on your reported annual household income (₹
               {recommendation.scheme?.financialBenefit
                 ? (recommendation.estimatedBenefit || 150000).toLocaleString('en-IN')
                 : '1,50,000'}
@@ -118,7 +118,7 @@ export const RecommendationExplanationScreen: React.FC<Props> = ({ recommendatio
             </p>
             {recommendation.criteriaMet && recommendation.criteriaMet.length > 0 && (
               <div className="pt-2 border-t border-[#1C3127]/80 space-y-2">
-                <span className="text-xs font-bold text-mint-300 block">Verified Deterministic Factors:</span>
+                <span className="text-xs font-bold text-mint-300 block">Evaluated Eligibility Factors:</span>
                 <ul className="space-y-1.5">
                   {recommendation.criteriaMet.map((c, i) => (
                     <li key={i} className="flex items-start gap-2 text-xs text-slate-300">

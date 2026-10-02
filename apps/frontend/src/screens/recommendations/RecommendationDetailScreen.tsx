@@ -119,7 +119,7 @@ export const RecommendationDetailScreen: React.FC<Props> = ({
               <h2 className="text-sm font-bold text-white font-heading">
                 Satisfied Criteria ({recommendation.criteriaMet?.length || 0})
               </h2>
-              <p className="text-[11px] text-slate-400">Rules matched from your verified demographic records</p>
+              <p className="text-[11px] text-slate-400">Rules matched from your citizen profile records</p>
             </div>
           </div>
 
@@ -201,7 +201,7 @@ export const RecommendationDetailScreen: React.FC<Props> = ({
             </div>
           ) : (
             <p className="text-xs text-mint-400/90 font-medium">
-              ✓ All required documents are present and verified in your Citizen Vault.
+              ✓ No additional documents are required for this scheme.
             </p>
           )}
         </div>

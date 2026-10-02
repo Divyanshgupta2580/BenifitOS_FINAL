@@ -63,10 +63,10 @@ export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
 
       setStatusMessage({
         type: 'success',
-        text: 'Document verified & uploaded',
+        text: 'Document uploaded successfully (Pending Verification)',
         uploadedName: selectedTypeLabel,
         detectedName: detectedLabel,
-        status: 'Verified',
+        status: 'Pending Verification',
       });
       setTimeout(onBack, 1500);
     } catch (err: any) {

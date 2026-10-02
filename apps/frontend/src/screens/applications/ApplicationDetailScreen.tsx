@@ -119,8 +119,8 @@ export const ApplicationDetailScreen: React.FC<Props> = ({ applicationId, onBack
                     <DocumentTextIcon className="w-4 h-4 text-mint-400" />
                     <span>Linked Vault Document #{docId.slice(0, 8)}</span>
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 border border-emerald-500/30 text-mint-300">
-                    VERIFIED
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-forest-950 border border-[#1C3127] text-slate-300">
+                    ATTACHED
                   </span>
                 </div>
               ))}

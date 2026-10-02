@@ -131,12 +131,12 @@ export const DashboardScreen: React.FC<Props> = ({
   const isPrimaryDataError =
     !isLoadingInitial && (isProfileError || isRecsError);
   const isSecondaryDataError = isDocsError || isAppsError || isNotifsError;
-  const completionPct = profile?.completionPercentage || 75;
+  const completionPct = profile?.completionPercentage ?? 0;
 
   const citizenFullName =
     profile && (profile.firstName || profile.lastName) ?
       `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
-    : (user?.email ? user.email.split('@')[0] : "Divyansh Gupta");
+    : (user?.email ? user.email.split('@')[0] : "Citizen");
 
   return (
     <AppLayout activeTab="dashboard">

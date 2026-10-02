@@ -10,7 +10,7 @@ const SLIDES = [
   {
     Icon: CameraIcon,
     title: 'Vision OCR Document Vault',
-    description: 'Scan Aadhaar, Educational Certificates, and Caste Certificates with AI Vision for automated document verification.',
+    description: 'Scan Aadhaar, Educational Certificates, and Caste Certificates with AI Vision for automated attribute extraction.',
   },
   {
     Icon: BotIcon,

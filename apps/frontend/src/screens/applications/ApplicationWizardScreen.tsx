@@ -207,7 +207,7 @@ export const ApplicationWizardScreen: React.FC<Props> = ({ onBack, onSuccess }) 
                 3. Attach Documents from Vault
               </h2>
               <p className="text-xs text-slate-400">
-                Select verified documents from your Vault to attach to this application:
+                Select documents from your Vault to attach to this application:
               </p>
               <div className="space-y-2.5 max-h-72 overflow-y-auto custom-scrollbar">
                 {documents.map((doc) => {

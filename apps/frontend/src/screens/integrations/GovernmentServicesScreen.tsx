@@ -72,7 +72,7 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
 
   // Connection Modal State
   const [activeModalService, setActiveModalService] = useState<GovernmentServiceItem | null>(null);
-  const [aadhaarNumber, setAadhaarNumber] = useState('999999999999');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [otp, setOtp] = useState('');
   const [txnId, setTxnId] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
@@ -85,7 +85,7 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
 
   const connectedCount = services.filter((s) => s.status === 'CONNECTED' || s.status === 'VERIFIED').length;
   const verifiedCount = services.filter((s) => s.status === 'VERIFIED').length;
-  const pendingCount = services.filter((s) => s.status === 'PENDING').length;
+  const pendingCount = services.filter((s) => s.status === 'PENDING_VERIFICATION').length;
 
   const handleOpenConnect = (service: GovernmentServiceItem) => {
     if (service.code === 'DIGILOCKER') {

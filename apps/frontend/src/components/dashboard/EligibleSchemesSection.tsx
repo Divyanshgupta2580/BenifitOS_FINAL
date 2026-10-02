@@ -198,12 +198,12 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-slate-100 leading-tight">
-                            Required Documents Verified
+                            Eligibility Criteria Satisfied
                           </p>
                           <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
                             {rec.criteriaMet && rec.criteriaMet.length > 0
-                              ? `${rec.criteriaMet.length} mandatory criteria verified`
-                              : 'Mandatory criteria verified'}
+                              ? `${rec.criteriaMet.length} eligibility rules verified by engine`
+                              : 'Eligibility criteria satisfied'}
                           </p>
                         </div>
                       </div>

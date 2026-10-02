@@ -168,7 +168,7 @@ export const RegisterScreen: React.FC<Props> = ({ onNavigateToLogin }) => {
             National Welfare Gateway
           </p>
           <p className="text-xs text-slate-400 mt-1">
-            Provide your verified profile details to unlock automatic scheme qualifications.
+            Provide your profile details to unlock automatic scheme qualifications.
           </p>
         </div>
 

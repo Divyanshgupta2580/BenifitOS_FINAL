@@ -46,7 +46,7 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
   };
 
   const handleConfirmVerification = () => {
-    setStatusMessage({ type: 'success', text: 'Extracted fields verified and saved to citizen document vault!' });
+    setStatusMessage({ type: 'success', text: 'Extracted fields saved to citizen document vault!' });
     setTimeout(onBack, 1200);
   };
 
@@ -66,7 +66,7 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
             <span>Back to Vault</span>
           </button>
           <span className="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-forest-950 border border-[#1C3127] text-slate-300">
-            OCR Verification Suite
+            OCR Extraction Review
           </span>
         </div>
 
@@ -191,7 +191,7 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
               className="w-full py-4 px-6 rounded-2xl font-black text-sm bg-gradient-to-r from-mint-500 to-emerald-400 hover:from-mint-400 hover:to-emerald-300 text-forest-950 shadow-xl shadow-mint-500/10 flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               <CheckCircle2Icon className="w-5 h-5 text-forest-950" />
-              <span>Confirm &amp; Verify Document Attributes</span>
+              <span>Confirm &amp; Save Extracted Attributes</span>
             </button>
           </>
         ) : (

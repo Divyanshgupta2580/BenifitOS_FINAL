@@ -244,7 +244,7 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
               </h1>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Deterministic rule evaluation matched against your verified citizen profile.
+              Deterministic rule evaluation matched against your citizen profile.
             </p>
           </div>
 
@@ -449,7 +449,7 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
                     </span>
                   </h2>
                   <p className="text-xs text-slate-400">
-                    You currently qualify for these welfare schemes based on 100% verified mandatory criteria.
+                    You currently qualify for these welfare schemes based on satisfying all mandatory eligibility rules.
                   </p>
                 </div>
               </div>

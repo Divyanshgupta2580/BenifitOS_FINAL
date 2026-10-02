@@ -19,7 +19,7 @@ export const useGovernmentServices = () => {
       if (otp && txnId) {
         return await governmentApiService.verifyAadhaarOtp(txnId, otp);
       }
-      return await governmentApiService.requestAadhaarOtp(aadhaarNumber || '999999999999');
+      return await governmentApiService.requestAadhaarOtp(aadhaarNumber || '');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: GOVERNMENT_SERVICES_QUERY_KEY });

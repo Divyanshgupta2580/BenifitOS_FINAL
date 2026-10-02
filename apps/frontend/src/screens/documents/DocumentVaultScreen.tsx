@@ -67,7 +67,7 @@ export const DocumentVaultScreen: React.FC<Props> = ({
               </h1>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Your important government documents are encrypted, organized, and verified.
+              Your important government documents are encrypted, organized, and securely stored.
             </p>
           </div>
 
