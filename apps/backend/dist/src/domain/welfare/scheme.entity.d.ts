@@ -29,6 +29,35 @@ export interface EligibilityRule {
     isRequired: boolean;
     description: string;
 }
+export declare enum SchemeVerificationStatus {
+    VERIFIED = "VERIFIED",
+    NEEDS_REVIEW = "NEEDS_REVIEW",
+    OUTDATED = "OUTDATED",
+    UNVERIFIED = "UNVERIFIED"
+}
+export declare enum SchemeSourceType {
+    CENTRAL_PORTAL = "CENTRAL_PORTAL",
+    MINISTRY_PORTAL = "MINISTRY_PORTAL",
+    STATE_PORTAL = "STATE_PORTAL",
+    MYSCHEME = "MYSCHEME",
+    NATIONAL_PORTAL = "NATIONAL_PORTAL",
+    OFFICIAL_PORTAL = "OFFICIAL_PORTAL"
+}
+export declare enum BenefitType {
+    DIRECT_BENEFIT_TRANSFER = "DIRECT_BENEFIT_TRANSFER",
+    HOUSING_GRANT = "HOUSING_GRANT",
+    SCHOLARSHIP = "SCHOLARSHIP",
+    HEALTH_COVER = "HEALTH_COVER",
+    SUBSIDIZED_LOAN = "SUBSIDIZED_LOAN",
+    MONTHLY_PENSION = "MONTHLY_PENSION",
+    SUBSIDY = "SUBSIDY",
+    OTHER = "OTHER"
+}
+export declare enum ApplicationMode {
+    ONLINE = "ONLINE",
+    OFFLINE = "OFFLINE",
+    HYBRID = "HYBRID"
+}
 export interface SchemeProps {
     id: string;
     code: string;
@@ -43,6 +72,15 @@ export interface SchemeProps {
     applicationDeadline?: Date | null;
     eligibilityRules?: EligibilityRule[];
     requiredDocuments?: DocumentType[];
+    sourceUrl?: string | null;
+    sourceName?: string | null;
+    sourceType?: SchemeSourceType | null;
+    lastVerifiedAt?: Date | null;
+    verificationStatus?: SchemeVerificationStatus;
+    benefitType?: BenefitType | null;
+    applicationUrl?: string | null;
+    applicationMode?: ApplicationMode | null;
+    applicationProcedure?: string | null;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -59,6 +97,15 @@ export declare class WelfareSchemeEntity extends BaseDomainEntity<SchemeProps> {
     private _applicationDeadline?;
     private _eligibilityRules;
     private _requiredDocuments;
+    private _sourceUrl?;
+    private _sourceName?;
+    private _sourceType?;
+    private _lastVerifiedAt?;
+    private _verificationStatus;
+    private _benefitType?;
+    private _applicationUrl?;
+    private _applicationMode?;
+    private _applicationProcedure?;
     constructor(props: SchemeProps);
     get code(): string;
     get title(): string;
@@ -72,4 +119,13 @@ export declare class WelfareSchemeEntity extends BaseDomainEntity<SchemeProps> {
     get applicationDeadline(): Date | null | undefined;
     get eligibilityRules(): EligibilityRule[];
     get requiredDocuments(): DocumentType[];
+    get sourceUrl(): string | null | undefined;
+    get sourceName(): string | null | undefined;
+    get sourceType(): SchemeSourceType | null | undefined;
+    get lastVerifiedAt(): Date | null | undefined;
+    get verificationStatus(): SchemeVerificationStatus;
+    get benefitType(): BenefitType | null | undefined;
+    get applicationUrl(): string | null | undefined;
+    get applicationMode(): ApplicationMode | null | undefined;
+    get applicationProcedure(): string | null | undefined;
 }

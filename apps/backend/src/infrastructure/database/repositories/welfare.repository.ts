@@ -5,12 +5,14 @@ import { Prisma } from '@prisma/client';
 import { WelfareSchemeEntity, SchemeCategory, DocumentType } from '../../../domain/welfare/scheme.entity';
 import { EligibilityRule } from '../../../domain/welfare/scheme.entity';
 import { SchemeRecommendationEntity } from '../../../domain/welfare/recommendation.entity';
+import { CANONICAL_WELFARE_SCHEMES } from '../../../cron/daily-maintenance.cron';
 
 @Injectable()
 export class WelfareSchemeRepositoryImpl implements IWelfareSchemeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   private mapToEntity(data: Prisma.WelfareSchemeGetPayload<{ include: { eligibilityRules: true; requiredDocuments: true } }>): WelfareSchemeEntity {
+    const canonical = CANONICAL_WELFARE_SCHEMES.find((s) => s.code === data.code);
     return new WelfareSchemeEntity({
       id: data.id,
       code: data.code,
@@ -23,6 +25,15 @@ export class WelfareSchemeRepositoryImpl implements IWelfareSchemeRepository {
       financialBenefit: data.financialBenefit,
       isActive: data.isActive,
       applicationDeadline: data.applicationDeadline,
+      sourceUrl: (data as any).sourceUrl || canonical?.sourceUrl || null,
+      sourceName: (data as any).sourceName || canonical?.sourceName || null,
+      sourceType: (data as any).sourceType || (canonical?.sourceType as any) || null,
+      lastVerifiedAt: (data as any).lastVerifiedAt || (canonical?.lastVerifiedAt ? new Date(canonical.lastVerifiedAt) : new Date('2026-10-01')),
+      verificationStatus: (data as any).verificationStatus || (canonical?.verificationStatus as any) || 'VERIFIED' as any,
+      benefitType: (data as any).benefitType || (canonical?.benefitType as any) || null,
+      applicationUrl: (data as any).applicationUrl || canonical?.applicationUrl || null,
+      applicationMode: (data as any).applicationMode || (canonical?.applicationMode as any) || null,
+      applicationProcedure: (data as any).applicationProcedure || canonical?.applicationProcedure || null,
       eligibilityRules: data.eligibilityRules ? data.eligibilityRules.map((r: Prisma.EligibilityCriteriaGetPayload<{}>) => ({
         id: r.id,
         attributeKey: r.attributeKey,

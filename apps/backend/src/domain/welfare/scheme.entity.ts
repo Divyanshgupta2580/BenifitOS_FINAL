@@ -42,6 +42,39 @@ export interface EligibilityRule {
   description: string;
 }
 
+export enum SchemeVerificationStatus {
+  VERIFIED = 'VERIFIED',
+  NEEDS_REVIEW = 'NEEDS_REVIEW',
+  OUTDATED = 'OUTDATED',
+  UNVERIFIED = 'UNVERIFIED',
+}
+
+export enum SchemeSourceType {
+  CENTRAL_PORTAL = 'CENTRAL_PORTAL',
+  MINISTRY_PORTAL = 'MINISTRY_PORTAL',
+  STATE_PORTAL = 'STATE_PORTAL',
+  MYSCHEME = 'MYSCHEME',
+  NATIONAL_PORTAL = 'NATIONAL_PORTAL',
+  OFFICIAL_PORTAL = 'OFFICIAL_PORTAL',
+}
+
+export enum BenefitType {
+  DIRECT_BENEFIT_TRANSFER = 'DIRECT_BENEFIT_TRANSFER',
+  HOUSING_GRANT = 'HOUSING_GRANT',
+  SCHOLARSHIP = 'SCHOLARSHIP',
+  HEALTH_COVER = 'HEALTH_COVER',
+  SUBSIDIZED_LOAN = 'SUBSIDIZED_LOAN',
+  MONTHLY_PENSION = 'MONTHLY_PENSION',
+  SUBSIDY = 'SUBSIDY',
+  OTHER = 'OTHER',
+}
+
+export enum ApplicationMode {
+  ONLINE = 'ONLINE',
+  OFFLINE = 'OFFLINE',
+  HYBRID = 'HYBRID',
+}
+
 export interface SchemeProps {
   id: string;
   code: string;
@@ -56,6 +89,16 @@ export interface SchemeProps {
   applicationDeadline?: Date | null;
   eligibilityRules?: EligibilityRule[];
   requiredDocuments?: DocumentType[];
+  // Provenance & Structured Fields
+  sourceUrl?: string | null;
+  sourceName?: string | null;
+  sourceType?: SchemeSourceType | null;
+  lastVerifiedAt?: Date | null;
+  verificationStatus?: SchemeVerificationStatus;
+  benefitType?: BenefitType | null;
+  applicationUrl?: string | null;
+  applicationMode?: ApplicationMode | null;
+  applicationProcedure?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -73,6 +116,15 @@ export class WelfareSchemeEntity extends BaseDomainEntity<SchemeProps> {
   private _applicationDeadline?: Date | null;
   private _eligibilityRules: EligibilityRule[];
   private _requiredDocuments: DocumentType[];
+  private _sourceUrl?: string | null;
+  private _sourceName?: string | null;
+  private _sourceType?: SchemeSourceType | null;
+  private _lastVerifiedAt?: Date | null;
+  private _verificationStatus: SchemeVerificationStatus;
+  private _benefitType?: BenefitType | null;
+  private _applicationUrl?: string | null;
+  private _applicationMode?: ApplicationMode | null;
+  private _applicationProcedure?: string | null;
 
   constructor(props: SchemeProps) {
     super(props.id, props.createdAt, props.updatedAt);
@@ -88,6 +140,15 @@ export class WelfareSchemeEntity extends BaseDomainEntity<SchemeProps> {
     this._applicationDeadline = props.applicationDeadline;
     this._eligibilityRules = props.eligibilityRules || [];
     this._requiredDocuments = props.requiredDocuments || [];
+    this._sourceUrl = props.sourceUrl;
+    this._sourceName = props.sourceName;
+    this._sourceType = props.sourceType;
+    this._lastVerifiedAt = props.lastVerifiedAt;
+    this._verificationStatus = props.verificationStatus || SchemeVerificationStatus.VERIFIED;
+    this._benefitType = props.benefitType;
+    this._applicationUrl = props.applicationUrl;
+    this._applicationMode = props.applicationMode;
+    this._applicationProcedure = props.applicationProcedure;
   }
 
   public get code(): string { return this._code; }
@@ -102,4 +163,13 @@ export class WelfareSchemeEntity extends BaseDomainEntity<SchemeProps> {
   public get applicationDeadline(): Date | null | undefined { return this._applicationDeadline; }
   public get eligibilityRules(): EligibilityRule[] { return this._eligibilityRules; }
   public get requiredDocuments(): DocumentType[] { return this._requiredDocuments; }
+  public get sourceUrl(): string | null | undefined { return this._sourceUrl; }
+  public get sourceName(): string | null | undefined { return this._sourceName; }
+  public get sourceType(): SchemeSourceType | null | undefined { return this._sourceType; }
+  public get lastVerifiedAt(): Date | null | undefined { return this._lastVerifiedAt; }
+  public get verificationStatus(): SchemeVerificationStatus { return this._verificationStatus; }
+  public get benefitType(): BenefitType | null | undefined { return this._benefitType; }
+  public get applicationUrl(): string | null | undefined { return this._applicationUrl; }
+  public get applicationMode(): ApplicationMode | null | undefined { return this._applicationMode; }
+  public get applicationProcedure(): string | null | undefined { return this._applicationProcedure; }
 }

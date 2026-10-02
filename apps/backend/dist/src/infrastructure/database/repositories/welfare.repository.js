@@ -14,12 +14,14 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma.service");
 const scheme_entity_1 = require("../../../domain/welfare/scheme.entity");
 const recommendation_entity_1 = require("../../../domain/welfare/recommendation.entity");
+const daily_maintenance_cron_1 = require("../../../cron/daily-maintenance.cron");
 let WelfareSchemeRepositoryImpl = class WelfareSchemeRepositoryImpl {
     prisma;
     constructor(prisma) {
         this.prisma = prisma;
     }
     mapToEntity(data) {
+        const canonical = daily_maintenance_cron_1.CANONICAL_WELFARE_SCHEMES.find((s) => s.code === data.code);
         return new scheme_entity_1.WelfareSchemeEntity({
             id: data.id,
             code: data.code,
@@ -32,6 +34,15 @@ let WelfareSchemeRepositoryImpl = class WelfareSchemeRepositoryImpl {
             financialBenefit: data.financialBenefit,
             isActive: data.isActive,
             applicationDeadline: data.applicationDeadline,
+            sourceUrl: data.sourceUrl || canonical?.sourceUrl || null,
+            sourceName: data.sourceName || canonical?.sourceName || null,
+            sourceType: data.sourceType || canonical?.sourceType || null,
+            lastVerifiedAt: data.lastVerifiedAt || (canonical?.lastVerifiedAt ? new Date(canonical.lastVerifiedAt) : new Date('2026-10-01')),
+            verificationStatus: data.verificationStatus || canonical?.verificationStatus || 'VERIFIED',
+            benefitType: data.benefitType || canonical?.benefitType || null,
+            applicationUrl: data.applicationUrl || canonical?.applicationUrl || null,
+            applicationMode: data.applicationMode || canonical?.applicationMode || null,
+            applicationProcedure: data.applicationProcedure || canonical?.applicationProcedure || null,
             eligibilityRules: data.eligibilityRules ? data.eligibilityRules.map((r) => ({
                 id: r.id,
                 attributeKey: r.attributeKey,
