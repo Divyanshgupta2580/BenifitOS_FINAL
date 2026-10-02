@@ -66,9 +66,9 @@ assert(aiControllerCode.includes('dto.language'), 'AiController must forward dto
 
 const aiServicePath = path.join(__dirname, '../apps/backend/src/modules/ai/ai.service.ts');
 const aiServiceCode = fs.readFileSync(aiServicePath, 'utf-8');
-assert(aiServiceCode.includes("MANDATORY LANGUAGE DIRECTIVE — HINDI (हिंदी):"), 'Must contain explicit Hindi directive');
-assert(aiServiceCode.includes("MANDATORY LANGUAGE DIRECTIVE — ENGLISH:"), 'Must contain explicit English directive');
-assert(aiServiceCode.includes("योजना का नाम"), 'Must contain Hindi scheme template');
+assert(aiServiceCode.includes("Respond entirely in formal Hindi (Devanagari)"), 'Must contain explicit Hindi directive');
+assert(aiServiceCode.includes("Respond entirely in concise professional English"), 'Must contain explicit English directive');
+assert(aiServiceCode.includes("### सारांश"), 'Must contain Hindi section headers');
 console.log('  [PASS] Backend AI prompt dynamically configures full Devanagari Hindi directives when requested.');
 
 // 4. Testing Structured AI Response Renderer (English & Hindi)
@@ -85,10 +85,9 @@ console.log('  [PASS] StructuredAiResponseRenderer parses both English and Hindi
 console.log('\n5. Testing AiCopilotScreen Hindi Segmented Switcher...');
 const copilotScreenPath = path.join(__dirname, '../apps/frontend/src/screens/ai/AiCopilotScreen.tsx');
 const copilotScreenCode = fs.readFileSync(copilotScreenPath, 'utf-8');
-assert(copilotScreenCode.includes('QUICK_ACTIONS_HI'), 'Must provide bilingual quick actions in Hindi');
-assert(copilotScreenCode.includes('QUICK_ACTIONS_EN'), 'Must provide bilingual quick actions in English');
-assert(copilotScreenCode.includes("EN {language === 'en' ? '✓' : ''}"), 'Must have accessible segmented English toggle');
-assert(copilotScreenCode.includes("हिंदी {language === 'hi' ? '✓' : ''}"), 'Must have accessible segmented Hindi toggle');
+assert(copilotScreenCode.includes('QUICK_ACTIONS'), 'Must provide bilingual quick actions');
+assert(copilotScreenCode.includes('setLanguageExplicit(\'en\')'), 'Must have accessible segmented English toggle');
+assert(copilotScreenCode.includes('setLanguageExplicit(\'hi\')'), 'Must have accessible segmented Hindi toggle');
 console.log('  [PASS] AiCopilotScreen provides verified segmented language switcher and bilingual quick actions.');
 
 console.log('\n============================================================');

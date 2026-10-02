@@ -259,7 +259,7 @@ ${languageDirective}`;
       },
     };
 
-    if (useCase === 'eligible-schemes' || useCase === 'eligibility-explanation' || useCase === 'missing-requirements') {
+    if (minimized) {
       promptPayload.citizenAttributes = citizenAttributes;
       promptPayload.recommendations = topRecommendations;
     }
