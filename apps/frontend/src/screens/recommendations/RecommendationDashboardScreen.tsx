@@ -22,38 +22,36 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
   onBack,
 }) => {
   const { recommendations, isLoading, isError, refetch } = useRecommendations();
-  const [filter, setFilter] = useState<'ELIGIBLE' | 'INCOMPLETE_PROFILE' | 'NOT_ELIGIBLE' | 'ALL'>('ELIGIBLE');
+  const [filter, setFilter] = useState<'ELIGIBLE' | 'INCOMPLETE_PROFILE' | 'NEEDS_VERIFICATION' | 'NOT_ELIGIBLE' | 'ALL'>('ELIGIBLE');
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
 
-  const eligibleCount = recommendations.filter((r) => r.isEligible).length;
+  const eligibleCount = recommendations.filter((r) => r.isEligible && (r.eligibilityStatus === 'ELIGIBLE' || !r.eligibilityStatus)).length;
   const incompleteCount = recommendations.filter(
     (r) =>
       !r.isEligible &&
-      (r.eligibilityStatus === 'INCOMPLETE_PROFILE' ||
-        (r.missingProfileFields && r.missingProfileFields.length > 0))
+      r.eligibilityStatus === 'INCOMPLETE_PROFILE'
+  ).length;
+  const needsVerificationCount = recommendations.filter(
+    (r) =>
+      !r.isEligible &&
+      r.eligibilityStatus === 'NEEDS_VERIFICATION'
   ).length;
   const notEligibleCount = recommendations.filter(
     (r) =>
       !r.isEligible &&
-      (r.eligibilityStatus === 'NOT_ELIGIBLE' ||
-        (!r.missingProfileFields || r.missingProfileFields.length === 0))
+      (r.eligibilityStatus === 'NOT_ELIGIBLE' || (!r.eligibilityStatus && !r.isEligible))
   ).length;
 
   const filteredRecs = recommendations.filter((r) => {
-    if (filter === 'ELIGIBLE') return r.isEligible;
+    if (filter === 'ELIGIBLE') return r.isEligible && (r.eligibilityStatus === 'ELIGIBLE' || !r.eligibilityStatus);
     if (filter === 'INCOMPLETE_PROFILE') {
-      return (
-        !r.isEligible &&
-        (r.eligibilityStatus === 'INCOMPLETE_PROFILE' ||
-          (r.missingProfileFields && r.missingProfileFields.length > 0))
-      );
+      return !r.isEligible && r.eligibilityStatus === 'INCOMPLETE_PROFILE';
+    }
+    if (filter === 'NEEDS_VERIFICATION') {
+      return !r.isEligible && r.eligibilityStatus === 'NEEDS_VERIFICATION';
     }
     if (filter === 'NOT_ELIGIBLE') {
-      return (
-        !r.isEligible &&
-        (r.eligibilityStatus === 'NOT_ELIGIBLE' ||
-          (!r.missingProfileFields || r.missingProfileFields.length === 0))
-      );
+      return !r.isEligible && (r.eligibilityStatus === 'NOT_ELIGIBLE' || (!r.eligibilityStatus && !r.isEligible));
     }
     return true;
   });
@@ -130,7 +128,18 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
                   : 'bg-forest-950/60 border-[#1C3127] text-slate-400 hover:text-white'
               }`}
             >
-              Incomplete Profile ({incompleteCount})
+              Incomplete ({incompleteCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilter('NEEDS_VERIFICATION')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                filter === 'NEEDS_VERIFICATION'
+                  ? 'bg-sky-950/90 border-sky-500/50 text-sky-300 shadow-xs'
+                  : 'bg-forest-950/60 border-[#1C3127] text-slate-400 hover:text-white'
+              }`}
+            >
+              Needs Verification ({needsVerificationCount})
             </button>
             <button
               type="button"

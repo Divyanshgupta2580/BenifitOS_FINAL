@@ -13,6 +13,7 @@ export interface DetailedEvaluationResult {
   missingProfileFields: string[];
   failedRules: string[];
   passedRules: string[];
+  pendingVerificationRules?: string[];
 }
 
 @Injectable()
@@ -29,6 +30,7 @@ export class EligibilityEvaluatorService {
     const missingProfileFields: string[] = [];
     const failedRules: string[] = [];
     const passedRules: string[] = [];
+    const pendingVerificationRules: string[] = [];
 
     // 1. State / Domicile validation
     let statePassed = true;
@@ -51,11 +53,20 @@ export class EligibilityEvaluatorService {
 
     // 2. Rule by rule evaluation
     for (const rule of rules) {
+      const isVerifRule = rule.attributeKey.toLowerCase().includes('verif') || 
+                          rule.attributeKey.toLowerCase().includes('aadhaar') || 
+                          rule.attributeKey.toLowerCase().includes('kyc');
+      
       const val = this.getCitizenAttributeValue(citizen, rule.attributeKey);
       if (val === null || val === undefined || val === '') {
         const fieldName = rule.description || rule.attributeKey;
-        missingProfileFields.push(fieldName);
-        missingCriteria.push(`Missing profile data: ${fieldName}`);
+        if (isVerifRule) {
+          pendingVerificationRules.push(`Pending verification: ${fieldName}`);
+          missingCriteria.push(`Verification pending: ${fieldName}`);
+        } else {
+          missingProfileFields.push(fieldName);
+          missingCriteria.push(`Missing profile data: ${fieldName}`);
+        }
         continue;
       }
 
@@ -65,11 +76,17 @@ export class EligibilityEvaluatorService {
         criteriaMet.push(desc);
         passedRules.push(desc);
       } else {
-        const failureDesc = rule.description
-          ? `Does not satisfy: ${rule.description} (Current value: ${val})`
-          : `Fails requirement: ${rule.attributeKey} (Your value: ${val}, required: ${rule.operator} ${rule.targetValue})`;
-        failedRules.push(failureDesc);
-        missingCriteria.push(failureDesc);
+        if (isVerifRule) {
+          const verifDesc = rule.description || `Required verification not completed: ${rule.attributeKey}`;
+          pendingVerificationRules.push(verifDesc);
+          missingCriteria.push(verifDesc);
+        } else {
+          const failureDesc = rule.description
+            ? `Does not satisfy: ${rule.description} (Current value: ${val})`
+            : `Fails requirement: ${rule.attributeKey} (Your value: ${val}, required: ${rule.operator} ${rule.targetValue})`;
+          failedRules.push(failureDesc);
+          missingCriteria.push(failureDesc);
+        }
       }
     }
 
@@ -78,7 +95,7 @@ export class EligibilityEvaluatorService {
     const matchPercentage = totalRules > 0 ? Math.round((metCount / totalRules) * 100) : 100;
 
     // Strict eligibility determination:
-    // User is ONLY eligible if 100% of criteria are met and NO profile fields are missing
+    // User is ONLY eligible if 100% of criteria are met and NO profile fields are missing or unverified
     let eligibilityStatus: EligibilityStatus;
     let statusReason: string;
 
@@ -88,6 +105,9 @@ export class EligibilityEvaluatorService {
     } else if (failedRules.length > 0) {
       eligibilityStatus = 'NOT_ELIGIBLE';
       statusReason = `Ineligible: ${failedRules[0]}`;
+    } else if (pendingVerificationRules.length > 0) {
+      eligibilityStatus = 'NEEDS_VERIFICATION';
+      statusReason = `Verification required: ${pendingVerificationRules[0]}`;
     } else {
       eligibilityStatus = 'ELIGIBLE';
       statusReason = 'All eligibility criteria verified and satisfied';
@@ -115,6 +135,7 @@ export class EligibilityEvaluatorService {
       missingProfileFields,
       failedRules,
       passedRules,
+      pendingVerificationRules,
     };
   }
 
@@ -131,14 +152,30 @@ export class EligibilityEvaluatorService {
         return String(val).toUpperCase().trim() === String(target).toUpperCase().trim();
       case 'NOT_EQUALS':
         return String(val).toUpperCase().trim() !== String(target).toUpperCase().trim();
-      case 'GREATER_THAN':
-        return Number(val) > Number(target);
-      case 'LESS_THAN':
-        return Number(val) < Number(target);
-      case 'GREATER_EQUAL':
-        return Number(val) >= Number(target);
-      case 'LESS_EQUAL':
-        return Number(val) <= Number(target);
+      case 'GREATER_THAN': {
+        const numVal = Number(val);
+        const numTarget = Number(target);
+        if (isNaN(numVal) || isNaN(numTarget)) return false;
+        return numVal > numTarget;
+      }
+      case 'LESS_THAN': {
+        const numVal = Number(val);
+        const numTarget = Number(target);
+        if (isNaN(numVal) || isNaN(numTarget)) return false;
+        return numVal < numTarget;
+      }
+      case 'GREATER_EQUAL': {
+        const numVal = Number(val);
+        const numTarget = Number(target);
+        if (isNaN(numVal) || isNaN(numTarget)) return false;
+        return numVal >= numTarget;
+      }
+      case 'LESS_EQUAL': {
+        const numVal = Number(val);
+        const numTarget = Number(target);
+        if (isNaN(numVal) || isNaN(numTarget)) return false;
+        return numVal <= numTarget;
+      }
       case 'IN': {
         const list = target.split(',').map((s) => s.trim().toUpperCase());
         return list.includes(String(val).toUpperCase().trim());
@@ -154,6 +191,8 @@ export class EligibilityEvaluatorService {
         return citizen.age !== undefined && citizen.age !== null ? citizen.age : null;
       case 'gender':
         return citizen.gender || null;
+      case 'maritalStatus':
+        return citizen.maritalStatus || null;
       case 'annualIncomeINR':
         return citizen.annualIncomeINR !== undefined && citizen.annualIncomeINR !== null ? citizen.annualIncomeINR : null;
       case 'socialCategory':
@@ -172,6 +211,20 @@ export class EligibilityEvaluatorService {
         return citizen.address?.district || null;
       case 'isRural':
         return citizen.address?.isRural !== undefined ? citizen.address.isRural : null;
+      case 'hasLand':
+        return (citizen.landDetails && citizen.landDetails.length > 0) ? 'true' : 'false';
+      case 'landSizeAcres': {
+        const total = (citizen.landDetails || []).reduce((acc, l) => acc + (l.landSizeAcres || 0), 0);
+        return total;
+      }
+      case 'isAadhaarVerified':
+      case 'isAadhaarLinked':
+        return citizen.aadhaarHash ? 'true' : 'false';
+      case 'isPanVerified':
+      case 'isPanLinked':
+        return citizen.panHash ? 'true' : 'false';
+      case 'verificationStatus':
+        return citizen.aadhaarHash ? 'VERIFIED' : 'PENDING';
       default:
         return null;
     }

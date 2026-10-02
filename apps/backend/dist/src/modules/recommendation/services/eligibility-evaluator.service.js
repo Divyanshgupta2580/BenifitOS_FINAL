@@ -22,6 +22,7 @@ let EligibilityEvaluatorService = class EligibilityEvaluatorService {
         const missingProfileFields = [];
         const failedRules = [];
         const passedRules = [];
+        const pendingVerificationRules = [];
         let statePassed = true;
         if (!scheme.isCentralScheme && scheme.state) {
             const citizenState = (citizen.address?.state || '').trim().toUpperCase();
@@ -42,11 +43,20 @@ let EligibilityEvaluatorService = class EligibilityEvaluatorService {
             }
         }
         for (const rule of rules) {
+            const isVerifRule = rule.attributeKey.toLowerCase().includes('verif') ||
+                rule.attributeKey.toLowerCase().includes('aadhaar') ||
+                rule.attributeKey.toLowerCase().includes('kyc');
             const val = this.getCitizenAttributeValue(citizen, rule.attributeKey);
             if (val === null || val === undefined || val === '') {
                 const fieldName = rule.description || rule.attributeKey;
-                missingProfileFields.push(fieldName);
-                missingCriteria.push(`Missing profile data: ${fieldName}`);
+                if (isVerifRule) {
+                    pendingVerificationRules.push(`Pending verification: ${fieldName}`);
+                    missingCriteria.push(`Verification pending: ${fieldName}`);
+                }
+                else {
+                    missingProfileFields.push(fieldName);
+                    missingCriteria.push(`Missing profile data: ${fieldName}`);
+                }
                 continue;
             }
             const isMet = this.evaluateSingleRule(citizen, rule);
@@ -56,11 +66,18 @@ let EligibilityEvaluatorService = class EligibilityEvaluatorService {
                 passedRules.push(desc);
             }
             else {
-                const failureDesc = rule.description
-                    ? `Does not satisfy: ${rule.description} (Current value: ${val})`
-                    : `Fails requirement: ${rule.attributeKey} (Your value: ${val}, required: ${rule.operator} ${rule.targetValue})`;
-                failedRules.push(failureDesc);
-                missingCriteria.push(failureDesc);
+                if (isVerifRule) {
+                    const verifDesc = rule.description || `Required verification not completed: ${rule.attributeKey}`;
+                    pendingVerificationRules.push(verifDesc);
+                    missingCriteria.push(verifDesc);
+                }
+                else {
+                    const failureDesc = rule.description
+                        ? `Does not satisfy: ${rule.description} (Current value: ${val})`
+                        : `Fails requirement: ${rule.attributeKey} (Your value: ${val}, required: ${rule.operator} ${rule.targetValue})`;
+                    failedRules.push(failureDesc);
+                    missingCriteria.push(failureDesc);
+                }
             }
         }
         const totalRules = rules.length + (!scheme.isCentralScheme && scheme.state ? 1 : 0);
@@ -75,6 +92,10 @@ let EligibilityEvaluatorService = class EligibilityEvaluatorService {
         else if (failedRules.length > 0) {
             eligibilityStatus = 'NOT_ELIGIBLE';
             statusReason = `Ineligible: ${failedRules[0]}`;
+        }
+        else if (pendingVerificationRules.length > 0) {
+            eligibilityStatus = 'NEEDS_VERIFICATION';
+            statusReason = `Verification required: ${pendingVerificationRules[0]}`;
         }
         else {
             eligibilityStatus = 'ELIGIBLE';
@@ -100,6 +121,7 @@ let EligibilityEvaluatorService = class EligibilityEvaluatorService {
             missingProfileFields,
             failedRules,
             passedRules,
+            pendingVerificationRules,
         };
     }
     evaluateSingleRule(citizen, rule) {
@@ -113,14 +135,34 @@ let EligibilityEvaluatorService = class EligibilityEvaluatorService {
                 return String(val).toUpperCase().trim() === String(target).toUpperCase().trim();
             case 'NOT_EQUALS':
                 return String(val).toUpperCase().trim() !== String(target).toUpperCase().trim();
-            case 'GREATER_THAN':
-                return Number(val) > Number(target);
-            case 'LESS_THAN':
-                return Number(val) < Number(target);
-            case 'GREATER_EQUAL':
-                return Number(val) >= Number(target);
-            case 'LESS_EQUAL':
-                return Number(val) <= Number(target);
+            case 'GREATER_THAN': {
+                const numVal = Number(val);
+                const numTarget = Number(target);
+                if (isNaN(numVal) || isNaN(numTarget))
+                    return false;
+                return numVal > numTarget;
+            }
+            case 'LESS_THAN': {
+                const numVal = Number(val);
+                const numTarget = Number(target);
+                if (isNaN(numVal) || isNaN(numTarget))
+                    return false;
+                return numVal < numTarget;
+            }
+            case 'GREATER_EQUAL': {
+                const numVal = Number(val);
+                const numTarget = Number(target);
+                if (isNaN(numVal) || isNaN(numTarget))
+                    return false;
+                return numVal >= numTarget;
+            }
+            case 'LESS_EQUAL': {
+                const numVal = Number(val);
+                const numTarget = Number(target);
+                if (isNaN(numVal) || isNaN(numTarget))
+                    return false;
+                return numVal <= numTarget;
+            }
             case 'IN': {
                 const list = target.split(',').map((s) => s.trim().toUpperCase());
                 return list.includes(String(val).toUpperCase().trim());
@@ -135,6 +177,8 @@ let EligibilityEvaluatorService = class EligibilityEvaluatorService {
                 return citizen.age !== undefined && citizen.age !== null ? citizen.age : null;
             case 'gender':
                 return citizen.gender || null;
+            case 'maritalStatus':
+                return citizen.maritalStatus || null;
             case 'annualIncomeINR':
                 return citizen.annualIncomeINR !== undefined && citizen.annualIncomeINR !== null ? citizen.annualIncomeINR : null;
             case 'socialCategory':
@@ -153,6 +197,20 @@ let EligibilityEvaluatorService = class EligibilityEvaluatorService {
                 return citizen.address?.district || null;
             case 'isRural':
                 return citizen.address?.isRural !== undefined ? citizen.address.isRural : null;
+            case 'hasLand':
+                return (citizen.landDetails && citizen.landDetails.length > 0) ? 'true' : 'false';
+            case 'landSizeAcres': {
+                const total = (citizen.landDetails || []).reduce((acc, l) => acc + (l.landSizeAcres || 0), 0);
+                return total;
+            }
+            case 'isAadhaarVerified':
+            case 'isAadhaarLinked':
+                return citizen.aadhaarHash ? 'true' : 'false';
+            case 'isPanVerified':
+            case 'isPanLinked':
+                return citizen.panHash ? 'true' : 'false';
+            case 'verificationStatus':
+                return citizen.aadhaarHash ? 'VERIFIED' : 'PENDING';
             default:
                 return null;
         }

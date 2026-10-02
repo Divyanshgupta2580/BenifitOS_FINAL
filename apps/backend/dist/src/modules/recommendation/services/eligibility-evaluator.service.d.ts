@@ -9,6 +9,7 @@ export interface DetailedEvaluationResult {
     missingProfileFields: string[];
     failedRules: string[];
     passedRules: string[];
+    pendingVerificationRules?: string[];
 }
 export declare class EligibilityEvaluatorService {
     evaluateEligibility(citizen: CitizenEntity, scheme: WelfareSchemeEntity): SchemeRecommendationEntity;
