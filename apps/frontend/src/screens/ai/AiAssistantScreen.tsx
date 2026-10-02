@@ -4,6 +4,8 @@ import { LightbulbIcon, ArrowRightIcon, AlertTriangleIcon } from '../../componen
 import { StructuredAiResponseRenderer } from '../../components/ai/StructuredAiResponseRenderer';
 import { AppLayout } from '../../components/layout/AppLayout';
 
+import { useLanguageStore } from '../../store/language.store';
+
 interface Props {
   onBack?: () => void;
   onNavigateToSchemes?: () => void;
@@ -17,9 +19,11 @@ export const AiAssistantScreen: React.FC<Props> = ({
   onNavigateToVault,
   onNavigateToApplications,
 }) => {
+  const { locale, setLocale } = useLanguageStore();
   const { messages, isLoading, sendMessage, retryLastMessage, clearChat, suggestedPrompts } = useAiChat();
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isHindi = locale === 'hi';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -57,19 +61,52 @@ export const AiAssistantScreen: React.FC<Props> = ({
             )}
             <div>
               <h1 className="text-xl font-bold text-white font-heading leading-tight">
-                AI Citizen Assistant
+                {isHindi ? 'AI नागरिक सहायक' : 'AI Citizen Assistant'}
               </h1>
               <span className="text-[11px] text-emerald-400/80 block">
-                Official Digital Welfare Intelligence
+                {isHindi ? 'सत्यापित सरकारी कल्याणकारी मार्गदर्शन' : 'Official Digital Welfare Intelligence'}
               </span>
             </div>
           </div>
-          <button
-            onClick={clearChat}
-            className="text-xs font-semibold text-rose-400 hover:text-rose-300 px-3 py-1 rounded-lg border border-rose-900/60 bg-rose-950/40 hover:bg-rose-900/40 transition-colors"
-          >
-            Clear Chat
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Language Segmented Control */}
+            <div
+              className="inline-flex items-center rounded-xl bg-[#080C0A] p-1 border border-[#1C3127]"
+              role="group"
+              aria-label={isHindi ? 'भाषा चयन' : 'Language selection'}
+            >
+              <button
+                type="button"
+                onClick={() => setLocale('en')}
+                className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-bold transition-all focus:outline-none ${
+                  !isHindi
+                    ? 'bg-[#0B3B2B] text-mint-300 border border-mint-500/40 shadow-xs'
+                    : 'text-slate-400 hover:text-white border border-transparent'
+                }`}
+                aria-pressed={!isHindi}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocale('hi')}
+                className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-bold transition-all focus:outline-none ${
+                  isHindi
+                    ? 'bg-[#0B3B2B] text-mint-300 border border-mint-500/40 shadow-xs'
+                    : 'text-slate-400 hover:text-white border border-transparent'
+                }`}
+                aria-pressed={isHindi}
+              >
+                हिंदी
+              </button>
+            </div>
+            <button
+              onClick={clearChat}
+              className="text-xs font-semibold text-rose-400 hover:text-rose-300 px-3 py-1.5 rounded-lg border border-rose-900/60 bg-rose-950/40 hover:bg-rose-900/40 transition-colors"
+            >
+              {isHindi ? 'साफ़ करें' : 'Clear Chat'}
+            </button>
+          </div>
         </div>
 
         {/* Suggested Prompts Chips */}

@@ -141,33 +141,35 @@ export const AiCopilotScreen: React.FC<Props> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Language Switcher */}
+            {/* Language Switcher Segmented Control */}
             <div
-              className="flex items-center rounded-xl bg-[#0E1712] p-1 border border-[#1C3127]"
+              className="inline-flex items-center rounded-xl bg-[#080C0A] p-1 border border-[#1C3127]"
               role="group"
-              aria-label={isHindi ? 'भाषा चयन' : 'Language selector'}
+              aria-label={isHindi ? 'भाषा चयन' : 'Language selection'}
             >
               <button
                 type="button"
                 onClick={() => setLanguageExplicit('en')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`min-h-[34px] px-3.5 py-1 rounded-lg text-xs font-bold transition-all focus:outline-none focus:ring-1 focus:ring-mint-400 ${
                   language === 'en'
-                    ? 'bg-[#0B3B2B] text-mint-300 border border-mint-500/40'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-[#0B3B2B] text-mint-300 border border-mint-500/40 shadow-xs'
+                    : 'text-slate-400 hover:text-white border border-transparent'
                 }`}
                 aria-pressed={language === 'en'}
+                aria-label="Switch to English"
               >
-                EN
+                English
               </button>
               <button
                 type="button"
                 onClick={() => setLanguageExplicit('hi')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`min-h-[34px] px-3.5 py-1 rounded-lg text-xs font-bold transition-all focus:outline-none focus:ring-1 focus:ring-mint-400 ${
                   language === 'hi'
-                    ? 'bg-[#0B3B2B] text-mint-300 border border-mint-500/40'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-[#0B3B2B] text-mint-300 border border-mint-500/40 shadow-xs'
+                    : 'text-slate-400 hover:text-white border border-transparent'
                 }`}
                 aria-pressed={language === 'hi'}
+                aria-label="हिंदी भाषा चुनें"
               >
                 हिंदी
               </button>
