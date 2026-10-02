@@ -100,7 +100,7 @@ async function runLiveApiProbe() {
   console.log('Recommendations Status:', recRes.statusCode);
   const recs = recRes.data?.data?.recommendations || recRes.data?.recommendations || [];
   console.log(`Total Schemes Evaluated: ${recs.length}`);
-  const eligibleSchemes = recs.filter((r) => r.isEligible === true || r.eligibilityStatus === 'ELIGIBLE');
+  const eligibleSchemes = recs.filter((r) => r.isEligible === true && r.eligibilityStatus === 'ELIGIBLE');
   const ineligibleSchemes = recs.filter((r) => r.isEligible === false && r.eligibilityStatus !== 'INCOMPLETE_PROFILE');
   const incompleteSchemes = recs.filter((r) => r.eligibilityStatus === 'INCOMPLETE_PROFILE');
 
@@ -178,7 +178,7 @@ async function runLiveApiProbe() {
   console.log('\n8. Recalculating Recommendations on Live Server (/recommendations/recalculate)...');
   const updatedRecRes = await makeRequest('POST', '/recommendations/recalculate', null, token);
   const updatedRecs = updatedRecRes.data?.data?.recommendations || updatedRecRes.data?.recommendations || [];
-  const updatedEligible = updatedRecs.filter((r) => r.isEligible === true || r.eligibilityStatus === 'ELIGIBLE');
+  const updatedEligible = updatedRecs.filter((r) => r.isEligible === true && r.eligibilityStatus === 'ELIGIBLE');
   console.log(`New Eligible Schemes Count (after income raised to 8.5L): ${updatedEligible.length}`);
 
   console.log('\n====================================================');

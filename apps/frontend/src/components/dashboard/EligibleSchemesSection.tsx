@@ -21,7 +21,7 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
 }) => {
   // Strictly filter only verified ELIGIBLE schemes
   const confirmedEligible = recommendations.filter(
-    (r) => r.isEligible === true && (r.eligibilityStatus === 'ELIGIBLE' || !r.eligibilityStatus)
+    (r) => r.isEligible === true && r.eligibilityStatus === 'ELIGIBLE'
   );
 
   const futureEligible = recommendations.filter(

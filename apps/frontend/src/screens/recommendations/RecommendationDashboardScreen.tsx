@@ -36,7 +36,7 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
 
   // Categorize recommendations deterministically
   const eligibleNowList = recommendations.filter(
-    (r) => r.isEligible === true && (r.eligibilityStatus === 'ELIGIBLE' || !r.eligibilityStatus)
+    (r) => r.isEligible === true && r.eligibilityStatus === 'ELIGIBLE'
   );
 
   const in1YearList = recommendations.filter(
@@ -118,7 +118,7 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
             </div>
 
             {/* Status & Timing Badge */}
-            {rec.isEligible ? (
+            {rec.isEligible === true && rec.eligibilityStatus === 'ELIGIBLE' ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-950/90 border border-emerald-500/50 text-mint-300 shadow-xs">
                 <CheckCircle2Icon className="w-3.5 h-3.5 text-mint-400 shrink-0" />
                 <span>Eligible Now</span>

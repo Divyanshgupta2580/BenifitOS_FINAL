@@ -11,7 +11,7 @@ export interface SchemeRecommendationItem {
   matchPercentage: number;
   estimatedBenefit: number;
   isEligible: boolean;
-  eligibilityStatus?: 'ELIGIBLE' | 'FUTURE_ELIGIBLE' | 'NOT_ELIGIBLE' | 'NEEDS_VERIFICATION' | 'INCOMPLETE_PROFILE';
+  eligibilityStatus: 'ELIGIBLE' | 'FUTURE_ELIGIBLE' | 'NOT_ELIGIBLE' | 'NEEDS_VERIFICATION' | 'INCOMPLETE_PROFILE';
   eligibilityTiming?: 'NOW' | 'IN_1_YEAR' | 'IN_2_YEARS' | 'IN_3_YEARS' | 'NOT_APPLICABLE';
   yearsUntilEligible?: number | null;
   statusReason?: string;
