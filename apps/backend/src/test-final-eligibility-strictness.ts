@@ -271,7 +271,112 @@ const resIncomplete = evaluator.evaluateDetailedEligibility(incompleteCitizen, s
 assert(resIncomplete.eligibilityStatus === 'INCOMPLETE_PROFILE' && resIncomplete.recommendation.isEligible === false, 'Backend Evaluator: Incomplete profile evaluates to INCOMPLETE_PROFILE and isEligible=false');
 
 
-console.log(`\n===============================================================`);
-console.log(` RESULT: ${passCount}/${totalCount} TESTS PASSED`);
-console.log(` STATUS: STRICT ELIGIBILITY INVARIANT HARDENING VERIFIED!      `);
-console.log(`===============================================================\n`);
+// =========================================================================
+// SECTION 5: RECOMMENDATION ENGINE ENRICHMENT FALLBACK MICRO-AUDIT
+// =========================================================================
+async function runSection5() {
+  console.log('\n--- SECTION 5: Recommendation Engine Enrichment Fallback Micro-Audit ---');
+
+  const { RecommendationEngineService } = await import('./modules/recommendation/recommendation.service');
+  const { SchemeRecommendationEntity } = await import('./domain/welfare/recommendation.entity');
+
+  const mockCitizen = new CitizenEntity({
+    id: 'cit-audit-1',
+    userId: 'usr-audit-1',
+    firstName: 'Priya',
+    lastName: 'Sharma',
+    dateOfBirth: new Date(currentYear - 65, 0, 1),
+    gender: Gender.FEMALE,
+    annualIncomeINR: 80000,
+    socialCategory: SocialCategory.OBC,
+    disabilityType: DisabilityType.NONE,
+    disabilityPercent: 0,
+    employmentStatus: EmploymentStatus.UNEMPLOYED,
+    maritalStatus: MaritalStatus.WIDOWED,
+    isBplCardHolder: true,
+  });
+
+  const mockScheme = new WelfareSchemeEntity({
+    id: 'sch-audit-1',
+    code: 'PENSION-60',
+    title: 'Senior Citizen Pension Scheme',
+    description: 'Pension for senior citizens',
+    category: SchemeCategory.PENSION,
+    department: 'Department of Social Justice',
+    financialBenefit: 24000,
+    isCentralScheme: true,
+    isActive: true,
+    eligibilityRules: [
+      { id: 'r-pen-1', attributeKey: 'age', operator: 'GREATER_EQUAL', targetValue: '60', isRequired: true, description: 'Must be at least 60 years old' },
+      { id: 'r-pen-2', attributeKey: 'annualIncomeINR', operator: 'LESS_EQUAL', targetValue: '200000', isRequired: true, description: 'Annual income must not exceed 2L' },
+    ],
+    requiredDocuments: [DocumentType.AADHAAR],
+  });
+
+  const mockCitizenRepo: any = {
+    findByUserId: async (uid: string) => (uid === 'usr-audit-1' ? mockCitizen : null),
+  };
+
+  const mockSchemeRepo: any = {
+    findById: async (sid: string) => (sid === 'sch-audit-1' ? mockScheme : null),
+    findAllActive: async () => [mockScheme],
+  };
+
+  const mockRecRepo: any = {
+    findByCitizenId: async () => [],
+    deleteForCitizen: async () => {},
+    saveMany: async () => {},
+  };
+
+  const recService = new RecommendationEngineService(
+    evaluator,
+    mockCitizenRepo,
+    mockSchemeRepo,
+    mockRecRepo,
+  );
+
+  // 1. Normal recommendation test: verify detailed evaluator status is returned directly
+  const enriched = await recService.getEnrichedRecommendations('usr-audit-1');
+  assert(enriched.length === 1, 'Enrichment Audit: Returns 1 recommendation');
+  assert(enriched[0].eligibilityStatus === 'ELIGIBLE', 'Enrichment Audit: Normal recommendation receives ELIGIBLE directly from evaluator');
+  assert(enriched[0].isEligible === true, 'Enrichment Audit: Normal recommendation isEligible is true');
+
+  // 2. Orphaned scheme test (where schemeRepo.findById returns null)
+  const orphanRec = new SchemeRecommendationEntity({
+    id: 'rec-orphan-1',
+    citizenProfileId: 'cit-audit-1',
+    schemeId: 'sch-deleted',
+    matchPercentage: 0,
+    estimatedBenefit: 0,
+    isEligible: false,
+    criteriaMet: [],
+    missingCriteria: ['Scheme removed'],
+    missingDocuments: [],
+  });
+
+  const mockRecRepoWithOrphan: any = {
+    findByCitizenId: async () => [orphanRec],
+  };
+
+  const recServiceOrphan = new RecommendationEngineService(
+    evaluator,
+    mockCitizenRepo,
+    mockSchemeRepo,
+    mockRecRepoWithOrphan,
+  );
+
+  const enrichedOrphan = await recServiceOrphan.getEnrichedRecommendations('usr-audit-1');
+  assert(enrichedOrphan.length === 1, 'Enrichment Audit (Orphan): Returns 1 recommendation');
+  assert(enrichedOrphan[0].eligibilityStatus === 'NOT_ELIGIBLE', 'Enrichment Audit (Orphan): Ineligible orphan fails closed to NOT_ELIGIBLE');
+  assert(enrichedOrphan[0].isEligible === false, 'Enrichment Audit (Orphan): Orphan isEligible remains false');
+
+  console.log(`\n===============================================================`);
+  console.log(` RESULT: ${passCount}/${totalCount} TESTS PASSED`);
+  console.log(` STATUS: STRICT ELIGIBILITY INVARIANT HARDENING VERIFIED!      `);
+  console.log(`===============================================================\n`);
+}
+
+runSection5().catch((err) => {
+  console.error('Section 5 failed:', err);
+  process.exit(1);
+});
