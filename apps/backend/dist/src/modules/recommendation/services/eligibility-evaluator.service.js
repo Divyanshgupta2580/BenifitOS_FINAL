@@ -23,6 +23,7 @@ let EligibilityEvaluatorService = class EligibilityEvaluatorService {
         const failedRules = [];
         const passedRules = [];
         const pendingVerificationRules = [];
+        const failedRuleObjects = [];
         let statePassed = true;
         if (!scheme.isCentralScheme && scheme.state) {
             const citizenState = (citizen.address?.state || '').trim().toUpperCase();
@@ -77,36 +78,86 @@ let EligibilityEvaluatorService = class EligibilityEvaluatorService {
                         : `Fails requirement: ${rule.attributeKey} (Your value: ${val}, required: ${rule.operator} ${rule.targetValue})`;
                     failedRules.push(failureDesc);
                     missingCriteria.push(failureDesc);
+                    failedRuleObjects.push({ rule, val });
                 }
             }
         }
         const totalRules = rules.length + (!scheme.isCentralScheme && scheme.state ? 1 : 0);
         const metCount = criteriaMet.length;
         const matchPercentage = totalRules > 0 ? Math.round((metCount / totalRules) * 100) : 100;
-        let eligibilityStatus;
-        let statusReason;
+        let eligibilityStatus = 'NOT_ELIGIBLE';
+        let eligibilityTiming = 'NOT_APPLICABLE';
+        let yearsUntilEligible = null;
+        let statusReason = 'Ineligible';
         if (missingProfileFields.length > 0) {
             eligibilityStatus = 'INCOMPLETE_PROFILE';
             statusReason = `Profile incomplete: Missing ${missingProfileFields.join(', ')}`;
         }
-        else if (failedRules.length > 0) {
-            eligibilityStatus = 'NOT_ELIGIBLE';
-            statusReason = `Ineligible: ${failedRules[0]}`;
-        }
-        else if (pendingVerificationRules.length > 0) {
+        else if (pendingVerificationRules.length > 0 && failedRules.length === 0 && statePassed) {
             eligibilityStatus = 'NEEDS_VERIFICATION';
             statusReason = `Verification required: ${pendingVerificationRules[0]}`;
         }
-        else {
+        else if (failedRules.length === 0 && statePassed) {
             eligibilityStatus = 'ELIGIBLE';
+            eligibilityTiming = 'NOW';
+            yearsUntilEligible = 0;
             statusReason = 'All eligibility criteria verified and satisfied';
+        }
+        else {
+            const isOnlyAgeMinFailure = statePassed &&
+                pendingVerificationRules.length === 0 &&
+                failedRuleObjects.length > 0 &&
+                failedRuleObjects.every(item => item.rule.attributeKey.toLowerCase() === 'age' &&
+                    (item.rule.operator === 'GREATER_EQUAL' || item.rule.operator === 'GREATER_THAN')) &&
+                failedRules.length === failedRuleObjects.length;
+            let evaluatedFuture = false;
+            if (isOnlyAgeMinFailure) {
+                const citizenAge = citizen.age;
+                if (citizenAge !== undefined && citizenAge !== null && !isNaN(citizenAge)) {
+                    let requiredMinAge = 0;
+                    for (const item of failedRuleObjects) {
+                        const target = Number(item.rule.targetValue);
+                        const targetMin = item.rule.operator === 'GREATER_THAN' ? target + 1 : target;
+                        if (targetMin > requiredMinAge) {
+                            requiredMinAge = targetMin;
+                        }
+                    }
+                    const diff = requiredMinAge - citizenAge;
+                    if (diff >= 1 && diff <= 3) {
+                        const futureAge = citizenAge + diff;
+                        let maxAgeViolated = false;
+                        for (const rule of rules) {
+                            if (rule.attributeKey.toLowerCase() === 'age') {
+                                const target = Number(rule.targetValue);
+                                if (rule.operator === 'LESS_EQUAL' && futureAge > target)
+                                    maxAgeViolated = true;
+                                if (rule.operator === 'LESS_THAN' && futureAge >= target)
+                                    maxAgeViolated = true;
+                            }
+                        }
+                        if (!maxAgeViolated) {
+                            evaluatedFuture = true;
+                            eligibilityStatus = 'FUTURE_ELIGIBLE';
+                            yearsUntilEligible = diff;
+                            eligibilityTiming = diff === 1 ? 'IN_1_YEAR' : diff === 2 ? 'IN_2_YEARS' : 'IN_3_YEARS';
+                            statusReason = `Eligible in ${diff} year${diff > 1 ? 's' : ''} upon reaching age ${requiredMinAge} (Current age: ${citizenAge})`;
+                        }
+                    }
+                }
+            }
+            if (!evaluatedFuture) {
+                eligibilityStatus = 'NOT_ELIGIBLE';
+                eligibilityTiming = 'NOT_APPLICABLE';
+                yearsUntilEligible = null;
+                statusReason = `Ineligible: ${failedRules[0]}`;
+            }
         }
         const isEligible = eligibilityStatus === 'ELIGIBLE';
         const recommendation = new recommendation_entity_1.SchemeRecommendationEntity({
             id: (0, crypto_1.randomUUID)(),
             citizenProfileId: citizen.id,
             schemeId: scheme.id,
-            matchPercentage: isEligible ? 100 : Math.min(matchPercentage, 99),
+            matchPercentage: isEligible ? 100 : (eligibilityStatus === 'FUTURE_ELIGIBLE' ? Math.min(matchPercentage, 90) : Math.min(matchPercentage, 99)),
             estimatedBenefit: isEligible ? scheme.financialBenefit : 0,
             isEligible,
             criteriaMet,
@@ -117,6 +168,8 @@ let EligibilityEvaluatorService = class EligibilityEvaluatorService {
         return {
             recommendation,
             eligibilityStatus,
+            eligibilityTiming,
+            yearsUntilEligible,
             statusReason,
             missingProfileFields,
             failedRules,

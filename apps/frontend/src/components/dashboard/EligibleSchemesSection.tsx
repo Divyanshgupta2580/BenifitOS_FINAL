@@ -24,9 +24,14 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
     (r) => r.isEligible === true && (r.eligibilityStatus === 'ELIGIBLE' || !r.eligibilityStatus)
   );
 
-  const getSchemeImage = (category?: string, code?: string) => {
-    if (code === 'PM-KISAN' || category === 'AGRICULTURE') return '/images/farmer_pm_kisan.jpg';
-    if (category === 'EDUCATION' || code?.includes('SCHOLARSHIP')) return '/images/students_scholarship.jpg';
+  const futureEligible = recommendations.filter(
+    (r) => !r.isEligible && r.eligibilityStatus === 'FUTURE_ELIGIBLE'
+  );
+
+  const getSchemeImage = (category?: string) => {
+    const normalized = (category || '').toUpperCase();
+    if (normalized === 'AGRICULTURE') return '/images/farmer_pm_kisan.jpg';
+    if (normalized === 'EDUCATION') return '/images/students_scholarship.jpg';
     return '/images/rashtrapati_bhavan_hero.jpg';
   };
 
@@ -59,8 +64,13 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
               Schemes You Are Eligible For
             </h2>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-950/90 border border-emerald-500/40 text-mint-300">
-              {confirmedEligible.length} Verified
+              {confirmedEligible.length} Verified Now
             </span>
+            {futureEligible.length > 0 && (
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-950/90 border border-sky-500/40 text-sky-300">
+                +{futureEligible.length} Future (1-3 Yrs)
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-400 leading-tight mt-0.5">
             Deterministic backend rules engine evaluated qualification based on your profile.
@@ -111,7 +121,7 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
             const department = rec.department || scheme?.department || 'Government of India';
             const description = scheme?.description || (rec as any).description || 'Government welfare financial support.';
             const benefit = rec.estimatedBenefit || scheme?.financialBenefit || 0;
-            const image = getSchemeImage(category, rec.code || scheme?.code);
+            const image = getSchemeImage(category);
             const categoryIcon = getCategoryIcon(category);
             const categoryBg = getCategoryBg(category);
 

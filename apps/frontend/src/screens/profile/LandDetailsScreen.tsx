@@ -79,7 +79,7 @@ export const LandDetailsScreen: React.FC<Props> = ({ onBack }) => {
               Manage Agricultural Land Holdings
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              Land ownership records for PM-KISAN and agrarian subsidy schemes.
+              Land ownership records for agricultural and agrarian welfare subsidy schemes.
             </p>
           </div>
         </div>

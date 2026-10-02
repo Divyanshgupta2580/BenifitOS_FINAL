@@ -229,7 +229,7 @@ export const CitizenProfileScreen: React.FC<Props> = ({
               </button>
             </div>
             <p className="text-xs text-slate-400">
-              {profile.landDetails?.length || 0} registered agricultural parcel(s) for PM-KISAN qualification.
+              {profile.landDetails?.length || 0} registered agricultural parcel(s) for agricultural welfare schemes qualification.
             </p>
           </div>
         </div>

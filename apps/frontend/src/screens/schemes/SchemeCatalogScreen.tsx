@@ -67,7 +67,7 @@ export const SchemeCatalogScreen: React.FC<Props> = ({ onSelectScheme, onBack })
             <SearchIcon className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search by scheme name, code or keyword (e.g. PM-KISAN, PMAY, Scholarship)..."
+              placeholder="Search by scheme name, department, category or keywords..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-mint-500 focus:ring-1 focus:ring-mint-500 transition-all"

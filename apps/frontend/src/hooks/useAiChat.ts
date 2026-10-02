@@ -13,17 +13,17 @@ export interface ChatMessage {
 }
 
 export const SUGGESTED_PROMPTS_EN = [
-  'What welfare schemes am I eligible for?',
-  'How do I apply for PM-Kisan Samman Nidhi?',
-  'Which documents are required for Ration Card application?',
-  'Explain the benefits of Ayushman Bharat Golden Card',
+  'What welfare schemes am I eligible for right now?',
+  'Which schemes will I become eligible for in the future?',
+  'Which documents are required for my eligible applications?',
+  'Explain the benefits of my recommended schemes',
 ];
 
 export const SUGGESTED_PROMPTS_HI = [
-  'मैं किन सरकारी कल्याणकारी योजनाओं के लिए पात्र हूँ?',
-  'पीएम-किसान सम्मान निधि के लिए आवेदन कैसे करें?',
-  'राशन कार्ड आवेदन के लिए कौन से दस्तावेज़ आवश्यक हैं?',
-  'आयुष्मान भारत योजना के लाभ बताएं',
+  'मैं अभी किन सरकारी योजनाओं के लिए पात्र हूँ?',
+  'मैं भविष्य में किन योजनाओं के लिए पात्र बनूँगा?',
+  'मेरे पात्र आवेदनों के लिए कौन से दस्तावेज़ आवश्यक हैं?',
+  'मेरी अनुशंसित योजनाओं के लाभ समझाएं',
 ];
 
 export const getAssistantWelcomeMessage = (lang: string): ChatMessage => ({

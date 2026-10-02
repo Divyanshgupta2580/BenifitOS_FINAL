@@ -185,6 +185,8 @@ ${languageDirective}`;
                 return 'eligibility-explanation';
         }
         const normalized = prompt.toLowerCase();
+        if (/future scheme|eligible.*year|when.*eligible|age.*eligible|भविष्य|अगले साल|किन योजनाओं.*भविष्य|पात्र कब/.test(normalized))
+            return 'eligible-schemes';
         if (/eligible schemes|eligible for|which schemes|what schemes|पात्र योजन|किन योजनाओं|योजनाओं के लिए पात्र/.test(normalized))
             return 'eligible-schemes';
         if (/why.*eligible|why.*not eligible|पात्र क्यों|पात्र नहीं|कारण/.test(normalized))
@@ -298,6 +300,8 @@ ${languageDirective}`;
             department: rec.scheme?.department,
             category: rec.scheme?.category,
             eligibilityStatus: 'ELIGIBLE',
+            eligibilityTiming: 'NOW',
+            yearsUntilEligible: 0,
             benefit: rec.scheme?.description,
             matchPercentage: rec.matchPercentage,
             satisfiedCriteria: Array.isArray(rec.criteriaMet) ? rec.criteriaMet.slice(0, 5) : [],
@@ -306,6 +310,66 @@ ${languageDirective}`;
                 .map((d) => d.description || d.documentType)
                 .slice(0, 6),
         }));
+        const futureEligibleSchemes = [];
+        const citizenEntity = profile ? new (await Promise.resolve().then(() => require('../../domain/citizen/citizen.entity'))).CitizenEntity({
+            id: profile.id,
+            userId: profile.userId,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            dateOfBirth: profile.dateOfBirth,
+            gender: profile.gender,
+            maritalStatus: profile.maritalStatus,
+            socialCategory: profile.socialCategory,
+            employmentStatus: profile.employmentStatus,
+            annualIncomeINR: profile.annualIncomeINR,
+            disabilityType: profile.disabilityType,
+            disabilityPercent: profile.disabilityPercent,
+            isBplCardHolder: profile.isBplCardHolder,
+            bplCardNumber: profile.bplCardNumber,
+            aadhaarHash: profile.aadhaarHash,
+            panHash: profile.panHash,
+            address: profile.address,
+        }) : null;
+        const evaluatorService = new (await Promise.resolve().then(() => require('../recommendation/services/eligibility-evaluator.service'))).EligibilityEvaluatorService();
+        for (const rec of allRecommendations) {
+            if (rec.scheme && citizenEntity && !rec.isEligible) {
+                const schemeEntity = new (await Promise.resolve().then(() => require('../../domain/welfare/scheme.entity'))).WelfareSchemeEntity({
+                    id: rec.scheme.id,
+                    code: rec.scheme.code,
+                    title: rec.scheme.title,
+                    description: rec.scheme.description,
+                    category: rec.scheme.category,
+                    department: rec.scheme.department,
+                    state: rec.scheme.state,
+                    isCentralScheme: rec.scheme.isCentralScheme,
+                    financialBenefit: rec.scheme.financialBenefit,
+                    isActive: rec.scheme.isActive,
+                    eligibilityRules: (rec.scheme.eligibilityRules || []).map((r) => ({
+                        id: r.id,
+                        attributeKey: r.attributeKey,
+                        operator: r.operator,
+                        targetValue: r.targetValue,
+                        isRequired: r.isRequired,
+                        description: r.description,
+                    })),
+                    requiredDocuments: (rec.scheme.requiredDocuments || []).map((d) => d.documentType),
+                });
+                const evalResult = evaluatorService.evaluateDetailedEligibility(citizenEntity, schemeEntity);
+                if (evalResult.eligibilityStatus === 'FUTURE_ELIGIBLE' && evalResult.yearsUntilEligible) {
+                    futureEligibleSchemes.push({
+                        schemeId: rec.scheme.id,
+                        schemeTitle: rec.scheme.title,
+                        department: rec.scheme.department,
+                        category: rec.scheme.category,
+                        eligibilityStatus: 'FUTURE_ELIGIBLE',
+                        eligibilityTiming: evalResult.eligibilityTiming,
+                        yearsUntilEligible: evalResult.yearsUntilEligible,
+                        benefit: rec.scheme.description,
+                        futureCondition: evalResult.statusReason,
+                    });
+                }
+            }
+        }
         const ineligibleSchemes = allRecommendations
             .filter((rec) => rec.isEligible === false && !(rec.missingCriteria || []).some((item) => item.startsWith('Missing profile data:')))
             .map((rec) => ({
@@ -348,11 +412,12 @@ ${languageDirective}`;
         if (minimized) {
             promptPayload.citizenAttributes = citizenAttributes;
             promptPayload.eligibleSchemes = eligibleSchemes;
+            promptPayload.futureEligibleSchemes = futureEligibleSchemes;
             promptPayload.ineligibleSchemes = ineligibleSchemes;
             promptPayload.incompleteSchemes = incompleteSchemes;
             if (useCase === 'eligible-schemes') {
                 promptPayload.schemeRecommendationRule =
-                    'CRITICAL: Only list schemes from "eligibleSchemes". Never recommend schemes from "ineligibleSchemes" or "incompleteSchemes". If "eligibleSchemes" is empty, state clearly that no schemes are currently eligible based on verified profile data.';
+                    'CRITICAL: Only list schemes from "eligibleSchemes" as currently eligible. If the user asks about future eligibility or age eligibility, summarize schemes from "futureEligibleSchemes" with their respective timeline (1 year, 2 years, or 3 years). Never recommend schemes from "ineligibleSchemes" or "incompleteSchemes".';
             }
         }
         if (useCase === 'documents' || useCase === 'application-steps' || useCase === 'scheme-explanation' || selectedRecommendation) {

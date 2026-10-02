@@ -4,11 +4,14 @@ import { WelfareSchemeEntity, EligibilityRule, DocumentType } from '../../../dom
 import { SchemeRecommendationEntity } from '../../../domain/welfare/recommendation.entity';
 import { randomUUID } from 'crypto';
 
-export type EligibilityStatus = 'ELIGIBLE' | 'NOT_ELIGIBLE' | 'NEEDS_VERIFICATION' | 'INCOMPLETE_PROFILE';
+export type EligibilityTiming = 'NOW' | 'IN_1_YEAR' | 'IN_2_YEARS' | 'IN_3_YEARS' | 'NOT_APPLICABLE';
+export type EligibilityStatus = 'ELIGIBLE' | 'FUTURE_ELIGIBLE' | 'NOT_ELIGIBLE' | 'NEEDS_VERIFICATION' | 'INCOMPLETE_PROFILE';
 
 export interface DetailedEvaluationResult {
   recommendation: SchemeRecommendationEntity;
   eligibilityStatus: EligibilityStatus;
+  eligibilityTiming: EligibilityTiming;
+  yearsUntilEligible: number | null;
   statusReason: string;
   missingProfileFields: string[];
   failedRules: string[];
@@ -31,6 +34,7 @@ export class EligibilityEvaluatorService {
     const failedRules: string[] = [];
     const passedRules: string[] = [];
     const pendingVerificationRules: string[] = [];
+    const failedRuleObjects: Array<{ rule: EligibilityRule; val: any }> = [];
 
     // 1. State / Domicile validation
     let statePassed = true;
@@ -86,6 +90,7 @@ export class EligibilityEvaluatorService {
             : `Fails requirement: ${rule.attributeKey} (Your value: ${val}, required: ${rule.operator} ${rule.targetValue})`;
           failedRules.push(failureDesc);
           missingCriteria.push(failureDesc);
+          failedRuleObjects.push({ rule, val });
         }
       }
     }
@@ -94,23 +99,86 @@ export class EligibilityEvaluatorService {
     const metCount = criteriaMet.length;
     const matchPercentage = totalRules > 0 ? Math.round((metCount / totalRules) * 100) : 100;
 
-    // Strict eligibility determination:
-    // User is ONLY eligible if 100% of criteria are met and NO profile fields are missing or unverified
-    let eligibilityStatus: EligibilityStatus;
-    let statusReason: string;
+    // Strict eligibility and timing determination:
+    let eligibilityStatus: EligibilityStatus = 'NOT_ELIGIBLE';
+    let eligibilityTiming: EligibilityTiming = 'NOT_APPLICABLE';
+    let yearsUntilEligible: number | null = null;
+    let statusReason: string = 'Ineligible';
 
     if (missingProfileFields.length > 0) {
       eligibilityStatus = 'INCOMPLETE_PROFILE';
       statusReason = `Profile incomplete: Missing ${missingProfileFields.join(', ')}`;
-    } else if (failedRules.length > 0) {
-      eligibilityStatus = 'NOT_ELIGIBLE';
-      statusReason = `Ineligible: ${failedRules[0]}`;
-    } else if (pendingVerificationRules.length > 0) {
+    } else if (pendingVerificationRules.length > 0 && failedRules.length === 0 && statePassed) {
       eligibilityStatus = 'NEEDS_VERIFICATION';
       statusReason = `Verification required: ${pendingVerificationRules[0]}`;
-    } else {
+    } else if (failedRules.length === 0 && statePassed) {
       eligibilityStatus = 'ELIGIBLE';
+      eligibilityTiming = 'NOW';
+      yearsUntilEligible = 0;
       statusReason = 'All eligibility criteria verified and satisfied';
+    } else {
+      // Check for Future Age-Based Eligibility:
+      // A scheme is FUTURE_ELIGIBLE if and only if:
+      // 1. State passed
+      // 2. No missing profile fields
+      // 3. No pending verification rules
+      // 4. The ONLY failure is an age minimum restriction
+      // 5. Citizen will reach required age in 1, 2, or 3 years
+      // 6. At that future age, no other age rule (such as maxAge) is violated
+      const isOnlyAgeMinFailure = 
+        statePassed &&
+        pendingVerificationRules.length === 0 &&
+        failedRuleObjects.length > 0 &&
+        failedRuleObjects.every(item => 
+          item.rule.attributeKey.toLowerCase() === 'age' && 
+          (item.rule.operator === 'GREATER_EQUAL' || item.rule.operator === 'GREATER_THAN')
+        ) &&
+        failedRules.length === failedRuleObjects.length;
+
+      let evaluatedFuture = false;
+      if (isOnlyAgeMinFailure) {
+        const citizenAge = citizen.age;
+        if (citizenAge !== undefined && citizenAge !== null && !isNaN(citizenAge)) {
+          // Find the strictest minimum age required
+          let requiredMinAge = 0;
+          for (const item of failedRuleObjects) {
+            const target = Number(item.rule.targetValue);
+            const targetMin = item.rule.operator === 'GREATER_THAN' ? target + 1 : target;
+            if (targetMin > requiredMinAge) {
+              requiredMinAge = targetMin;
+            }
+          }
+
+          const diff = requiredMinAge - citizenAge;
+          if (diff >= 1 && diff <= 3) {
+            // Check if future age violates any max age rule
+            const futureAge = citizenAge + diff;
+            let maxAgeViolated = false;
+            for (const rule of rules) {
+              if (rule.attributeKey.toLowerCase() === 'age') {
+                const target = Number(rule.targetValue);
+                if (rule.operator === 'LESS_EQUAL' && futureAge > target) maxAgeViolated = true;
+                if (rule.operator === 'LESS_THAN' && futureAge >= target) maxAgeViolated = true;
+              }
+            }
+
+            if (!maxAgeViolated) {
+              evaluatedFuture = true;
+              eligibilityStatus = 'FUTURE_ELIGIBLE';
+              yearsUntilEligible = diff;
+              eligibilityTiming = diff === 1 ? 'IN_1_YEAR' : diff === 2 ? 'IN_2_YEARS' : 'IN_3_YEARS';
+              statusReason = `Eligible in ${diff} year${diff > 1 ? 's' : ''} upon reaching age ${requiredMinAge} (Current age: ${citizenAge})`;
+            }
+          }
+        }
+      }
+
+      if (!evaluatedFuture) {
+        eligibilityStatus = 'NOT_ELIGIBLE';
+        eligibilityTiming = 'NOT_APPLICABLE';
+        yearsUntilEligible = null;
+        statusReason = `Ineligible: ${failedRules[0]}`;
+      }
     }
 
     const isEligible = eligibilityStatus === 'ELIGIBLE';
@@ -119,7 +187,7 @@ export class EligibilityEvaluatorService {
       id: randomUUID(),
       citizenProfileId: citizen.id,
       schemeId: scheme.id,
-      matchPercentage: isEligible ? 100 : Math.min(matchPercentage, 99), // Only 100% if strictly eligible
+      matchPercentage: isEligible ? 100 : (eligibilityStatus === 'FUTURE_ELIGIBLE' ? Math.min(matchPercentage, 90) : Math.min(matchPercentage, 99)),
       estimatedBenefit: isEligible ? scheme.financialBenefit : 0,
       isEligible,
       criteriaMet,
@@ -131,6 +199,8 @@ export class EligibilityEvaluatorService {
     return {
       recommendation,
       eligibilityStatus,
+      eligibilityTiming,
+      yearsUntilEligible,
       statusReason,
       missingProfileFields,
       failedRules,

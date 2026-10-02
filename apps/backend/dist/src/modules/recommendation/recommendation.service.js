@@ -63,6 +63,8 @@ let RecommendationEngineService = class RecommendationEngineService {
             const scheme = await this.schemeRepo.findById(r.schemeId);
             let detailedStatus = {
                 eligibilityStatus: r.isEligible ? 'ELIGIBLE' : 'NOT_ELIGIBLE',
+                eligibilityTiming: r.isEligible ? 'NOW' : 'NOT_APPLICABLE',
+                yearsUntilEligible: r.isEligible ? 0 : null,
                 statusReason: r.isEligible ? 'All criteria met' : 'Requirements not met',
                 missingProfileFields: [],
                 failedRules: [],
@@ -72,6 +74,8 @@ let RecommendationEngineService = class RecommendationEngineService {
                 const detailed = this.evaluator.evaluateDetailedEligibility(citizen, scheme);
                 detailedStatus = {
                     eligibilityStatus: detailed.eligibilityStatus,
+                    eligibilityTiming: detailed.eligibilityTiming,
+                    yearsUntilEligible: detailed.yearsUntilEligible,
                     statusReason: detailed.statusReason,
                     missingProfileFields: detailed.missingProfileFields,
                     failedRules: detailed.failedRules,
@@ -82,6 +86,7 @@ let RecommendationEngineService = class RecommendationEngineService {
                 id: r.id,
                 schemeId: r.schemeId,
                 title: scheme?.title || 'Welfare Scheme',
+                code: scheme?.code || 'SCHEME',
                 category: scheme?.category || 'WELFARE',
                 department: scheme?.department || 'Government Department',
                 description: scheme?.description || '',
@@ -90,6 +95,8 @@ let RecommendationEngineService = class RecommendationEngineService {
                 estimatedBenefit: r.estimatedBenefit,
                 isEligible: r.isEligible,
                 eligibilityStatus: detailedStatus.eligibilityStatus,
+                eligibilityTiming: detailedStatus.eligibilityTiming,
+                yearsUntilEligible: detailedStatus.yearsUntilEligible,
                 statusReason: detailedStatus.statusReason,
                 missingProfileFields: detailedStatus.missingProfileFields,
                 failedRules: detailedStatus.failedRules,

@@ -196,12 +196,17 @@ async function runTestSuite() {
   assert(resP02.failedRules.length > 0, 'P02: failedRules contains income failure reason');
 
   // PROFILE-03: Age below minimum
-  console.log('\n[PROFILE-03] Age below minimum (Age 16 for PMAY-G min age 18)');
+  console.log('\n[PROFILE-03] Age below minimum (Age 16 for PMAY-G min age 18 -> FUTURE_ELIGIBLE in 2 Yrs; Age 13 -> NOT_ELIGIBLE)');
   const p03 = createCitizen({ age: 16, annualIncomeINR: 200000 });
   const resP03 = evaluator.evaluateDetailedEligibility(p03, schemePMAY);
-  assert(resP03.eligibilityStatus === 'NOT_ELIGIBLE', 'P03: Status is NOT_ELIGIBLE');
-  assert(resP03.recommendation.isEligible === false, 'P03: isEligible is false');
-  assert(resP03.failedRules.some(r => r.includes('18') || r.toLowerCase().includes('age')), 'P03: Failed rule cites age requirement');
+  assert(resP03.eligibilityStatus === 'FUTURE_ELIGIBLE', 'P03: Status is FUTURE_ELIGIBLE for age 16 (2 years away)');
+  assert(resP03.recommendation.isEligible === false, 'P03: isEligible is strictly false');
+  assert(resP03.yearsUntilEligible === 2, 'P03: yearsUntilEligible is 2');
+
+  const p03_underage = createCitizen({ age: 13, annualIncomeINR: 200000 });
+  const resP03_underage = evaluator.evaluateDetailedEligibility(p03_underage, schemePMAY);
+  assert(resP03_underage.eligibilityStatus === 'NOT_ELIGIBLE', 'P03b: Status is NOT_ELIGIBLE for age 13 (4+ years away)');
+  assert(resP03_underage.recommendation.isEligible === false, 'P03b: isEligible is false');
 
   // PROFILE-04: Age above maximum
   console.log('\n[PROFILE-04] Age above maximum (Age 27 for Youth Skill Grant max age 25)');
