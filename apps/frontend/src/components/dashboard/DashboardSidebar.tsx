@@ -11,8 +11,6 @@ import {
   HelpCircleIcon,
   SettingsIcon,
   XIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
 } from '../ui/Icons';
 
 export type DashboardNavTab =
@@ -65,6 +63,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   unreadNotificationsCount = 0,
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [isBrandHovered, setIsBrandHovered] = useState(false);
 
   const primaryNavItems = [
     {
@@ -118,6 +117,17 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     },
   ];
 
+  const handleBrandClick = () => {
+    if (window.innerWidth < 1024) {
+      if (onNavigateToDashboard) onNavigateToDashboard();
+      onClose();
+      return;
+    }
+    if (onToggleCollapse) {
+      onToggleCollapse();
+    }
+  };
+
   return (
     <>
       {/* Mobile Backdrop Overlay */}
@@ -129,65 +139,85 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         />
       )}
 
-      {/* Sidebar Container */}
+      {/* Sidebar Container: Clean solid dark surface, NO background image */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 lg:z-30 bg-[#0A120E] bg-botanical-sidebar border-r border-[#1C3127]/80 flex flex-col justify-between transition-all duration-300 ease-in-out ${
+        className={`fixed top-0 bottom-0 left-0 z-50 lg:z-30 bg-[#0A120E] border-r border-[#1C3127]/80 flex flex-col justify-between transition-all duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        } ${isCollapsed ? 'lg:w-20' : 'lg:w-64'} w-64 pt-4 pb-4 px-3 select-none text-slate-200`}
+        } ${isCollapsed ? 'lg:w-20' : 'lg:w-64'} w-64 pt-3.5 pb-4 px-3 select-none text-slate-200`}
         aria-label="Portal main navigation"
         aria-expanded={!isCollapsed}
       >
-        {/* Top Logo and Branding Header */}
-        <div className="flex items-center justify-between px-2 pb-4 pt-1 mb-2 border-b border-[#1C3127]/60">
-          {!isCollapsed ? (
-            <div
-              className="flex items-center gap-3 cursor-pointer group"
-              onClick={onNavigateToDashboard}
-            >
-              {/* Mint Leaf Emblem */}
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-mint-400 to-emerald-600 flex items-center justify-center text-forest-950 shadow-lg shadow-mint-500/20 group-hover:scale-105 transition-transform shrink-0">
-                <svg
-                  className="w-5 h-5 fill-current"
-                  viewBox="0 0 24 24"
+        {/* Top Section: Brand Header as Collapse/Expand Trigger */}
+        <div>
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#1C3127]/60">
+            {!isCollapsed ? (
+              <button
+                type="button"
+                onClick={handleBrandClick}
+                onMouseEnter={() => setIsBrandHovered(true)}
+                onMouseLeave={() => setIsBrandHovered(false)}
+                aria-label="Collapse navigation"
+                title="Click to collapse navigation (Alt+[)"
+                className="w-full flex items-center justify-between p-1.5 -m-1.5 rounded-xl hover:bg-[#111C16] border border-transparent hover:border-[#1C3127] transition-all text-left group focus:outline-none focus:ring-1 focus:ring-mint-500/50"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {/* Mint Leaf Emblem */}
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-mint-400 to-emerald-600 flex items-center justify-center text-forest-950 shadow-md group-hover:scale-105 transition-transform shrink-0">
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M17.72 4.28a1.5 1.5 0 0 0-1.5 0C13.2 6.04 10.4 8.7 8.5 12.1A17.9 17.9 0 0 0 6 20a1 1 0 0 0 1 1c7.28 0 13-5.72 13-13 0-1.3-.4-2.5-1.28-3.72ZM8.12 18.88c.6-2.5 1.76-4.8 3.38-6.76a16.8 16.8 0 0 1 4.5-3.62c.28 2.5-.4 5.2-1.9 7.38-1.5 2.18-3.7 3-5.98 3Z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <h1 className="text-sm font-bold text-white tracking-tight leading-none font-heading flex items-center gap-1">
+                      <span>Benefit<span className="text-mint-400">OS</span></span>
+                    </h1>
+                    <p className="text-[10px] font-semibold text-emerald-400/80 tracking-wider uppercase mt-1 leading-tight">
+                      National Welfare Gateway
+                    </p>
+                  </div>
+                </div>
+
+                {/* Subtle collapse indicator on hover */}
+                <span className="hidden lg:block opacity-0 group-hover:opacity-100 text-slate-500 text-[10px] tracking-tight font-mono transition-opacity pr-1">
+                  ⇤
+                </span>
+              </button>
+            ) : (
+              <div className="w-full relative flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleBrandClick}
+                  onMouseEnter={() => setIsBrandHovered(true)}
+                  onMouseLeave={() => setIsBrandHovered(false)}
+                  aria-label="Expand navigation"
+                  title="Click to expand navigation (Alt+[)"
+                  className="w-10 h-10 rounded-xl bg-gradient-to-br from-mint-400 to-emerald-600 flex items-center justify-center text-forest-950 shadow-md hover:scale-105 hover:ring-2 hover:ring-mint-400/40 transition-all shrink-0 focus:outline-none focus:ring-2 focus:ring-mint-500"
                 >
-                  <path d="M17.72 4.28a1.5 1.5 0 0 0-1.5 0C13.2 6.04 10.4 8.7 8.5 12.1A17.9 17.9 0 0 0 6 20a1 1 0 0 0 1 1c7.28 0 13-5.72 13-13 0-1.3-.4-2.5-1.28-3.72ZM8.12 18.88c.6-2.5 1.76-4.8 3.38-6.76a16.8 16.8 0 0 1 4.5-3.62c.28 2.5-.4 5.2-1.9 7.38-1.5 2.18-3.7 3-5.98 3Z" />
-                </svg>
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M17.72 4.28a1.5 1.5 0 0 0-1.5 0C13.2 6.04 10.4 8.7 8.5 12.1A17.9 17.9 0 0 0 6 20a1 1 0 0 0 1 1c7.28 0 13-5.72 13-13 0-1.3-.4-2.5-1.28-3.72ZM8.12 18.88c.6-2.5 1.76-4.8 3.38-6.76a16.8 16.8 0 0 1 4.5-3.62c.28 2.5-.4 5.2-1.9 7.38-1.5 2.18-3.7 3-5.98 3Z" />
+                  </svg>
+                </button>
+
+                {/* Collapsed Brand Tooltip */}
+                {isBrandHovered && (
+                  <div className="hidden lg:block absolute left-full top-1/2 -translate-y-1/2 ml-2.5 px-2.5 py-1 bg-[#111C16] text-mint-300 text-xs font-semibold rounded-md shadow-xl z-50 whitespace-nowrap pointer-events-none border border-[#1C3127]">
+                    Expand Navigation (Alt+[)
+                  </div>
+                )}
               </div>
-              <div className="min-w-0">
-                <h1 className="text-base font-bold text-white tracking-tight leading-none font-heading">
-                  Benefit<span className="text-mint-400">OS</span>
-                </h1>
-                <p className="text-[10px] font-medium text-emerald-400/80 tracking-wider uppercase mt-1 leading-tight">
-                  National Welfare Gateway
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div
-              className="w-full flex justify-center cursor-pointer"
-              onClick={onNavigateToDashboard}
-              title="BenefitOS - National Welfare Gateway"
+            )}
+
+            {/* Mobile Close Button */}
+            <button
+              onClick={onClose}
+              aria-label="Close navigation sidebar"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-forest-800 lg:hidden"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-mint-400 to-emerald-600 flex items-center justify-center text-forest-950 shadow-md shrink-0">
-                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                  <path d="M17.72 4.28a1.5 1.5 0 0 0-1.5 0C13.2 6.04 10.4 8.7 8.5 12.1A17.9 17.9 0 0 0 6 20a1 1 0 0 0 1 1c7.28 0 13-5.72 13-13 0-1.3-.4-2.5-1.28-3.72ZM8.12 18.88c.6-2.5 1.76-4.8 3.38-6.76a16.8 16.8 0 0 1 4.5-3.62c.28 2.5-.4 5.2-1.9 7.38-1.5 2.18-3.7 3-5.98 3Z" />
-                </svg>
-              </div>
-            </div>
-          )}
+              <XIcon className="w-5 h-5" />
+            </button>
+          </div>
 
-          {/* Mobile Close Button */}
-          <button
-            onClick={onClose}
-            aria-label="Close navigation sidebar"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-forest-800 lg:hidden"
-          >
-            <XIcon className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Scrollable Navigation Items */}
-        <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar mt-1">
+          {/* Primary Navigation Items List */}
           <nav className="space-y-1" aria-label="Primary Navigation">
             {primaryNavItems.map((item) => {
               const isActive = activeTab === item.id;
@@ -204,11 +234,11 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                     aria-current={isActive ? 'page' : undefined}
                     aria-label={item.label}
                     className={`w-full flex items-center ${
-                      isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3.5 py-2.5'
+                      isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3 py-2.5'
                     } rounded-xl font-medium text-xs sm:text-[13px] transition-all duration-150 ${
                       isActive
-                        ? 'bg-[#0B3B2B] text-white font-semibold border border-mint-500/40 shadow-sm shadow-mint-900/30'
-                        : 'text-slate-300/90 hover:bg-forest-850 hover:text-white border border-transparent'
+                        ? 'bg-[#0B3B2B] text-white font-semibold border border-mint-500/40 shadow-xs'
+                        : 'text-slate-300/90 hover:bg-[#111C16] hover:text-white border border-transparent'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
@@ -233,7 +263,7 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
                   {/* Tooltip for collapsed view */}
                   {isCollapsed && hoveredItem === item.id && (
-                    <div className="hidden lg:block absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1 bg-forest-900 text-white text-xs font-medium rounded-md shadow-xl z-50 whitespace-nowrap pointer-events-none border border-forest-700">
+                    <div className="hidden lg:block absolute left-full top-1/2 -translate-y-1/2 ml-2.5 px-2.5 py-1 bg-[#111C16] text-white text-xs font-medium rounded-md shadow-xl z-50 whitespace-nowrap pointer-events-none border border-[#1C3127]">
                       {item.label}
                     </div>
                   )}
@@ -241,12 +271,10 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               );
             })}
           </nav>
+        </div>
 
-          {/* Separator */}
-          <div className="py-2">
-            <hr className="border-[#1C3127]/60" />
-          </div>
-
+        {/* Bottom Section: Divider + Settings + Subtle Help */}
+        <div className="pt-2 border-t border-[#1C3127]/60 space-y-1">
           {/* Settings Nav Item */}
           <div className="relative group">
             <button
@@ -258,12 +286,13 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               }}
               onMouseEnter={() => isCollapsed && setHoveredItem('settings')}
               onMouseLeave={() => setHoveredItem(null)}
+              aria-label="Settings"
               className={`w-full flex items-center ${
-                isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3.5 py-2.5'
+                isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3 py-2.5'
               } rounded-xl font-medium text-xs sm:text-[13px] transition-all ${
                 activeTab === 'settings'
                   ? 'bg-[#0B3B2B] text-white font-semibold border border-mint-500/40'
-                  : 'text-slate-300/90 hover:bg-forest-850 hover:text-white border border-transparent'
+                  : 'text-slate-300/90 hover:bg-[#111C16] hover:text-white border border-transparent'
               }`}
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -275,25 +304,11 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             </button>
 
             {isCollapsed && hoveredItem === 'settings' && (
-              <div className="hidden lg:block absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1 bg-forest-900 text-white text-xs font-medium rounded-md shadow-xl z-50 whitespace-nowrap pointer-events-none border border-forest-700">
+              <div className="hidden lg:block absolute left-full top-1/2 -translate-y-1/2 ml-2.5 px-2.5 py-1 bg-[#111C16] text-white text-xs font-medium rounded-md shadow-xl z-50 whitespace-nowrap pointer-events-none border border-[#1C3127]">
                 Settings
               </div>
             )}
           </div>
-        </div>
-
-        {/* Bottom Section: Trust Info + Help & Support + Collapse Toggle */}
-        <div className="pt-3 border-t border-[#1C3127]/60 space-y-3">
-          {!isCollapsed && (
-            <div className="p-3 rounded-xl bg-forest-900/70 border border-forest-800/80 flex items-start gap-2.5">
-              <div className="w-6 h-6 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
-                <BuildingIcon className="w-3.5 h-3.5" />
-              </div>
-              <p className="text-[11px] text-slate-300/90 leading-snug">
-                A simple way to access government benefits, trusted by citizens across India.
-              </p>
-            </div>
-          )}
 
           {/* Help & Support Button */}
           <div className="relative group">
@@ -306,49 +321,23 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               }}
               onMouseEnter={() => isCollapsed && setHoveredItem('help')}
               onMouseLeave={() => setHoveredItem(null)}
+              aria-label="Help and Support"
               className={`w-full flex items-center ${
                 isCollapsed ? 'justify-center px-2 py-2' : 'gap-3 px-3 py-2'
-              } text-xs font-medium text-slate-400 hover:text-white hover:bg-forest-850 rounded-lg transition-colors`}
+              } text-xs font-medium text-slate-400 hover:text-white hover:bg-[#111C16] rounded-xl transition-colors`}
             >
-              <HelpCircleIcon className="w-4 h-4 text-slate-400 group-hover:text-mint-300" />
-              {!isCollapsed && <span>Help &amp; Support</span>}
+              <HelpCircleIcon className="w-4 h-4 text-slate-400 group-hover:text-mint-300 shrink-0" />
+              {!isCollapsed && <span className="truncate">Help &amp; Support</span>}
             </button>
 
             {isCollapsed && hoveredItem === 'help' && (
-              <div className="hidden lg:block absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1 bg-forest-900 text-white text-xs font-medium rounded-md shadow-xl z-50 whitespace-nowrap pointer-events-none border border-forest-700">
+              <div className="hidden lg:block absolute left-full top-1/2 -translate-y-1/2 ml-2.5 px-2.5 py-1 bg-[#111C16] text-white text-xs font-medium rounded-md shadow-xl z-50 whitespace-nowrap pointer-events-none border border-[#1C3127]">
                 Help &amp; Support
               </div>
             )}
           </div>
-
-          {/* Collapse toggle button on desktop */}
-          {onToggleCollapse && (
-            <div className="hidden lg:flex items-center justify-between pt-1 border-t border-[#1C3127]/40 px-1">
-              {!isCollapsed ? (
-                <button
-                  type="button"
-                  onClick={onToggleCollapse}
-                  className="w-full flex items-center justify-between text-[11px] text-slate-400 hover:text-slate-200 py-1"
-                  aria-label="Collapse sidebar"
-                >
-                  <span>Collapse Navigation</span>
-                  <ChevronLeftIcon className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onToggleCollapse}
-                  className="w-full flex justify-center text-slate-400 hover:text-slate-200 py-1"
-                  aria-label="Expand sidebar"
-                >
-                  <ChevronRightIcon className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </aside>
     </>
   );
 };
-

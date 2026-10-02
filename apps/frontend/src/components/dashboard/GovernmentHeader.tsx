@@ -37,7 +37,7 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
   onNavigateToAiCopilot,
   unreadNotificationsCount = 2,
   profileCompletionPercentage = 100,
-  citizenName = 'Priya Sharma',
+  citizenName,
   onSearch,
 }) => {
   const { user, logout } = useAuthStore();
@@ -69,7 +69,7 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
     }
   };
 
-  const displayName = citizenName || (user?.email ? user.email.split('@')[0] : 'Priya Sharma');
+  const displayName = citizenName || (user?.email ? user.email.split('@')[0] : 'Divyansh Gupta');
 
   const toggleLanguage = () => {
     setLocale(locale === 'hi' ? 'en' : 'hi');

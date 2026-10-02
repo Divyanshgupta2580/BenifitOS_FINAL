@@ -134,9 +134,9 @@ export const DashboardScreen: React.FC<Props> = ({
   const completionPct = profile?.completionPercentage || 75;
 
   const citizenFullName =
-    profile ?
+    profile && (profile.firstName || profile.lastName) ?
       `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
-    : "Priya Sharma";
+    : (user?.email ? user.email.split('@')[0] : "Divyansh Gupta");
 
   return (
     <AppLayout activeTab="dashboard">
