@@ -25,16 +25,21 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
     }
   }
 
+  private getModelCandidates(): string[] {
+    const configured = process.env.GEMINI_MODEL;
+    const candidates = [configured, 'gemini-3.5-flash-lite', 'gemini-3.8-flash'].filter(Boolean) as string[];
+    return Array.from(new Set(candidates));
+  }
+
   private getModelName(): string {
-    return process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+    return process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
   }
 
   async generateText(options: AiPromptOptions): Promise<AiResponse> {
-    const model = this.getModelName();
-    const primaryClient = this.aiClient;
-    const secondaryClient = this.guidanceClient;
+    const clients = [this.aiClient, this.guidanceClient].filter(Boolean) as GoogleGenAI[];
+    const models = this.getModelCandidates();
 
-    if (!primaryClient && !secondaryClient) {
+    if (clients.length === 0) {
       return {
         content: 'AI Copilot is currently offline. Please verify service configuration and try again.',
         tokensUsed: 0,
@@ -52,41 +57,26 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
       },
     };
 
-    if (primaryClient) {
-      try {
-        const response = await primaryClient.models.generateContent({
-          model,
-          contents: [options.prompt],
-          config,
-        });
-        const text = response.text || '';
-        return {
-          content: text,
-          tokensUsed: Math.ceil(text.length / 4),
-          provider: 'AI Copilot',
-          model: 'AI-Copilot',
-        };
-      } catch (primaryErr: any) {
-        this.logger.warn(`Primary Gemini client error: ${primaryErr.message}. Attempting secondary guidance client...`);
-      }
-    }
-
-    if (secondaryClient && secondaryClient !== primaryClient) {
-      try {
-        const response = await secondaryClient.models.generateContent({
-          model,
-          contents: [options.prompt],
-          config,
-        });
-        const text = response.text || '';
-        return {
-          content: text,
-          tokensUsed: Math.ceil(text.length / 4),
-          provider: 'AI Copilot',
-          model: 'AI-Copilot',
-        };
-      } catch (secondaryErr: any) {
-        this.logger.error(`Secondary Gemini client error: ${secondaryErr.message}`);
+    for (const client of clients) {
+      for (const model of models) {
+        try {
+          const response = await client.models.generateContent({
+            model,
+            contents: [options.prompt],
+            config,
+          });
+          const text = response.text || '';
+          if (text) {
+            return {
+              content: text,
+              tokensUsed: Math.ceil(text.length / 4),
+              provider: 'AI Copilot',
+              model,
+            };
+          }
+        } catch (err: any) {
+          this.logger.warn(`Gemini client model ${model} attempt failed: ${err.message}. Trying next candidate...`);
+        }
       }
     }
 
@@ -178,8 +168,8 @@ export class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider {
     eligibilityRules?: string[];
     language?: string;
   }): Promise<string> {
-    const client = this.guidanceClient || this.aiClient;
-    const model = this.getModelName();
+    const clients = [this.guidanceClient, this.aiClient].filter(Boolean) as GoogleGenAI[];
+    const models = this.getModelCandidates();
     const isHindi = options.language === 'hi';
 
     const prompt = isHindi
@@ -210,7 +200,7 @@ Format your response in clean, formal Markdown with clear section headings and b
 
 IMPORTANT: Do not use emojis, casual language, or marketing claims. Maintain a professional, neutral government portal tone.`;
 
-    if (!client) {
+    if (clients.length === 0) {
       return isHindi
         ? `### ${options.schemeTitle} के लिए चरणबद्ध आवेदन मार्गदर्शिका
 
@@ -230,39 +220,49 @@ IMPORTANT: Do not use emojis, casual language, or marketing claims. Maintain a p
 6. **Track Status**: Monitor verification status and benefit disbursement timeline on the portal.`;
     }
 
-    try {
-      const response = await client.models.generateContent({
-        model,
-        contents: [prompt],
-        config: {
-          systemInstruction: isHindi
-            ? 'You are an AI Copilot scheme application specialist. Provide complete, clear, step-by-step instructions in Hindi (Devanagari script) without emojis.'
-            : 'You are an AI Copilot scheme application specialist. Provide complete, clear, step-by-step instructions without emojis.',
-          temperature: 0.2,
-          maxOutputTokens: 8192,
-          thinkingConfig: {
-            thinkingBudget: 512,
-          },
-        },
-      });
-      return response.text || '';
-    } catch (err: any) {
-      this.logger.error(`AI generateSchemeInstructions error: ${err.message}`);
-      return isHindi
-        ? `### ${options.schemeTitle} के लिए चरणबद्ध आवेदन मार्गदर्शिका
+    const config = {
+      systemInstruction: isHindi
+        ? 'You are an AI Copilot scheme application specialist. Provide complete, clear, step-by-step instructions in Hindi (Devanagari script) without emojis.'
+        : 'You are an AI Copilot scheme application specialist. Provide complete, clear, step-by-step instructions without emojis.',
+      temperature: 0.2,
+      maxOutputTokens: 8192,
+      thinkingConfig: {
+        thinkingBudget: 512,
+      },
+    };
+
+    for (const client of clients) {
+      for (const model of models) {
+        try {
+          const response = await client.models.generateContent({
+            model,
+            contents: [prompt],
+            config,
+          });
+          const text = response.text || '';
+          if (text) {
+            return text;
+          }
+        } catch (err: any) {
+          this.logger.warn(`AI generateSchemeInstructions attempt failed on model ${model}: ${err.message}. Trying next candidate...`);
+        }
+      }
+    }
+
+    return isHindi
+      ? `### ${options.schemeTitle} के लिए चरणबद्ध आवेदन मार्गदर्शिका
 
 1. **आवश्यक शर्तें एवं दस्तावेज़ चेकलिस्ट**: आधार कार्ड, बैंक खाते से लिंक मोबाइल नंबर और आय प्रमाण पत्र सत्यापित करें।
 2. **आधिकारिक पोर्टल पंजीकरण**: आधिकारिक पोर्टल पर जाएं और अपने विवरण से पंजीकरण करें।
 3. **आवेदन पत्र विवरण**: व्यक्तिगत, आय और व्यावसायिक विवरण सही-सही भरें।
 4. **स्कैन किए गए प्रमाण अपलोड करें**: आवश्यक पहचान और आय प्रमाण संलग्न करें।
 5. **अंतिम सबमिशन एवं पावती**: फॉर्म जमा करें और ट्रैकिंग के लिए आवेदन संदर्भ आईडी सुरक्षित रखें।`
-        : `### Step-by-Step Application Guide for ${options.schemeTitle}
+      : `### Step-by-Step Application Guide for ${options.schemeTitle}
 
 1. **Prerequisites and Document Checklist**: Verify Aadhaar, mobile number linked to bank account, and category or income certificate.
 2. **Official Portal Registration**: Access the official portal and register with your credentials.
 3. **Application Form Details**: Fill personal, income, and occupational details accurately.
 4. **Upload Scanned Proofs**: Attach mandatory identity and income proofs.
 5. **Final Submission and Acknowledgement**: Submit the form and store the Application Reference ID for tracking.`;
-    }
   }
 }

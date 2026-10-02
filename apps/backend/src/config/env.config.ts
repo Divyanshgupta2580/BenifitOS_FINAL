@@ -12,7 +12,7 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   REDIS_URL: z.string().default('redis://localhost:6379'),
   DEFAULT_AI_PROVIDER: z.enum(['gemini', 'openai', 'claude', 'azure']).default('gemini'),
-  GEMINI_MODEL: z.string().default('gemini-3.6-flash'),
+  GEMINI_MODEL: z.string().default('gemini-3.5-flash-lite'),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_SCHEME_GUIDANCE_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
