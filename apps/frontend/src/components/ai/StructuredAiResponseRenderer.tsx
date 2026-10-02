@@ -109,7 +109,7 @@ export const StructuredAiResponseRenderer: React.FC<StructuredAiResponseProps> =
           eligibilityStatus: eligMatch ? eligMatch[1].replace(/\*\*/g, '').trim() : (isHindi ? 'उपलब्ध जानकारी के अनुसार प्रासंगिक' : 'Appears relevant based on available information'),
           benefit: benefitMatch ? benefitMatch[1].replace(/\*\*/g, '').trim() : undefined,
           whyApply: whyMatch ? whyMatch[1].replace(/\*\*/g, '').trim() : undefined,
-          documents: docLines.length > 0 ? docLines.slice(0, 6) : undefined,
+          documents: docLines.length > 0 ? docLines : undefined,
           nextStep: nextMatch ? nextMatch[1].replace(/\*\*/g, '').trim() : undefined,
           officialUrl: urlMatch ? urlMatch[1] : undefined,
         });
