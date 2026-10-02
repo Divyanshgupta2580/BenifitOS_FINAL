@@ -17,6 +17,7 @@ export declare class AiService {
         isCached?: boolean;
         sources?: string[];
     }>;
+    sanitizeAiResponse(text: string): string;
     private resolveUseCase;
     private formatEligibilityLabel;
     private buildVerifiedChatContext;

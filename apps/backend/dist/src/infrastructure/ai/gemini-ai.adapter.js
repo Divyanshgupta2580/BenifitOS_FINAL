@@ -38,7 +38,9 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
     }
     async generateText(options) {
         const model = this.getModelName();
-        if (!this.aiClient) {
+        const primaryClient = this.aiClient;
+        const secondaryClient = this.guidanceClient;
+        if (!primaryClient && !secondaryClient) {
             return {
                 content: 'AI Copilot is currently offline. Please verify service configuration and try again.',
                 tokensUsed: 0,
@@ -46,36 +48,58 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
                 model: 'AI-Copilot',
             };
         }
-        try {
-            const response = await this.aiClient.models.generateContent({
-                model,
-                contents: [options.prompt],
-                config: {
-                    systemInstruction: options.systemInstruction,
-                    temperature: options.temperature || 0.3,
-                    maxOutputTokens: options.maxTokens || 8192,
-                    thinkingConfig: {
-                        thinkingBudget: 512,
-                    },
-                },
-            });
-            const text = response.text || '';
-            return {
-                content: text,
-                tokensUsed: Math.ceil(text.length / 4),
-                provider: 'AI Copilot',
-                model: 'AI-Copilot',
-            };
+        const config = {
+            systemInstruction: options.systemInstruction,
+            temperature: options.temperature || 0.3,
+            maxOutputTokens: options.maxTokens || 8192,
+            thinkingConfig: {
+                thinkingBudget: 512,
+            },
+        };
+        if (primaryClient) {
+            try {
+                const response = await primaryClient.models.generateContent({
+                    model,
+                    contents: [options.prompt],
+                    config,
+                });
+                const text = response.text || '';
+                return {
+                    content: text,
+                    tokensUsed: Math.ceil(text.length / 4),
+                    provider: 'AI Copilot',
+                    model: 'AI-Copilot',
+                };
+            }
+            catch (primaryErr) {
+                this.logger.warn(`Primary Gemini client error: ${primaryErr.message}. Attempting secondary guidance client...`);
+            }
         }
-        catch (err) {
-            this.logger.error(`AI generateText error: ${err.message}`);
-            return {
-                content: 'AI Copilot is temporarily unable to process your request. Please verify your connection or try again shortly.',
-                tokensUsed: 0,
-                provider: 'AI Copilot',
-                model: 'AI-Copilot',
-            };
+        if (secondaryClient && secondaryClient !== primaryClient) {
+            try {
+                const response = await secondaryClient.models.generateContent({
+                    model,
+                    contents: [options.prompt],
+                    config,
+                });
+                const text = response.text || '';
+                return {
+                    content: text,
+                    tokensUsed: Math.ceil(text.length / 4),
+                    provider: 'AI Copilot',
+                    model: 'AI-Copilot',
+                };
+            }
+            catch (secondaryErr) {
+                this.logger.error(`Secondary Gemini client error: ${secondaryErr.message}`);
+            }
         }
+        return {
+            content: 'AI Copilot is temporarily unable to process your request. Please verify your connection or try again shortly.',
+            tokensUsed: 0,
+            provider: 'AI Copilot',
+            model: 'AI-Copilot',
+        };
     }
     async generateStream(options, onChunk) {
         const res = await this.generateText(options);
