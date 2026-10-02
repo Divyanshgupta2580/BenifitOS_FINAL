@@ -152,7 +152,7 @@ export const OcrReviewScreen: React.FC<Props> = ({ documentId, onBack }) => {
             <div className="rounded-3xl bg-gradient-to-br from-[#0D2418] via-[#0E1712] to-[#0A120E] border border-emerald-500/40 p-6 shadow-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <span className="text-[11px] uppercase tracking-wider text-emerald-400 font-bold block mb-1">
-                  Vision OCR Confidence Score
+                  Document Classification & Match Score
                 </span>
                 <span className="text-3xl font-black text-white">{confidencePct}%</span>
               </div>

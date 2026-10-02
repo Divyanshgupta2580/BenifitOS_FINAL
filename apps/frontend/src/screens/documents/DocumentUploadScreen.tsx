@@ -98,7 +98,7 @@ export const DocumentUploadScreen: React.FC<Props> = ({ onBack }) => {
               Upload Citizen Document
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              Securely upload identity or eligibility certificates for automated OCR verification.
+              Securely upload identity or eligibility certificates for automated OCR extraction & administrative verification.
             </p>
           </div>
         </div>
