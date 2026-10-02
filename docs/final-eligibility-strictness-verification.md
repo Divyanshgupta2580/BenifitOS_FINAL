@@ -124,8 +124,16 @@ The backend API contract (`getEnrichedRecommendations`) guarantees a determinist
   [PASS] Test 34: Backend Evaluator: Citizen income 5L evaluates to NOT_ELIGIBLE and isEligible=false
   [PASS] Test 35: Backend Evaluator: Incomplete profile evaluates to INCOMPLETE_PROFILE and isEligible=false
 
+--- SECTION 5: Recommendation Engine Enrichment Fallback Micro-Audit ---
+  [PASS] Test 36: Enrichment Audit: Returns 1 recommendation
+  [PASS] Test 37: Enrichment Audit: Normal recommendation receives ELIGIBLE directly from evaluator
+  [PASS] Test 38: Enrichment Audit: Normal recommendation isEligible is true
+  [PASS] Test 39: Enrichment Audit (Orphan): Returns 1 recommendation
+  [PASS] Test 40: Enrichment Audit (Orphan): Ineligible orphan fails closed to NOT_ELIGIBLE
+  [PASS] Test 41: Enrichment Audit (Orphan): Orphan isEligible remains false
+
 ===============================================================
- RESULT: 35/35 TESTS PASSED
+ RESULT: 41/41 TESTS PASSED
  STATUS: STRICT ELIGIBILITY INVARIANT HARDENING VERIFIED!      
 ===============================================================
 ```
