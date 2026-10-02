@@ -295,6 +295,24 @@ export class EligibilityEvaluatorService {
         return citizen.panHash ? 'true' : 'false';
       case 'verificationStatus':
         return citizen.aadhaarHash ? 'VERIFIED' : 'PENDING';
+      case 'isSenior70PlusOrBpl': {
+        if (citizen.age !== undefined && citizen.age !== null && citizen.age >= 70) {
+          return 'true';
+        }
+        if (citizen.isBplCardHolder !== undefined && citizen.isBplCardHolder !== null) {
+          return citizen.isBplCardHolder ? 'true' : 'false';
+        }
+        return null;
+      }
+      case 'isIncomeTaxPayer': {
+        if (citizen.annualIncomeINR !== undefined && citizen.annualIncomeINR !== null) {
+          return citizen.annualIncomeINR > 700000 ? 'true' : 'false';
+        }
+        return null;
+      }
+      case 'hasPuccaHouse': {
+        return null; // External Awaas+ / SECC inspection field requiring administrative verification
+      }
       default:
         return null;
     }

@@ -21,6 +21,12 @@ export enum DocumentType {
   AADHAAR = 'AADHAAR',
   DRIVING_LICENSE = 'DRIVING_LICENSE',
   VOTER_ID = 'VOTER_ID',
+  INCOME_CERTIFICATE = 'INCOME_CERTIFICATE',
+  RATION_CARD = 'RATION_CARD',
+  LAND_RECORD = 'LAND_RECORD',
+  BANK_PASSBOOK = 'BANK_PASSBOOK',
+  PAN_CARD = 'PAN_CARD',
+  OTHER = 'OTHER',
 }
 
 export const DOCUMENT_TYPE_DISPLAY_NAMES: Record<DocumentType, string> = {
@@ -31,6 +37,12 @@ export const DOCUMENT_TYPE_DISPLAY_NAMES: Record<DocumentType, string> = {
   [DocumentType.AADHAAR]: 'Aadhaar Card',
   [DocumentType.DRIVING_LICENSE]: 'Driving Licence',
   [DocumentType.VOTER_ID]: 'Voter ID',
+  [DocumentType.INCOME_CERTIFICATE]: 'Income Certificate',
+  [DocumentType.RATION_CARD]: 'Ration Card / NFSA Card',
+  [DocumentType.LAND_RECORD]: 'Land Record / Khasra-Khatauni',
+  [DocumentType.BANK_PASSBOOK]: 'Bank Account Passbook',
+  [DocumentType.PAN_CARD]: 'PAN Card',
+  [DocumentType.OTHER]: 'Supporting Document',
 };
 
 export interface EligibilityRule {
@@ -64,6 +76,7 @@ export enum BenefitType {
   SCHOLARSHIP = 'SCHOLARSHIP',
   HEALTH_COVER = 'HEALTH_COVER',
   SUBSIDIZED_LOAN = 'SUBSIDIZED_LOAN',
+  COLLATERAL_FREE_LOAN = 'COLLATERAL_FREE_LOAN',
   MONTHLY_PENSION = 'MONTHLY_PENSION',
   SUBSIDY = 'SUBSIDY',
   OTHER = 'OTHER',

@@ -250,6 +250,16 @@ export function runSchemeDataIntegrityTests() {
     disabilityType: DisabilityType.NONE,
     disabilityPercent: 0,
     isBplCardHolder: false,
+    aadhaarHash: 'hash_aadhaar_verified_123',
+    landDetails: [
+      {
+        id: 'land-1',
+        landSizeAcres: 2.5,
+        landType: 'AGRICULTURAL',
+        district: 'Varanasi',
+        state: 'Uttar Pradesh',
+      },
+    ],
   });
 
   const pmKisanResult = evaluator.evaluateDetailedEligibility(farmerCitizen, pmKisanEntity);
@@ -385,7 +395,7 @@ export function runSchemeDataIntegrityTests() {
   );
 
   // Case 2: Database says user is eligible -> Response accurately explains eligibility
-  const case2AiText = '## Eligibility\n**Eligible**\n\n### Benefit\n₹6,000 per year in 3 equal installments.\n\n### Why\n- You are registered as an engaged farmer.\n- Your reported annual family income is within the ₹4,00,000 ceiling.\n\n### Next steps\nApply at https://pmkisan.gov.in/RegistrationFormNew.aspx with your Aadhaar card.';
+  const case2AiText = '## Eligibility\n**Eligible**\n\n### Benefit\n₹6,000 per year in 3 equal installments.\n\n### Why\n- You are registered as an engaged farmer.\n- You have verified cultivable landholding.\n- Your Aadhaar e-KYC is linked.\n\n### Next steps\nApply at https://pmkisan.gov.in/RegistrationFormNew.aspx with your Aadhaar card and land records.';
   const case2Val = validateAiResponseAgainstContext(case2AiText, case1Ctx);
   assert(case2Val.valid, 'CASE 2: AI grounded in ELIGIBLE database state accurately explains eligibility');
 
@@ -441,8 +451,8 @@ export function runSchemeDataIntegrityTests() {
 
   // Case 6: Missing document -> AI receives strictly verified database requiredDocuments
   assert(
-    pmKisanEntity.requiredDocuments.length === 2,
-    'CASE 6: Database supplies exact 2 required documents; AI does not fabricate extraneous document requirements'
+    pmKisanEntity.requiredDocuments.length === 3,
+    'CASE 6: Database supplies exact 3 required documents (AADHAAR, LAND_RECORD, BANK_PASSBOOK); AI does not fabricate extraneous document requirements'
   );
 
   // Case 7: Application URL strictly matches authoritative source
