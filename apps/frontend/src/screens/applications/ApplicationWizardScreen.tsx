@@ -182,7 +182,7 @@ export const ApplicationWizardScreen: React.FC<Props> = ({ onBack, onSuccess }) 
                 </p>
                 <p>
                   <strong className="text-slate-400">Annual Family Income:</strong>{' '}
-                  <span className="text-mint-300 font-bold">₹{profile?.annualIncome?.toLocaleString('en-IN') || 'N/A'}</span>
+                  <span className="text-mint-300 font-bold">₹{profile?.annualIncomeINR?.toLocaleString('en-IN') || 'N/A'}</span>
                 </p>
               </div>
 

@@ -193,7 +193,7 @@ export const ApplicationsListScreen: React.FC<Props> = ({
                     </h3>
                     <p className="text-xs text-slate-400 mt-1">
                       Category: {category.replace(/_/g, ' ')} • Submitted on{' '}
-                      {new Date(item.createdAt).toLocaleDateString()}
+                      {new Date(item.createdAt || item.submittedAt || item.updatedAt).toLocaleDateString()}
                     </p>
                   </div>
 

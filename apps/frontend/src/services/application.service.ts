@@ -9,6 +9,7 @@ export interface ApplicationItem {
   formData: Record<string, any>;
   attachedDocumentIds: string[];
   submittedAt?: string;
+  createdAt?: string;
   updatedAt: string;
   scheme?: {
     id: string;

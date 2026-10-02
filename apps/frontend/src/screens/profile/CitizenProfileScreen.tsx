@@ -179,7 +179,9 @@ export const CitizenProfileScreen: React.FC<Props> = ({
               </div>
               <div>
                 <span className="text-[11px] text-slate-400 block">Area Type</span>
-                <span className="text-xs sm:text-sm font-semibold text-white block mt-0.5">{profile.address.areaType}</span>
+                <span className="text-xs sm:text-sm font-semibold text-white block mt-0.5">
+                  {profile.address.isRural ? 'Rural' : 'Urban'}
+                </span>
               </div>
               <div>
                 <span className="text-[11px] text-slate-400 block">PIN Code</span>
