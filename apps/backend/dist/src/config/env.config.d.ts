@@ -33,12 +33,12 @@ export declare const envSchema: z.ZodObject<{
     REDIS_URL: string;
     SECURITY_STATE_MODE: "distributed" | "local";
     NODE_ENV: "production" | "development" | "test";
-    JWT_REFRESH_SECRET: string;
+    GEMINI_MODEL: string;
     JWT_SECRET: string;
+    CORS_ORIGIN: string;
+    JWT_REFRESH_SECRET: string;
     JWT_EXPIRATION: string;
     JWT_REFRESH_EXPIRATION: string;
-    GEMINI_MODEL: string;
-    CORS_ORIGIN: string;
     PORT: number;
     API_PREFIX: string;
     DATABASE_URL: string;
@@ -60,8 +60,8 @@ export declare const envSchema: z.ZodObject<{
     SUPABASE_SERVICE_ROLE_KEY?: string | undefined;
     DIGILOCKER_CLIENT_SECRET?: string | undefined;
 }, {
-    JWT_REFRESH_SECRET: string;
     JWT_SECRET: string;
+    JWT_REFRESH_SECRET: string;
     DATABASE_URL: string;
     REDIS_URL?: string | undefined;
     SECURITY_STATE_MODE?: "distributed" | "local" | undefined;
@@ -72,13 +72,13 @@ export declare const envSchema: z.ZodObject<{
     SMTP_PASS?: string | undefined;
     SMTP_FROM?: string | undefined;
     SMTP_SECURE?: string | undefined;
-    JWT_EXPIRATION?: string | undefined;
-    JWT_REFRESH_EXPIRATION?: string | undefined;
     GEMINI_API_KEY?: string | undefined;
     GEMINI_SCHEME_GUIDANCE_API_KEY?: string | undefined;
     GEMINI_MODEL?: string | undefined;
-    DIGILOCKER_CLIENT_ID?: string | undefined;
     CORS_ORIGIN?: string | undefined;
+    JWT_EXPIRATION?: string | undefined;
+    JWT_REFRESH_EXPIRATION?: string | undefined;
+    DIGILOCKER_CLIENT_ID?: string | undefined;
     PORT?: string | undefined;
     API_PREFIX?: string | undefined;
     DEFAULT_AI_PROVIDER?: "gemini" | "openai" | "claude" | "azure" | undefined;

@@ -4,7 +4,7 @@ import { RedisService } from '../redis/redis.service';
 import { createHash } from 'crypto';
 
 export interface CacheKeyOptions {
-  useCase: 'chat' | 'explain' | 'scheme-instructions';
+  useCase: 'chat' | 'explain' | 'scheme-instructions' | 'eligibility-validation';
   userId?: string;
   schemeId?: string;
   minimizedProfileHash?: string;

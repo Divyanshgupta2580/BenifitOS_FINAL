@@ -5,6 +5,7 @@ import {
   ArrowRightIcon,
   CheckCircle2Icon,
   AcademicCapIcon,
+  SparklesIcon,
 } from '../ui/Icons';
 import { SchemeRecommendationItem } from '../../services/recommendation.service';
 
@@ -19,13 +20,9 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
   onNavigateToSchemes,
   onSelectScheme,
 }) => {
-  // Strictly filter only verified ELIGIBLE schemes
-  const confirmedEligible = recommendations.filter(
-    (r) => r.isEligible === true && r.eligibilityStatus === 'ELIGIBLE'
-  );
-
-  const futureEligible = recommendations.filter(
-    (r) => !r.isEligible && r.eligibilityStatus === 'FUTURE_ELIGIBLE'
+  // Strictly filter only verified CLAIM_READY schemes
+  const claimReadySchemes = recommendations.filter(
+    (r) => r.isEligible === true && (r.status === 'CLAIM_READY' || r.eligibilityStatus === 'CLAIM_READY' || r.eligibilityStatus === 'ELIGIBLE'),
   );
 
   const getSchemeImage = (category?: string) => {
@@ -61,19 +58,14 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
               id="eligible-schemes-heading"
               className="text-base sm:text-lg font-bold text-white font-heading tracking-tight"
             >
-              Schemes You Are Eligible For
+              Claim-Ready Schemes
             </h2>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-950/90 border border-emerald-500/40 text-mint-300">
-              {confirmedEligible.length} Verified Now
+              {claimReadySchemes.length} Claim-Ready
             </span>
-            {futureEligible.length > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-950/90 border border-sky-500/40 text-sky-300">
-                +{futureEligible.length} Future (1-3 Yrs)
-              </span>
-            )}
           </div>
           <p className="text-xs text-slate-400 leading-tight mt-0.5">
-            Deterministic backend rules engine evaluated qualification based on your profile.
+            You're eligible — upload the required documents to continue.
           </p>
         </div>
 
@@ -88,17 +80,17 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
       </div>
 
       {/* Cards Grid or Empty State */}
-      {confirmedEligible.length === 0 ? (
+      {claimReadySchemes.length === 0 ? (
         <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-8 sm:p-10 text-center flex flex-col items-center space-y-3 shadow-lg">
           <div className="w-12 h-12 rounded-2xl bg-forest-950 border border-[#1C3127] flex items-center justify-center text-slate-400">
             <LandmarkIcon className="w-6 h-6" />
           </div>
           <div className="space-y-1 max-w-md mx-auto">
             <h3 className="text-sm font-bold text-white font-heading">
-              No Confirmed Eligible Schemes Yet
+              No Claim-Ready Schemes Yet
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Based on the deterministic rules evaluation of your current profile, no schemes currently meet 100% of mandatory conditions. Update your profile attributes or explore all schemes in the central catalog.
+              Based on the deterministic rules evaluation and AI validation of your current verified profile, no schemes currently meet 100% of statutory non-document criteria. Update your profile attributes or explore all schemes in the central catalog.
             </p>
           </div>
           <div className="pt-2 flex flex-wrap justify-center gap-3">
@@ -113,7 +105,7 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-          {confirmedEligible.slice(0, 2).map((rec) => {
+          {claimReadySchemes.slice(0, 2).map((rec) => {
             const scheme = rec.scheme || (rec as any);
             const schemeId = rec.schemeId || rec.id;
             const category = rec.category || scheme?.category;
@@ -124,6 +116,7 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
             const image = getSchemeImage(category);
             const categoryIcon = getCategoryIcon(category);
             const categoryBg = getCategoryBg(category);
+            const docsRemaining = rec.missingDocuments || [];
 
             return (
               <div
@@ -168,10 +161,10 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
                       {description}
                     </p>
 
-                    {/* Verified Eligible Badge */}
+                    {/* Claim-Ready Badge */}
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-mint-300 text-xs font-semibold shadow-xs">
                       <CheckCircle2Icon className="w-3.5 h-3.5 text-mint-400" />
-                      <span>Verified Eligible (100% Match)</span>
+                      <span>Claim-Ready (All Non-Document Criteria Satisfied)</span>
                     </div>
 
                     {/* Key Benefits and Documents Required Details */}
@@ -191,22 +184,32 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
                         </div>
                       </div>
 
-                      {/* Documents Required Row */}
+                      {/* Documents Remaining Row */}
                       <div className="flex items-start gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-forest-900/80 border border-[#1C3127] flex items-center justify-center text-sky-400 shrink-0 mt-0.5">
+                        <div className="w-7 h-7 rounded-lg bg-forest-900/80 border border-[#1C3127] flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
                           <DocumentTextIcon className="w-3.5 h-3.5" />
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-slate-100 leading-tight">
-                            Eligibility Criteria Satisfied
+                            {docsRemaining.length > 0
+                              ? `Required Documents to Upload (${docsRemaining.length})`
+                              : 'All Documents Verified'}
                           </p>
                           <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
-                            {rec.criteriaMet && rec.criteriaMet.length > 0
-                              ? `${rec.criteriaMet.length} eligibility rules verified by engine`
-                              : 'Eligibility criteria satisfied'}
+                            {docsRemaining.length > 0
+                              ? docsRemaining.map((d: any) => typeof d === 'string' ? d.replace(/_/g, ' ') : (d.documentType || '').replace(/_/g, ' ')).join(', ')
+                              : 'Ready for submission'}
                           </p>
                         </div>
                       </div>
+
+                      {/* AI Validation Note */}
+                      {rec.aiValidation?.reason && (
+                        <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-forest-950/60 border border-[#1C3127] text-[11px] text-emerald-300/80">
+                          <SparklesIcon className="w-3.5 h-3.5 text-mint-400 shrink-0 mt-0.5" />
+                          <span>{rec.aiValidation.reason}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -217,7 +220,7 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
                       onClick={() => onSelectScheme(schemeId)}
                       className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs sm:text-sm shadow-md transition-all hover:scale-[1.01] active:scale-[0.99]"
                     >
-                      <span>View Details</span>
+                      <span>View Details &amp; Apply</span>
                       <ArrowRightIcon className="w-4 h-4 stroke-[2.5]" />
                     </button>
                   </div>
@@ -230,4 +233,5 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
     </section>
   );
 };
+
 

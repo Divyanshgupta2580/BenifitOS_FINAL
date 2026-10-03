@@ -17,6 +17,7 @@ const user_repository_1 = require("../../infrastructure/database/repositories/us
 const citizen_repository_1 = require("../../infrastructure/database/repositories/citizen.repository");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
 const redis_service_1 = require("../../infrastructure/redis/redis.service");
+const notification_module_1 = require("../notification/notification.module");
 const email_service_1 = require("../../infrastructure/email/email.service");
 let AuthModule = class AuthModule {
 };
@@ -29,6 +30,7 @@ exports.AuthModule = AuthModule = __decorate([
                 secret: process.env.JWT_SECRET,
                 signOptions: { expiresIn: (process.env.JWT_EXPIRATION || '15m') },
             }),
+            notification_module_1.NotificationModule,
         ],
         controllers: [auth_controller_1.AuthController],
         providers: [

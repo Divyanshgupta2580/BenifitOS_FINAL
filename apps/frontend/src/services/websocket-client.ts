@@ -329,6 +329,29 @@ class WebSocketService {
       });
     });
   }
+
+  on(event: string, callback: (...args: any[]) => void): () => void {
+    if (this.socket) {
+      this.socket.on(event, callback);
+    }
+    return () => {
+      if (this.socket) {
+        this.socket.off(event, callback);
+      }
+    };
+  }
+
+  off(event: string, callback?: (...args: any[]) => void): void {
+    if (this.socket) {
+      if (callback) {
+        this.socket.off(event, callback);
+      } else {
+        this.socket.off(event);
+      }
+    }
+  }
 }
 
 export const wsService = new WebSocketService();
+export const socketClient = wsService;
+

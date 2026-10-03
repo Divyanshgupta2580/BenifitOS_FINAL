@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLanguageStore } from '../../store/language.store';
 import { useAuthStore } from '../../store/auth.store';
+import { useNotifications } from '../../hooks/useNotifications';
 import {
   Bars3Icon,
   BellIcon,
@@ -10,8 +11,10 @@ import {
   SearchIcon,
   SparklesIcon,
   GlobeIcon,
-  SunIcon,
-  MoonIcon,
+  CheckCircle2Icon,
+  AlertTriangleIcon,
+  ExternalLinkIcon,
+  CheckIcon,
 } from '../ui/Icons';
 import { useThemeStore } from '../../store/theme.store';
 
@@ -35,7 +38,7 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
   onNavigateToNotifications,
   onNavigateToSchemes,
   onNavigateToAiCopilot,
-  unreadNotificationsCount = 0,
+  unreadNotificationsCount: propUnreadCount,
   profileCompletionPercentage = 100,
   citizenName,
   onSearch,
@@ -44,8 +47,20 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
   const { locale, setLocale } = useLanguageStore();
   const { resolvedTheme, setTheme } = useThemeStore();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isNotifPopoverOpen, setIsNotifPopoverOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const notifPopoverRef = useRef<HTMLDivElement>(null);
+
+  const {
+    notifications,
+    unreadCount: hookUnreadCount,
+    markAsRead,
+    markAllAsRead,
+  } = useNotifications();
+
+  const unreadCount = typeof propUnreadCount === 'number' ? propUnreadCount : hookUnreadCount;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -54,6 +69,12 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
         !profileMenuRef.current.contains(event.target as Node)
       ) {
         setIsProfileMenuOpen(false);
+      }
+      if (
+        notifPopoverRef.current &&
+        !notifPopoverRef.current.contains(event.target as Node)
+      ) {
+        setIsNotifPopoverOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -69,15 +90,13 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
     }
   };
 
-  const displayName = citizenName || (user?.email ? user.email.split('@')[0] : 'Divyansh Gupta');
+  const displayName = citizenName || (user?.email ? user.email.split('@')[0] : 'Citizen');
 
   const toggleLanguage = () => {
     setLocale(locale === 'hi' ? 'en' : 'hi');
   };
 
-  const toggleTheme = () => {
-    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
-  };
+  const recentNotifications = notifications.slice(0, 4);
 
   return (
     <header className="sticky top-0 z-30 w-full bg-[#080C0A]/95 backdrop-blur-md border-b border-[#1C3127] transition-colors select-none">
@@ -97,7 +116,7 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
           <span className="text-sm font-bold text-white tracking-tight">BenefitOS</span>
         </div>
 
-        {/* Center: Global Search Bar matching reference image */}
+        {/* Center: Global Search Bar */}
         <div className="flex-1 max-w-2xl hidden md:block">
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -120,18 +139,103 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
 
         {/* Right Utility: Notifications & User Avatar Profile */}
         <div className="flex items-center gap-3 ml-auto">
-          {/* Notifications Icon Button with Red Dot */}
-          <button
-            type="button"
-            onClick={onNavigateToNotifications}
-            aria-label={`Notifications. ${unreadNotificationsCount} unread`}
-            className="relative p-2 rounded-full text-slate-300 hover:text-white hover:bg-[#16241D] border border-transparent hover:border-[#1C3127] transition-all focus:outline-none"
-          >
-            <BellIcon className="w-5 h-5 text-slate-300" />
-            {unreadNotificationsCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 shadow-sm" />
+          {/* Interactive Notifications Popover */}
+          <div className="relative" ref={notifPopoverRef}>
+            <button
+              type="button"
+              onClick={() => setIsNotifPopoverOpen((prev) => !prev)}
+              aria-label={`Notifications. ${unreadCount} unread`}
+              aria-expanded={isNotifPopoverOpen}
+              className="relative p-2 rounded-full text-slate-300 hover:text-white hover:bg-[#16241D] border border-transparent hover:border-[#1C3127] transition-all focus:outline-none"
+            >
+              <BellIcon className="w-5 h-5 text-slate-300" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-[#080C0A] shadow-sm animate-pulse" />
+              )}
+            </button>
+
+            {/* Notification Popover Dropdown */}
+            {isNotifPopoverOpen && (
+              <div
+                role="dialog"
+                aria-label="Notifications preview"
+                className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-[#111C16] border border-[#1C3127] shadow-2xl py-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+              >
+                {/* Header */}
+                <div className="px-4 pb-2.5 border-b border-[#1C3127] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white">Notifications</span>
+                    {unreadCount > 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/90 text-white">
+                        {unreadCount} new
+                      </span>
+                    )}
+                  </div>
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => markAllAsRead()}
+                      className="text-[11px] font-semibold text-mint-400 hover:text-mint-300 transition-colors"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+
+                {/* Items preview */}
+                <div className="max-h-72 overflow-y-auto divide-y divide-[#1C3127]/60">
+                  {recentNotifications.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-slate-400">
+                      No notifications yet.
+                    </div>
+                  ) : (
+                    recentNotifications.map((n) => (
+                      <div
+                        key={n.id}
+                        className={`p-3.5 hover:bg-[#16241D] transition-colors cursor-pointer flex items-start gap-3 ${
+                          !n.isRead ? 'bg-[#0E1A14]' : ''
+                        }`}
+                        onClick={() => {
+                          if (!n.isRead) markAsRead(n.id);
+                          setIsNotifPopoverOpen(false);
+                          if (onNavigateToNotifications) onNavigateToNotifications();
+                        }}
+                      >
+                        <div className="mt-0.5 shrink-0">
+                          {!n.isRead ? (
+                            <span className="w-2 h-2 block rounded-full bg-mint-400" />
+                          ) : (
+                            <span className="w-2 h-2 block rounded-full bg-slate-700" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-slate-200 truncate">{n.title}</p>
+                          <p className="text-[11px] text-slate-400 line-clamp-2 mt-0.5">{n.body}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Footer View All Link */}
+                <div className="pt-2.5 px-4 border-t border-[#1C3127] text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNotifPopoverOpen(false);
+                      if (onNavigateToNotifications) {
+                        onNavigateToNotifications();
+                      }
+                    }}
+                    className="w-full py-1.5 text-xs font-semibold text-mint-400 hover:text-white rounded-xl bg-[#16241D] hover:bg-[#1C3127] border border-[#264234] transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <span>View all notifications</span>
+                    <ExternalLinkIcon className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             )}
-          </button>
+          </div>
 
           {/* User Profile Pill & Dropdown */}
           <div className="relative" ref={profileMenuRef}>
@@ -147,7 +251,6 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
                 alt={displayName}
                 className="w-8 h-8 rounded-full object-cover border border-mint-500/40 shadow-sm"
                 onError={(e) => {
-                  // Fallback to stylized monogram if image is missing
                   (e.currentTarget as any).style.display = 'none';
                   e.currentTarget.parentElement?.querySelector('.avatar-monogram')?.classList.remove('hidden');
                 }}
@@ -211,6 +314,21 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
                     </button>
                   )}
 
+                  {onNavigateToNotifications && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        onNavigateToNotifications();
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs font-medium text-slate-200 hover:bg-[#16241D] hover:text-mint-300 flex items-center gap-2.5 transition-colors"
+                    >
+                      <BellIcon className="w-4 h-4 text-mint-400" />
+                      <span>Notifications ({unreadCount})</span>
+                    </button>
+                  )}
+
                   {onNavigateToAiCopilot && (
                     <button
                       type="button"
@@ -267,4 +385,3 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
     </header>
   );
 };
-

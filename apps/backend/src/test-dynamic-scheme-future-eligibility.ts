@@ -316,8 +316,20 @@ async function runDynamicSchemeDiscoverySuite() {
     },
   };
 
+  const mockAiValidator: any = {
+    validateEligibility: async (_citizen: any, scheme: any, detailed: any) => ({
+      decision: detailed.eligibilityStatus === 'ELIGIBLE' ? 'CLAIM_READY' : 'NOT_ELIGIBLE',
+      confidence: 0.95,
+      reason: detailed.statusReason,
+      allNonDocumentCriteriaSatisfied: detailed.eligibilityStatus === 'ELIGIBLE',
+      onlyDocumentsRemaining: detailed.eligibilityStatus === 'ELIGIBLE',
+      requiredDocuments: scheme.requiredDocuments || [],
+    }),
+  };
+
   const recommendationService = new RecommendationEngineService(
     evaluator,
+    mockAiValidator,
     mockCitizenRepo,
     mockSchemeRepo,
     mockRecommendationRepo,
@@ -355,10 +367,10 @@ async function runDynamicSchemeDiscoverySuite() {
     // Recommendation engine operates independently of Gemini
     const outageRecs = await recommendationService.getEnrichedRecommendations(studentAge19.userId);
     assert(outageRecs.length === 3, 'Gemini Resilience: Scheme recommendations load successfully even if AI is down');
-    const eligibleNow = outageRecs.filter(r => r.eligibilityStatus === 'ELIGIBLE');
+    const eligibleNow = outageRecs.filter(r => r.eligibilityStatus === 'CLAIM_READY' || r.eligibilityStatus === 'ELIGIBLE' || r.isEligible);
     assert(eligibleNow.length >= 1, 'Gemini Resilience: Confirmed Eligible Now schemes available during AI outage');
-  } catch (err) {
-    throw new Error('Recommendation system failed during simulated AI outage!');
+  } catch (err: any) {
+    throw new Error(`Recommendation system failed during simulated AI outage: ${err?.message}`);
   }
 
   console.log('\n========================================================================');

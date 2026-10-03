@@ -114,6 +114,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, activeTab }) => 
       ? 'vault'
       : location.pathname.startsWith('/government-services')
       ? 'government-services'
+      : location.pathname.startsWith('/notifications')
+      ? 'notifications'
       : location.pathname.startsWith('/profile')
       ? 'profile'
       : 'dashboard');
@@ -125,7 +127,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, activeTab }) => 
         onToggleSidebar={handleToggleSidebar}
         isSidebarOpen={isSidebarVisible}
         onNavigateToProfile={() => navigate('/profile')}
-        onNavigateToNotifications={() => navigate('/profile')}
+        onNavigateToNotifications={() => navigate('/notifications')}
         unreadNotificationsCount={unreadNotifsCount}
         profileCompletionPercentage={completionPct}
         citizenName={citizenFullName}
@@ -147,7 +149,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, activeTab }) => 
           onNavigateToVault={() => navigate('/documents')}
           onNavigateToGovernmentServices={() => navigate('/government-services')}
           onNavigateToProfile={() => navigate('/profile')}
-          onNavigateToNotifications={() => navigate('/profile')}
+          onNavigateToNotifications={() => navigate('/notifications')}
           onNavigateToHelp={() => navigate('/ai/copilot')}
           onNavigateToSettings={() => navigate('/profile')}
           unreadNotificationsCount={unreadNotifsCount}

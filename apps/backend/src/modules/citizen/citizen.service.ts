@@ -5,6 +5,8 @@ import { UpdateCitizenProfileDto } from './dto/citizen.dto';
 import { randomUUID } from 'crypto';
 import { ISchemeRecommendationRepository } from '../../domain/welfare/welfare-repository.interface';
 import { AiCacheService } from '../../infrastructure/ai/ai-cache.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType, NotificationSeverity } from '../../domain/notification/notification-repository.interface';
 
 @Injectable()
 export class CitizenService {
@@ -12,6 +14,7 @@ export class CitizenService {
     @Inject('ICitizenRepository') private readonly citizenRepo: ICitizenRepository,
     @Inject('ISchemeRecommendationRepository') private readonly recommendationRepo?: ISchemeRecommendationRepository,
     @Optional() private readonly aiCacheService?: AiCacheService,
+    @Inject(NotificationService) @Optional() private readonly notificationService?: NotificationService,
   ) {}
 
   async getProfileByUserId(userId: string): Promise<CitizenEntity> {
@@ -77,6 +80,22 @@ export class CitizenService {
     if (this.aiCacheService) {
       await this.aiCacheService.invalidateForUser(userId);
     }
+
+    if (this.notificationService) {
+      try {
+        await this.notificationService.createNotification({
+          userId,
+          type: NotificationType.PROFILE_INCOMPLETE,
+          title: 'Profile Updated',
+          body: 'Your citizen profile has been updated. Scheme eligibility criteria have been refreshed.',
+          severity: NotificationSeverity.SUCCESS,
+          deduplicateMinutes: 10,
+        });
+      } catch (err) {
+        // silent fail
+      }
+    }
+
     return updated;
   }
 }

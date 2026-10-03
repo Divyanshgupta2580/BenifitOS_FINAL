@@ -6,8 +6,10 @@ import { GeminiAiAdapter } from '../../infrastructure/ai/gemini-ai.adapter';
 import { DocumentRepositoryImpl } from '../../infrastructure/database/repositories/document.repository';
 import { LocalStorageAdapter } from '../../infrastructure/storage/local-storage.adapter';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
+  imports: [NotificationModule],
   controllers: [DocumentController],
   providers: [
     DocumentService,

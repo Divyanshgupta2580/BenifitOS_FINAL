@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, Inject, Optional, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { IDocumentRepository } from '../../domain/document/document-repository.interface';
 import { DocumentEntity, VerificationStatus } from '../../domain/document/document.entity';
 import { DocumentType, DOCUMENT_TYPE_DISPLAY_NAMES } from '../../domain/welfare/scheme.entity';
@@ -7,6 +7,8 @@ import { DocumentClassificationService } from './document-classification.service
 import { GeminiAiAdapter } from '../../infrastructure/ai/gemini-ai.adapter';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { randomUUID } from 'crypto';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType, NotificationSeverity } from '../../domain/notification/notification-repository.interface';
 
 @Injectable()
 export class DocumentService {
@@ -18,6 +20,7 @@ export class DocumentService {
     private readonly classificationService: DocumentClassificationService,
     private readonly geminiAdapter: GeminiAiAdapter,
     private readonly prisma: PrismaService,
+    @Inject(NotificationService) @Optional() private readonly notificationService?: NotificationService,
   ) {}
 
   async uploadDocument(
@@ -150,6 +153,22 @@ export class DocumentService {
       }
     }
 
+    if (this.notificationService) {
+      try {
+        const docDisplayName = DOCUMENT_TYPE_DISPLAY_NAMES[classification.detectedType] || classification.detectedType;
+        await this.notificationService.createNotification({
+          userId,
+          type: NotificationType.DOCUMENT_VERIFIED,
+          title: 'Document Uploaded',
+          body: `Your ${docDisplayName} was uploaded successfully and is ready for review.`,
+          severity: NotificationSeverity.INFO,
+          metadata: { documentId: savedDoc.id, documentType: classification.detectedType },
+        });
+      } catch (err) {
+        // silent
+      }
+    }
+
     return {
       document: savedDoc,
       classification: {
@@ -232,6 +251,22 @@ export class DocumentService {
     // Update document to PENDING (pending government / administrative verification)
     doc.updateVerificationStatus(VerificationStatus.PENDING);
     const updatedDoc = await this.documentRepo.update(doc);
+
+    if (this.notificationService) {
+      try {
+        const docDisplayName = DOCUMENT_TYPE_DISPLAY_NAMES[doc.documentType] || doc.documentType;
+        await this.notificationService.createNotification({
+          userId,
+          type: NotificationType.DOCUMENT_VERIFIED,
+          title: 'Document Details Confirmed',
+          body: `Extracted details for ${docDisplayName} confirmed and submitted for verification.`,
+          severity: NotificationSeverity.SUCCESS,
+          metadata: { documentId: id, documentType: doc.documentType },
+        });
+      } catch (err) {
+        // silent
+      }
+    }
 
     return {
       message: 'Extracted attributes confirmed by citizen. Awaiting administrative verification.',

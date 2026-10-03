@@ -114,6 +114,13 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       icon: <UserIcon className="w-5 h-5" />,
       onClick: onNavigateToProfile,
     },
+    {
+      id: 'notifications' as DashboardNavTab,
+      label: 'Notifications',
+      icon: <BellIcon className="w-5 h-5" />,
+      onClick: onNavigateToNotifications || (() => {}),
+      badgeCount: unreadNotificationsCount,
+    },
   ];
 
   const handleBrandClick = () => {

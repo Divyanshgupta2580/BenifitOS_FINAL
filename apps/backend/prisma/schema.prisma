@@ -120,6 +120,35 @@ enum OutboxStatus {
   FAILED
 }
 
+enum NotificationType {
+  SCHEME_ELIGIBILITY
+  DOCUMENT_REQUIRED
+  DOCUMENT_VERIFIED
+  DOCUMENT_REJECTED
+  APPLICATION_SUBMITTED
+  APPLICATION_STATUS_CHANGED
+  PROFILE_INCOMPLETE
+  AI_GUIDANCE
+  SYSTEM
+}
+
+enum NotificationSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+enum EligibilityStatus {
+  NOT_ELIGIBLE
+  PARTIALLY_ELIGIBLE
+  INSUFFICIENT_DATA
+  CLAIM_READY
+  DOCUMENTS_PENDING
+  APPLICATION_READY
+  REVIEW_REQUIRED
+}
+
 enum CacheStatus {
   ACTIVE
   EXPIRED
@@ -307,9 +336,11 @@ model SchemeRecommendation {
   matchPercentage    Float
   estimatedBenefit   Float
   isEligible         Boolean
+  status             EligibilityStatus  @default(NOT_ELIGIBLE)
   criteriaMet        String[]
   missingCriteria    String[]
   missingDocuments   DocumentType[]
+  aiValidation       Json?
   calculatedAt       DateTime           @default(now())
 
   citizenProfile     CitizenProfile     @relation(fields: [citizenProfileId], references: [id], onDelete: Cascade)
@@ -444,18 +475,22 @@ model AiMessage {
 }
 
 model Notification {
-  id               String      @id @default(uuid())
+  id               String               @id @default(uuid())
   userId           String
+  type             NotificationType     @default(SYSTEM)
   title            String
   body             String
-  channel          ChannelType @default(IN_APP)
-  isRead           Boolean     @default(false)
+  severity         NotificationSeverity @default(INFO)
+  channel          ChannelType          @default(IN_APP)
+  isRead           Boolean              @default(false)
   metadata         Json?
-  createdAt        DateTime    @default(now())
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @default(now()) @updatedAt
 
-  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
+  @@index([userId, createdAt])
   @@map("notifications")
 }
 

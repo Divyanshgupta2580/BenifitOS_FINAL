@@ -33,6 +33,7 @@ import { ApplicationDetailScreen } from '../screens/applications/ApplicationDeta
 import { AiAssistantScreen } from '../screens/ai/AiAssistantScreen';
 import { AiCopilotScreen } from '../screens/ai/AiCopilotScreen';
 import { GovernmentServicesScreen } from '../screens/integrations/GovernmentServicesScreen';
+import { NotificationsScreen } from '../screens/notifications/NotificationsScreen';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -217,6 +218,7 @@ export const AppNavigator: React.FC = () => {
         <Route path="/ai/chat" element={<ProtectedRoute><AiAssistantScreenWrapper /></ProtectedRoute>} />
         <Route path="/ai/copilot" element={<ProtectedRoute><AiCopilotScreenWrapper /></ProtectedRoute>} />
         <Route path="/government-services" element={<ProtectedRoute><GovernmentServicesScreenWrapper /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
 
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

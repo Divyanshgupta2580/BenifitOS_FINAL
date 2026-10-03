@@ -4,9 +4,17 @@ export declare class NotificationController {
     constructor(notificationService: NotificationService);
     getNotifications(userId: string): Promise<{
         count: number;
+        unreadCount: number;
         notifications: import("../../domain/notification/notification-repository.interface").NotificationProps[];
+    }>;
+    getUnreadCount(userId: string): Promise<{
+        unreadCount: number;
+    }>;
+    markAllAsRead(userId: string): Promise<{
+        message: string;
     }>;
     markAsRead(userId: string, id: string): Promise<{
         message: string;
     }>;
+    deleteNotification(userId: string, id: string): Promise<void>;
 }

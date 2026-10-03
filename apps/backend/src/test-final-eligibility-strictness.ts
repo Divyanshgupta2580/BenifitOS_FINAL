@@ -328,8 +328,20 @@ async function runSection5() {
     saveMany: async () => {},
   };
 
+  const mockAiValidator: any = {
+    validateEligibility: async (_citizen: any, scheme: any, detailed: any) => ({
+      decision: detailed.eligibilityStatus === 'ELIGIBLE' ? 'CLAIM_READY' : 'NOT_ELIGIBLE',
+      confidence: 0.95,
+      reason: detailed.statusReason,
+      allNonDocumentCriteriaSatisfied: detailed.eligibilityStatus === 'ELIGIBLE',
+      onlyDocumentsRemaining: detailed.eligibilityStatus === 'ELIGIBLE',
+      requiredDocuments: scheme.requiredDocuments || [],
+    }),
+  };
+
   const recService = new RecommendationEngineService(
     evaluator,
+    mockAiValidator,
     mockCitizenRepo,
     mockSchemeRepo,
     mockRecRepo,
@@ -338,7 +350,7 @@ async function runSection5() {
   // 1. Normal recommendation test: verify detailed evaluator status is returned directly
   const enriched = await recService.getEnrichedRecommendations('usr-audit-1');
   assert(enriched.length === 1, 'Enrichment Audit: Returns 1 recommendation');
-  assert(enriched[0].eligibilityStatus === 'ELIGIBLE', 'Enrichment Audit: Normal recommendation receives ELIGIBLE directly from evaluator');
+  assert(enriched[0].eligibilityStatus === 'CLAIM_READY' || enriched[0].eligibilityStatus === 'ELIGIBLE', 'Enrichment Audit: Normal recommendation receives ELIGIBLE/CLAIM_READY');
   assert(enriched[0].isEligible === true, 'Enrichment Audit: Normal recommendation isEligible is true');
 
   // 2. Orphaned scheme test (where schemeRepo.findById returns null)
@@ -360,6 +372,7 @@ async function runSection5() {
 
   const recServiceOrphan = new RecommendationEngineService(
     evaluator,
+    mockAiValidator,
     mockCitizenRepo,
     mockSchemeRepo,
     mockRecRepoWithOrphan,

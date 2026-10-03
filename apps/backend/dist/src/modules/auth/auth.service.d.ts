@@ -5,14 +5,16 @@ import { IUserRepository } from '../../domain/user/user-repository.interface';
 import { ICitizenRepository } from '../../domain/citizen/citizen-repository.interface';
 import { RedisService } from '../../infrastructure/redis/redis.service';
 import { EmailService } from '../../infrastructure/email/email.service';
+import { NotificationService } from '../notification/notification.service';
 export declare class AuthService {
     private readonly userRepo;
     private readonly citizenRepo;
     private readonly jwtService;
     private readonly redisService;
     private readonly emailService?;
+    private readonly notificationService?;
     private readonly logger;
-    constructor(userRepo: IUserRepository, citizenRepo: ICitizenRepository, jwtService: JwtService, redisService: RedisService, emailService?: EmailService | undefined);
+    constructor(userRepo: IUserRepository, citizenRepo: ICitizenRepository, jwtService: JwtService, redisService: RedisService, emailService?: EmailService | undefined, notificationService?: NotificationService | undefined);
     register(dto: RegisterDto): Promise<{
         user: UserEntity;
         accessToken: string;

@@ -23,14 +23,27 @@ let NotificationController = class NotificationController {
     }
     async getNotifications(userId) {
         const notifications = await this.notificationService.getUserNotifications(userId);
+        const unreadCount = await this.notificationService.getUnreadCount(userId);
         return {
             count: notifications.length,
+            unreadCount,
             notifications,
         };
+    }
+    async getUnreadCount(userId) {
+        const unreadCount = await this.notificationService.getUnreadCount(userId);
+        return { unreadCount };
+    }
+    async markAllAsRead(userId) {
+        await this.notificationService.markAllAsRead(userId);
+        return { message: 'All notifications marked as read.' };
     }
     async markAsRead(userId, id) {
         await this.notificationService.markAsRead(userId, id);
         return { message: 'Notification marked as read.' };
+    }
+    async deleteNotification(userId, id) {
+        await this.notificationService.deleteNotification(userId, id);
     }
 };
 exports.NotificationController = NotificationController;
@@ -42,6 +55,20 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], NotificationController.prototype, "getNotifications", null);
 __decorate([
+    (0, common_1.Get)('unread-count'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], NotificationController.prototype, "getUnreadCount", null);
+__decorate([
+    (0, common_1.Patch)('read-all'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], NotificationController.prototype, "markAllAsRead", null);
+__decorate([
     (0, common_1.Patch)(':id/read'),
     __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
     __param(1, (0, common_1.Param)('id')),
@@ -49,6 +76,15 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], NotificationController.prototype, "markAsRead", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], NotificationController.prototype, "deleteNotification", null);
 exports.NotificationController = NotificationController = __decorate([
     (0, common_1.Controller)('notifications'),
     __metadata("design:paramtypes", [notification_service_1.NotificationService])

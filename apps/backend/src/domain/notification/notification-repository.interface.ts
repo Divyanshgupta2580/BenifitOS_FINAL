@@ -6,21 +6,46 @@ export enum ChannelType {
   WEBSOCKET = 'WEBSOCKET',
 }
 
+export enum NotificationType {
+  SCHEME_ELIGIBILITY = 'SCHEME_ELIGIBILITY',
+  DOCUMENT_REQUIRED = 'DOCUMENT_REQUIRED',
+  DOCUMENT_VERIFIED = 'DOCUMENT_VERIFIED',
+  DOCUMENT_REJECTED = 'DOCUMENT_REJECTED',
+  APPLICATION_SUBMITTED = 'APPLICATION_SUBMITTED',
+  APPLICATION_STATUS_CHANGED = 'APPLICATION_STATUS_CHANGED',
+  PROFILE_INCOMPLETE = 'PROFILE_INCOMPLETE',
+  AI_GUIDANCE = 'AI_GUIDANCE',
+  SYSTEM = 'SYSTEM',
+}
+
+export enum NotificationSeverity {
+  INFO = 'INFO',
+  SUCCESS = 'SUCCESS',
+  WARNING = 'WARNING',
+  ERROR = 'ERROR',
+}
+
 export interface NotificationProps {
   id: string;
   userId: string;
+  type?: NotificationType;
   title: string;
   body: string;
+  severity?: NotificationSeverity;
   channel: ChannelType;
   isRead: boolean;
   metadata?: Record<string, any> | null;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface INotificationRepository {
   findById(id: string): Promise<NotificationProps | null>;
   findByUserId(userId: string): Promise<NotificationProps[]>;
+  countUnread(userId: string): Promise<number>;
   save(notification: NotificationProps): Promise<NotificationProps>;
   markAsRead(id: string): Promise<void>;
   markAllAsRead(userId: string): Promise<void>;
+  delete(id: string): Promise<void>;
+  findRecentSimilar(userId: string, type: NotificationType, title: string, withinMinutes: number): Promise<NotificationProps | null>;
 }

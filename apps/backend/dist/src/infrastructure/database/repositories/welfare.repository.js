@@ -134,9 +134,11 @@ let SchemeRecommendationRepositoryImpl = class SchemeRecommendationRepositoryImp
             matchPercentage: data.matchPercentage,
             estimatedBenefit: data.estimatedBenefit,
             isEligible: data.isEligible,
+            status: data.status || (data.isEligible ? 'CLAIM_READY' : 'NOT_ELIGIBLE'),
             criteriaMet: data.criteriaMet,
             missingCriteria: data.missingCriteria,
             missingDocuments: data.missingDocuments,
+            aiValidation: data.aiValidation || null,
             calculatedAt: data.calculatedAt,
         });
     }
@@ -166,17 +168,21 @@ let SchemeRecommendationRepositoryImpl = class SchemeRecommendationRepositoryImp
                     matchPercentage: rec.matchPercentage,
                     estimatedBenefit: rec.estimatedBenefit,
                     isEligible: rec.isEligible,
+                    status: rec.status || (rec.isEligible ? 'CLAIM_READY' : 'NOT_ELIGIBLE'),
                     criteriaMet: rec.criteriaMet,
                     missingCriteria: rec.missingCriteria,
                     missingDocuments: sanitizedMissingDocs,
+                    aiValidation: rec.aiValidation || null,
                 },
                 update: {
                     matchPercentage: rec.matchPercentage,
                     estimatedBenefit: rec.estimatedBenefit,
                     isEligible: rec.isEligible,
+                    status: rec.status || (rec.isEligible ? 'CLAIM_READY' : 'NOT_ELIGIBLE'),
                     criteriaMet: rec.criteriaMet,
                     missingCriteria: rec.missingCriteria,
                     missingDocuments: sanitizedMissingDocs,
+                    aiValidation: rec.aiValidation || null,
                 },
             });
         }

@@ -22,19 +22,23 @@ const user_entity_1 = require("../../domain/user/user.entity");
 const citizen_entity_1 = require("../../domain/citizen/citizen.entity");
 const redis_service_1 = require("../../infrastructure/redis/redis.service");
 const email_service_1 = require("../../infrastructure/email/email.service");
+const notification_service_1 = require("../notification/notification.service");
+const notification_repository_interface_1 = require("../../domain/notification/notification-repository.interface");
 let AuthService = AuthService_1 = class AuthService {
     userRepo;
     citizenRepo;
     jwtService;
     redisService;
     emailService;
+    notificationService;
     logger = new common_1.Logger(AuthService_1.name);
-    constructor(userRepo, citizenRepo, jwtService, redisService, emailService) {
+    constructor(userRepo, citizenRepo, jwtService, redisService, emailService, notificationService) {
         this.userRepo = userRepo;
         this.citizenRepo = citizenRepo;
         this.jwtService = jwtService;
         this.redisService = redisService;
         this.emailService = emailService;
+        this.notificationService = notificationService;
     }
     async register(dto) {
         const existing = await this.userRepo.findByEmail(dto.email);
@@ -79,6 +83,21 @@ let AuthService = AuthService_1 = class AuthService {
             },
         });
         await this.citizenRepo.save(citizen);
+        if (this.notificationService) {
+            try {
+                await this.notificationService.createNotification({
+                    userId: savedUser.id,
+                    type: notification_repository_interface_1.NotificationType.PROFILE_INCOMPLETE,
+                    title: 'Welcome to BenefitOS',
+                    body: 'Complete your citizen profile to unlock verified, claim-ready scheme eligibility.',
+                    severity: notification_repository_interface_1.NotificationSeverity.INFO,
+                    deduplicateMinutes: 60,
+                });
+            }
+            catch (notifErr) {
+                this.logger.warn(`Failed to create welcome notification for ${savedUser.id}: ${notifErr?.message}`);
+            }
+        }
         const tokens = await this.generateTokens(savedUser);
         return { user: savedUser, ...tokens };
     }
@@ -197,8 +216,10 @@ exports.AuthService = AuthService = AuthService_1 = __decorate([
     __param(0, (0, common_1.Inject)('IUserRepository')),
     __param(1, (0, common_1.Inject)('ICitizenRepository')),
     __param(4, (0, common_1.Inject)(email_service_1.EmailService)),
+    __param(5, (0, common_1.Inject)(notification_service_1.NotificationService)),
     __metadata("design:paramtypes", [Object, Object, jwt_1.JwtService,
         redis_service_1.RedisService,
-        email_service_1.EmailService])
+        email_service_1.EmailService,
+        notification_service_1.NotificationService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

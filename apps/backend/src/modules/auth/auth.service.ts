@@ -10,6 +10,9 @@ import { CitizenEntity, Gender, MaritalStatus, SocialCategory, EmploymentStatus,
 import { RedisService } from '../../infrastructure/redis/redis.service';
 import { EmailService } from '../../infrastructure/email/email.service';
 
+import { NotificationService } from '../notification/notification.service';
+import { NotificationType, NotificationSeverity } from '../../domain/notification/notification-repository.interface';
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -20,6 +23,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly redisService: RedisService,
     @Inject(EmailService) private readonly emailService?: EmailService,
+    @Inject(NotificationService) private readonly notificationService?: NotificationService,
   ) {}
 
   async register(dto: RegisterDto): Promise<{ user: UserEntity; accessToken: string; refreshToken: string }> {
@@ -70,6 +74,22 @@ export class AuthService {
     });
 
     await this.citizenRepo.save(citizen);
+
+    // Send welcome notification instructing user to complete their profile
+    if (this.notificationService) {
+      try {
+        await this.notificationService.createNotification({
+          userId: savedUser.id,
+          type: NotificationType.PROFILE_INCOMPLETE,
+          title: 'Welcome to BenefitOS',
+          body: 'Complete your citizen profile to unlock verified, claim-ready scheme eligibility.',
+          severity: NotificationSeverity.INFO,
+          deduplicateMinutes: 60,
+        });
+      } catch (notifErr: any) {
+        this.logger.warn(`Failed to create welcome notification for ${savedUser.id}: ${notifErr?.message}`);
+      }
+    }
 
     const tokens = await this.generateTokens(savedUser);
     return { user: savedUser, ...tokens };

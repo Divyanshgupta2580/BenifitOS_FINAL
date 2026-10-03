@@ -124,9 +124,11 @@ export class SchemeRecommendationRepositoryImpl implements ISchemeRecommendation
       matchPercentage: data.matchPercentage,
       estimatedBenefit: data.estimatedBenefit,
       isEligible: data.isEligible,
+      status: (data.status as any) || (data.isEligible ? 'CLAIM_READY' : 'NOT_ELIGIBLE'),
       criteriaMet: data.criteriaMet,
       missingCriteria: data.missingCriteria,
       missingDocuments: data.missingDocuments as DocumentType[],
+      aiValidation: (data.aiValidation as Record<string, any>) || null,
       calculatedAt: data.calculatedAt,
     });
   }
@@ -160,17 +162,21 @@ export class SchemeRecommendationRepositoryImpl implements ISchemeRecommendation
           matchPercentage: rec.matchPercentage,
           estimatedBenefit: rec.estimatedBenefit,
           isEligible: rec.isEligible,
+          status: (rec.status as any) || (rec.isEligible ? 'CLAIM_READY' : 'NOT_ELIGIBLE'),
           criteriaMet: rec.criteriaMet,
           missingCriteria: rec.missingCriteria,
           missingDocuments: sanitizedMissingDocs,
+          aiValidation: (rec.aiValidation as any) || null,
         },
         update: {
           matchPercentage: rec.matchPercentage,
           estimatedBenefit: rec.estimatedBenefit,
           isEligible: rec.isEligible,
+          status: (rec.status as any) || (rec.isEligible ? 'CLAIM_READY' : 'NOT_ELIGIBLE'),
           criteriaMet: rec.criteriaMet,
           missingCriteria: rec.missingCriteria,
           missingDocuments: sanitizedMissingDocs,
+          aiValidation: (rec.aiValidation as any) || null,
         },
       });
     }

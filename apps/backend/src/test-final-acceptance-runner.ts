@@ -8,6 +8,7 @@ import { AuthService } from './modules/auth/auth.service';
 import { CitizenService } from './modules/citizen/citizen.service';
 import { RecommendationEngineService } from './modules/recommendation/recommendation.service';
 import { EligibilityEvaluatorService } from './modules/recommendation/services/eligibility-evaluator.service';
+import { EligibilityAiValidatorService } from './modules/recommendation/services/eligibility-ai-validator.service';
 import { DocumentService } from './modules/document/document.service';
 import { DocumentClassificationService } from './modules/document/document-classification.service';
 import { ApplicationService } from './modules/application/application.service';
@@ -60,7 +61,8 @@ async function runAcceptanceTest() {
   const authService = new AuthService(userRepo, citizenRepo, jwtService, redisService);
   const citizenService = new CitizenService(citizenRepo, recommendationRepo, aiCache);
   const evaluatorService = new EligibilityEvaluatorService();
-  const recommendationEngine = new RecommendationEngineService(evaluatorService, citizenRepo, schemeRepo, recommendationRepo);
+  const aiValidatorService = new EligibilityAiValidatorService(geminiAdapter, aiCache);
+  const recommendationEngine = new RecommendationEngineService(evaluatorService, aiValidatorService, citizenRepo, schemeRepo, recommendationRepo);
   const storageAdapter = new LocalStorageAdapter();
   const classificationService = new DocumentClassificationService();
   const documentService = new DocumentService(documentRepo, storageAdapter, classificationService, geminiAdapter, prismaService);

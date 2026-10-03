@@ -8,6 +8,7 @@ import { UserRepositoryImpl } from '../../infrastructure/database/repositories/u
 import { CitizenRepositoryImpl } from '../../infrastructure/database/repositories/citizen.repository';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { RedisService } from '../../infrastructure/redis/redis.service';
+import { NotificationModule } from '../notification/notification.module';
 import { EmailService } from '../../infrastructure/email/email.service';
 
 @Module({
@@ -17,6 +18,7 @@ import { EmailService } from '../../infrastructure/email/email.service';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: (process.env.JWT_EXPIRATION || '15m') as any },
     }),
+    NotificationModule,
   ],
   controllers: [AuthController],
   providers: [

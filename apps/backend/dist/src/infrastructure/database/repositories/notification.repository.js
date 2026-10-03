@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationRepositoryImpl = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma.service");
+const notification_repository_interface_1 = require("../../../domain/notification/notification-repository.interface");
 let NotificationRepositoryImpl = class NotificationRepositoryImpl {
     prisma;
     constructor(prisma) {
@@ -21,12 +22,15 @@ let NotificationRepositoryImpl = class NotificationRepositoryImpl {
         return {
             id: data.id,
             userId: data.userId,
+            type: data.type || notification_repository_interface_1.NotificationType.SYSTEM,
             title: data.title,
             body: data.body,
+            severity: data.severity || notification_repository_interface_1.NotificationSeverity.INFO,
             channel: data.channel,
             isRead: data.isRead,
-            metadata: data.metadata,
+            metadata: data.metadata || null,
             createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
         };
     }
     async findById(id) {
@@ -37,18 +41,26 @@ let NotificationRepositoryImpl = class NotificationRepositoryImpl {
         const records = await this.prisma.client.notification.findMany({
             where: { userId },
             orderBy: { createdAt: 'desc' },
+            take: 100,
         });
         return records.map((r) => this.mapToEntity(r));
+    }
+    async countUnread(userId) {
+        return await this.prisma.client.notification.count({
+            where: { userId, isRead: false },
+        });
     }
     async save(notification) {
         const record = await this.prisma.client.notification.create({
             data: {
                 id: notification.id,
                 userId: notification.userId,
+                type: notification.type || 'SYSTEM',
                 title: notification.title,
                 body: notification.body,
-                channel: notification.channel,
-                isRead: notification.isRead,
+                severity: notification.severity || 'INFO',
+                channel: notification.channel || 'IN_APP',
+                isRead: notification.isRead || false,
                 metadata: notification.metadata || {},
             },
         });
@@ -65,6 +77,24 @@ let NotificationRepositoryImpl = class NotificationRepositoryImpl {
             where: { userId, isRead: false },
             data: { isRead: true },
         });
+    }
+    async delete(id) {
+        await this.prisma.client.notification.delete({
+            where: { id },
+        });
+    }
+    async findRecentSimilar(userId, type, title, withinMinutes) {
+        const since = new Date(Date.now() - withinMinutes * 60 * 1000);
+        const record = await this.prisma.client.notification.findFirst({
+            where: {
+                userId,
+                type,
+                title,
+                createdAt: { gte: since },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        return record ? this.mapToEntity(record) : null;
     }
 };
 exports.NotificationRepositoryImpl = NotificationRepositoryImpl;

@@ -15,11 +15,13 @@ const gemini_ai_adapter_1 = require("../../infrastructure/ai/gemini-ai.adapter")
 const document_repository_1 = require("../../infrastructure/database/repositories/document.repository");
 const local_storage_adapter_1 = require("../../infrastructure/storage/local-storage.adapter");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
+const notification_module_1 = require("../notification/notification.module");
 let DocumentModule = class DocumentModule {
 };
 exports.DocumentModule = DocumentModule;
 exports.DocumentModule = DocumentModule = __decorate([
     (0, common_1.Module)({
+        imports: [notification_module_1.NotificationModule],
         controllers: [document_controller_1.DocumentController],
         providers: [
             document_service_1.DocumentService,

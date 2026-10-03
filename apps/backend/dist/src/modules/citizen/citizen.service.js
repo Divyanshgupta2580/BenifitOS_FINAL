@@ -17,14 +17,18 @@ const common_1 = require("@nestjs/common");
 const citizen_entity_1 = require("../../domain/citizen/citizen.entity");
 const crypto_1 = require("crypto");
 const ai_cache_service_1 = require("../../infrastructure/ai/ai-cache.service");
+const notification_service_1 = require("../notification/notification.service");
+const notification_repository_interface_1 = require("../../domain/notification/notification-repository.interface");
 let CitizenService = class CitizenService {
     citizenRepo;
     recommendationRepo;
     aiCacheService;
-    constructor(citizenRepo, recommendationRepo, aiCacheService) {
+    notificationService;
+    constructor(citizenRepo, recommendationRepo, aiCacheService, notificationService) {
         this.citizenRepo = citizenRepo;
         this.recommendationRepo = recommendationRepo;
         this.aiCacheService = aiCacheService;
+        this.notificationService = notificationService;
     }
     async getProfileByUserId(userId) {
         const profile = await this.citizenRepo.findByUserId(userId);
@@ -85,6 +89,20 @@ let CitizenService = class CitizenService {
         if (this.aiCacheService) {
             await this.aiCacheService.invalidateForUser(userId);
         }
+        if (this.notificationService) {
+            try {
+                await this.notificationService.createNotification({
+                    userId,
+                    type: notification_repository_interface_1.NotificationType.PROFILE_INCOMPLETE,
+                    title: 'Profile Updated',
+                    body: 'Your citizen profile has been updated. Scheme eligibility criteria have been refreshed.',
+                    severity: notification_repository_interface_1.NotificationSeverity.SUCCESS,
+                    deduplicateMinutes: 10,
+                });
+            }
+            catch (err) {
+            }
+        }
         return updated;
     }
 };
@@ -94,6 +112,9 @@ exports.CitizenService = CitizenService = __decorate([
     __param(0, (0, common_1.Inject)('ICitizenRepository')),
     __param(1, (0, common_1.Inject)('ISchemeRecommendationRepository')),
     __param(2, (0, common_1.Optional)()),
-    __metadata("design:paramtypes", [Object, Object, ai_cache_service_1.AiCacheService])
+    __param(3, (0, common_1.Inject)(notification_service_1.NotificationService)),
+    __param(3, (0, common_1.Optional)()),
+    __metadata("design:paramtypes", [Object, Object, ai_cache_service_1.AiCacheService,
+        notification_service_1.NotificationService])
 ], CitizenService);
 //# sourceMappingURL=citizen.service.js.map

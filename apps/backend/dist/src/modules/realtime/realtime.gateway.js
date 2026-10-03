@@ -159,6 +159,7 @@ let RealtimeGateway = RealtimeGateway_1 = class RealtimeGateway {
     }
     emitNotification(userId, notificationData) {
         this.server.to(`user:${userId}`).emit('events.notification_received', notificationData);
+        this.server.to(`user:${userId}`).emit('notification:new', notificationData);
     }
 };
 exports.RealtimeGateway = RealtimeGateway;

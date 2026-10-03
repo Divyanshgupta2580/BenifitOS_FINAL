@@ -1,0 +1,227 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { GeminiAiAdapter } from '../../../infrastructure/ai/gemini-ai.adapter';
+import { AiCacheService } from '../../../infrastructure/ai/ai-cache.service';
+import { CitizenEntity } from '../../../domain/citizen/citizen.entity';
+import { WelfareSchemeEntity } from '../../../domain/welfare/scheme.entity';
+import { DetailedEvaluationResult } from './eligibility-evaluator.service';
+import { createHash } from 'crypto';
+
+export type ClaimReadyDecision = 'CLAIM_READY' | 'NOT_ELIGIBLE' | 'INSUFFICIENT_DATA' | 'REVIEW_REQUIRED';
+
+export interface AiValidationResult {
+  decision: ClaimReadyDecision;
+  allNonDocumentCriteriaSatisfied: boolean;
+  onlyDocumentsRemaining: boolean;
+  confidence: number;
+  failedCriteria: string[];
+  unverifiedCriteria: string[];
+  requiredDocuments: string[];
+  reason: string;
+  isCached?: boolean;
+}
+
+@Injectable()
+export class EligibilityAiValidatorService {
+  private readonly logger = new Logger(EligibilityAiValidatorService.name);
+
+  constructor(
+    private readonly geminiAdapter: GeminiAiAdapter,
+    private readonly aiCache: AiCacheService,
+  ) {}
+
+  async validateEligibility(
+    citizen: CitizenEntity,
+    scheme: WelfareSchemeEntity,
+    deterministic: DetailedEvaluationResult,
+  ): Promise<AiValidationResult> {
+    const requiredDocNames = (scheme.requiredDocuments || []).map((d: any) =>
+      typeof d === 'string' ? d : d.documentType || d.description,
+    );
+
+    // GUARD 1: Missing profile fields -> INSUFFICIENT_DATA
+    if (deterministic.missingProfileFields.length > 0) {
+      return {
+        decision: 'INSUFFICIENT_DATA',
+        allNonDocumentCriteriaSatisfied: false,
+        onlyDocumentsRemaining: false,
+        confidence: 1.0,
+        failedCriteria: [],
+        unverifiedCriteria: deterministic.missingProfileFields,
+        requiredDocuments: requiredDocNames,
+        reason: `Eligibility could not be confirmed yet: Missing required profile attributes (${deterministic.missingProfileFields.join(', ')}).`,
+      };
+    }
+
+    // GUARD 2: Deterministic failure -> NOT_ELIGIBLE (Gemini can NEVER override failure)
+    if (deterministic.eligibilityStatus === 'NOT_ELIGIBLE' || !deterministic.recommendation.isEligible) {
+      return {
+        decision: 'NOT_ELIGIBLE',
+        allNonDocumentCriteriaSatisfied: false,
+        onlyDocumentsRemaining: false,
+        confidence: 1.0,
+        failedCriteria: deterministic.failedRules.length > 0 ? deterministic.failedRules : [deterministic.statusReason],
+        unverifiedCriteria: [],
+        requiredDocuments: requiredDocNames,
+        reason: deterministic.statusReason || 'Mandatory statutory scheme criteria not satisfied.',
+      };
+    }
+
+    // GUARD 3: Deterministic passed all non-document rules -> Second-layer Gemini Validation
+    const citizenFacts = {
+      age: citizen.age,
+      gender: citizen.gender,
+      maritalStatus: citizen.maritalStatus,
+      employmentStatus: citizen.employmentStatus,
+      annualIncomeINR: citizen.annualIncomeINR,
+      isBplCardHolder: citizen.isBplCardHolder,
+      state: citizen.address?.state,
+      isRural: citizen.address?.isRural,
+      hasLand: citizen.landDetails && citizen.landDetails.length > 0,
+      disabilityType: citizen.disabilityType,
+    };
+
+    const schemeRules = (scheme.eligibilityRules || []).map((r) => ({
+      attribute: r.attributeKey,
+      operator: r.operator,
+      target: r.targetValue,
+      description: r.description,
+    }));
+
+    const profileHash = createHash('sha256')
+      .update(JSON.stringify(citizenFacts))
+      .digest('hex')
+      .substring(0, 16);
+
+    const schemeRuleHash = createHash('sha256')
+      .update(JSON.stringify({ code: scheme.code, rules: schemeRules, docs: requiredDocNames }))
+      .digest('hex')
+      .substring(0, 16);
+
+    const cacheKeyOptions = {
+      useCase: 'eligibility-validation' as const,
+      userId: citizen.userId,
+      schemeId: scheme.id,
+      schemeRuleHash,
+      minimizedProfileHash: profileHash,
+      language: 'en',
+      promptVersion: 'v2.0',
+    };
+
+    try {
+      const cached = await this.aiCache.getOrExecute(
+        cacheKeyOptions,
+        async () => {
+          const promptPayload = {
+            scheme: {
+              code: scheme.code,
+              title: scheme.title,
+              department: scheme.department,
+              rules: schemeRules,
+              requiredDocuments: requiredDocNames,
+            },
+            citizenProfileFacts: citizenFacts,
+            deterministicEngineResult: {
+              status: 'ELIGIBLE',
+              passedRules: deterministic.passedRules,
+              failedRules: deterministic.failedRules,
+            },
+          };
+
+          const systemInstruction = `You are the BenefitOS Welfare Scheme Eligibility Auditor.
+Your responsibility is to perform strict second-layer verification of citizen eligibility for government welfare schemes.
+CRITICAL AUDIT RULES:
+1. Base your evaluation ONLY on the supplied facts from the verified database.
+2. DO NOT hallucinate, infer, or invent missing information.
+3. If every required non-document criterion is satisfied by the citizen's profile facts, set "decision": "CLAIM_READY", "allNonDocumentCriteriaSatisfied": true, "onlyDocumentsRemaining": true.
+4. If any mandatory criterion fails or is missing, set "decision": "NOT_ELIGIBLE" or "INSUFFICIENT_DATA".
+5. Return ONLY a valid JSON object matching this schema:
+{
+  "decision": "CLAIM_READY" | "NOT_ELIGIBLE" | "INSUFFICIENT_DATA" | "REVIEW_REQUIRED",
+  "allNonDocumentCriteriaSatisfied": boolean,
+  "onlyDocumentsRemaining": boolean,
+  "confidence": number,
+  "failedCriteria": string[],
+  "unverifiedCriteria": string[],
+  "requiredDocuments": string[],
+  "reason": string
+}`;
+
+          const res = await this.geminiAdapter.generateText({
+            prompt: `Audit eligibility for this applicant:\n${JSON.stringify(promptPayload, null, 2)}`,
+            systemInstruction,
+            temperature: 0.1,
+          });
+
+          // Clean JSON markdown fences if present
+          let jsonText = res.content.trim();
+          if (jsonText.startsWith('```')) {
+            jsonText = jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+          }
+
+          try {
+            const parsed = JSON.parse(jsonText);
+            const decision: ClaimReadyDecision =
+              parsed.decision === 'CLAIM_READY' && parsed.allNonDocumentCriteriaSatisfied === true
+                ? 'CLAIM_READY'
+                : parsed.decision === 'INSUFFICIENT_DATA'
+                ? 'INSUFFICIENT_DATA'
+                : parsed.decision === 'REVIEW_REQUIRED'
+                ? 'REVIEW_REQUIRED'
+                : 'NOT_ELIGIBLE';
+
+            const validated: AiValidationResult = {
+              decision,
+              allNonDocumentCriteriaSatisfied: !!parsed.allNonDocumentCriteriaSatisfied,
+              onlyDocumentsRemaining: !!parsed.onlyDocumentsRemaining,
+              confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.98,
+              failedCriteria: Array.isArray(parsed.failedCriteria) ? parsed.failedCriteria : [],
+              unverifiedCriteria: Array.isArray(parsed.unverifiedCriteria) ? parsed.unverifiedCriteria : [],
+              requiredDocuments: Array.isArray(parsed.requiredDocuments) ? parsed.requiredDocuments : requiredDocNames,
+              reason: parsed.reason || 'Verified statutory eligibility conditions satisfied.',
+            };
+
+            return {
+              content: JSON.stringify(validated),
+              provider: res.provider || 'Gemini Eligibility Auditor',
+            };
+          } catch (parseErr) {
+            // Fallback to strict deterministic confirmation
+            const fallback: AiValidationResult = {
+              decision: 'CLAIM_READY',
+              allNonDocumentCriteriaSatisfied: true,
+              onlyDocumentsRemaining: true,
+              confidence: 0.95,
+              failedCriteria: [],
+              unverifiedCriteria: [],
+              requiredDocuments: requiredDocNames,
+              reason: 'All non-document statutory eligibility conditions verified and satisfied based on stored profile.',
+            };
+            return {
+              content: JSON.stringify(fallback),
+              provider: 'Deterministic Rule Auditor',
+            };
+          }
+        },
+        24,
+      );
+
+      const parsedResult: AiValidationResult = JSON.parse(cached.content);
+      return {
+        ...parsedResult,
+        isCached: cached.isCached,
+      };
+    } catch (err: any) {
+      this.logger.warn(`AI eligibility validation fallback: ${err?.message}`);
+      return {
+        decision: 'CLAIM_READY',
+        allNonDocumentCriteriaSatisfied: true,
+        onlyDocumentsRemaining: true,
+        confidence: 0.92,
+        failedCriteria: [],
+        unverifiedCriteria: [],
+        requiredDocuments: requiredDocNames,
+        reason: 'Statutory eligibility criteria verified and satisfied by deterministic engine.',
+      };
+    }
+  }
+}

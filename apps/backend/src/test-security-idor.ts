@@ -401,10 +401,15 @@ async function runSecurityAuditTests() {
   const notifA = await notifService.sendNotification(userA_Id, 'Application Update', 'Your application is under review');
   assert(notifA.isRead === false, 'Notification created for User A (unread)');
 
-  // User B attempts to mark User A's notification as read -> Should not affect User A's notification
-  await notifService.markAsRead(userB_Id, notifA.id);
+  // User B attempts to mark User A's notification as read -> Throws ForbiddenException and does not affect User A
+  let userBNotifBlocked = false;
+  try {
+    await notifService.markAsRead(userB_Id, notifA.id);
+  } catch (err: any) {
+    userBNotifBlocked = true;
+  }
   const notifCheck = await notifRepo.findById(notifA.id);
-  assert(notifCheck.isRead === false, 'User B cannot mark User A notification as read (IDOR prevented)');
+  assert(userBNotifBlocked && notifCheck.isRead === false, 'User B cannot mark User A notification as read (IDOR prevented with 403 Forbidden)');
 
   // User A marks their own notification as read -> Succeeds
   await notifService.markAsRead(userA_Id, notifA.id);

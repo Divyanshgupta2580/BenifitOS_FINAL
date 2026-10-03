@@ -12,11 +12,13 @@ const application_controller_1 = require("./application.controller");
 const application_service_1 = require("./application.service");
 const application_repository_1 = require("../../infrastructure/database/repositories/application.repository");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
+const notification_module_1 = require("../notification/notification.module");
 let ApplicationModule = class ApplicationModule {
 };
 exports.ApplicationModule = ApplicationModule;
 exports.ApplicationModule = ApplicationModule = __decorate([
     (0, common_1.Module)({
+        imports: [notification_module_1.NotificationModule],
         controllers: [application_controller_1.ApplicationController],
         providers: [
             application_service_1.ApplicationService,

@@ -11,7 +11,8 @@ export interface SchemeRecommendationItem {
   matchPercentage: number;
   estimatedBenefit: number;
   isEligible: boolean;
-  eligibilityStatus: 'ELIGIBLE' | 'FUTURE_ELIGIBLE' | 'NOT_ELIGIBLE' | 'NEEDS_VERIFICATION' | 'INCOMPLETE_PROFILE';
+  status?: 'CLAIM_READY' | 'DOCUMENTS_PENDING' | 'ELIGIBLE' | 'FUTURE_ELIGIBLE' | 'NOT_ELIGIBLE' | 'INSUFFICIENT_DATA' | 'NEEDS_VERIFICATION' | 'INCOMPLETE_PROFILE' | 'REVIEW_REQUIRED';
+  eligibilityStatus: 'CLAIM_READY' | 'DOCUMENTS_PENDING' | 'ELIGIBLE' | 'FUTURE_ELIGIBLE' | 'NOT_ELIGIBLE' | 'INSUFFICIENT_DATA' | 'NEEDS_VERIFICATION' | 'INCOMPLETE_PROFILE' | 'REVIEW_REQUIRED';
   eligibilityTiming?: 'NOW' | 'IN_1_YEAR' | 'IN_2_YEARS' | 'IN_3_YEARS' | 'NOT_APPLICABLE';
   yearsUntilEligible?: number | null;
   statusReason?: string;
@@ -22,6 +23,14 @@ export interface SchemeRecommendationItem {
   criteriaMet: string[];
   missingCriteria: string[];
   missingDocuments: string[];
+  aiValidation?: {
+    decision: string;
+    confidence: number;
+    reason: string;
+    allNonDocumentCriteriaSatisfied?: boolean;
+    onlyDocumentsRemaining?: boolean;
+    requiredDocuments?: string[];
+  };
   calculatedAt?: string;
   scheme?: {
     id: string;

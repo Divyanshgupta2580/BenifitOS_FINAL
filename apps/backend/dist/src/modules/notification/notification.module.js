@@ -12,11 +12,13 @@ const notification_controller_1 = require("./notification.controller");
 const notification_service_1 = require("./notification.service");
 const notification_repository_1 = require("../../infrastructure/database/repositories/notification.repository");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
+const realtime_module_1 = require("../realtime/realtime.module");
 let NotificationModule = class NotificationModule {
 };
 exports.NotificationModule = NotificationModule;
 exports.NotificationModule = NotificationModule = __decorate([
     (0, common_1.Module)({
+        imports: [(0, common_1.forwardRef)(() => realtime_module_1.RealtimeModule)],
         controllers: [notification_controller_1.NotificationController],
         providers: [
             notification_service_1.NotificationService,

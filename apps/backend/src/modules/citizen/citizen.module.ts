@@ -5,9 +5,10 @@ import { CitizenRepositoryImpl } from '../../infrastructure/database/repositorie
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { SchemeRecommendationRepositoryImpl } from '../../infrastructure/database/repositories/welfare.repository';
 import { AiModule } from '../ai/ai.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [AiModule],
+  imports: [AiModule, NotificationModule],
   controllers: [CitizenController],
   providers: [
     CitizenService,

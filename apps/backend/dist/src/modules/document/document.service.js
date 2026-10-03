@@ -22,19 +22,23 @@ const document_classification_service_1 = require("./document-classification.ser
 const gemini_ai_adapter_1 = require("../../infrastructure/ai/gemini-ai.adapter");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
 const crypto_1 = require("crypto");
+const notification_service_1 = require("../notification/notification.service");
+const notification_repository_interface_1 = require("../../domain/notification/notification-repository.interface");
 let DocumentService = DocumentService_1 = class DocumentService {
     documentRepo;
     storageAdapter;
     classificationService;
     geminiAdapter;
     prisma;
+    notificationService;
     logger = new common_1.Logger(DocumentService_1.name);
-    constructor(documentRepo, storageAdapter, classificationService, geminiAdapter, prisma) {
+    constructor(documentRepo, storageAdapter, classificationService, geminiAdapter, prisma, notificationService) {
         this.documentRepo = documentRepo;
         this.storageAdapter = storageAdapter;
         this.classificationService = classificationService;
         this.geminiAdapter = geminiAdapter;
         this.prisma = prisma;
+        this.notificationService = notificationService;
     }
     async uploadDocument(userId, requiredDocumentType, file) {
         const validTypes = Object.values(scheme_entity_1.DocumentType);
@@ -133,6 +137,21 @@ let DocumentService = DocumentService_1 = class DocumentService {
                 }
             }
         }
+        if (this.notificationService) {
+            try {
+                const docDisplayName = scheme_entity_1.DOCUMENT_TYPE_DISPLAY_NAMES[classification.detectedType] || classification.detectedType;
+                await this.notificationService.createNotification({
+                    userId,
+                    type: notification_repository_interface_1.NotificationType.DOCUMENT_VERIFIED,
+                    title: 'Document Uploaded',
+                    body: `Your ${docDisplayName} was uploaded successfully and is ready for review.`,
+                    severity: notification_repository_interface_1.NotificationSeverity.INFO,
+                    metadata: { documentId: savedDoc.id, documentType: classification.detectedType },
+                });
+            }
+            catch (err) {
+            }
+        }
         return {
             document: savedDoc,
             classification: {
@@ -201,6 +220,21 @@ let DocumentService = DocumentService_1 = class DocumentService {
         }
         doc.updateVerificationStatus(document_entity_1.VerificationStatus.PENDING);
         const updatedDoc = await this.documentRepo.update(doc);
+        if (this.notificationService) {
+            try {
+                const docDisplayName = scheme_entity_1.DOCUMENT_TYPE_DISPLAY_NAMES[doc.documentType] || doc.documentType;
+                await this.notificationService.createNotification({
+                    userId,
+                    type: notification_repository_interface_1.NotificationType.DOCUMENT_VERIFIED,
+                    title: 'Document Details Confirmed',
+                    body: `Extracted details for ${docDisplayName} confirmed and submitted for verification.`,
+                    severity: notification_repository_interface_1.NotificationSeverity.SUCCESS,
+                    metadata: { documentId: id, documentType: doc.documentType },
+                });
+            }
+            catch (err) {
+            }
+        }
         return {
             message: 'Extracted attributes confirmed by citizen. Awaiting administrative verification.',
             document: updatedDoc,
@@ -222,9 +256,12 @@ exports.DocumentService = DocumentService;
 exports.DocumentService = DocumentService = DocumentService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('IDocumentRepository')),
+    __param(5, (0, common_1.Inject)(notification_service_1.NotificationService)),
+    __param(5, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [Object, local_storage_adapter_1.LocalStorageAdapter,
         document_classification_service_1.DocumentClassificationService,
         gemini_ai_adapter_1.GeminiAiAdapter,
-        prisma_service_1.PrismaService])
+        prisma_service_1.PrismaService,
+        notification_service_1.NotificationService])
 ], DocumentService);
 //# sourceMappingURL=document.service.js.map
