@@ -3,6 +3,7 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { CheckCircle2Icon, AlertTriangleIcon, ClockIcon, ArrowRightIcon } from '../../components/ui/Icons';
 import { useApplication } from '../../hooks/useApplication';
 import { AppLayout } from '../../components/layout/AppLayout';
+import { ErrorState } from '../../components/ui/ErrorState';
 
 interface Props {
   applicationId: string;
@@ -31,20 +32,14 @@ export const ApplicationTimelineScreen: React.FC<Props> = ({
     return (
       <AppLayout activeTab="applications">
         <main className="flex flex-col justify-center items-center min-h-[60vh] p-6 text-center">
-          <div className="bg-[#0E1712] p-8 rounded-2xl border border-[#1C3127]/80 max-w-md w-full shadow-lg space-y-4">
-            <p className="text-sm font-semibold text-rose-300">Could not load application timeline from server.</p>
-            <button
-              onClick={() => refetch()}
-              className="w-full py-2.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs transition-colors"
-            >
-              Retry
-            </button>
-            <button
-              onClick={onBack}
-              className="w-full py-2.5 rounded-xl bg-forest-900 border border-[#1C3127] text-slate-300 hover:text-white text-xs font-semibold transition-colors"
-            >
-              Back to Applications
-            </button>
+          <div className="max-w-md w-full">
+            <ErrorState
+              title="Timeline Unavailable"
+              message="Could not load application timeline from the server. Please verify your connection."
+              onRetry={() => refetch()}
+              onSecondaryAction={onBack}
+              secondaryActionLabel="Back to Applications"
+            />
           </div>
         </main>
       </AppLayout>

@@ -4,6 +4,7 @@ import { useScheme } from '../../hooks/useScheme';
 import { SchemeInstructionsSection } from '../../components/ui/SchemeInstructionsSection';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { LandmarkIcon, CheckCircle2Icon, DocumentTextIcon, ArrowRightIcon } from '../../components/ui/Icons';
+import { ErrorState } from '../../components/ui/ErrorState';
 
 interface Props {
   schemeId: string;
@@ -28,20 +29,14 @@ export const SchemeDetailScreen: React.FC<Props> = ({ schemeId, onBack, onSimula
     return (
       <AppLayout activeTab="schemes">
         <main className="flex flex-col justify-center items-center min-h-[60vh] p-6 text-center">
-          <div className="bg-[#0E1712] p-8 rounded-2xl border border-[#1C3127]/80 max-w-md w-full shadow-lg space-y-4">
-            <p className="text-sm font-semibold text-rose-300">Could not load scheme details from server.</p>
-            <button
-              onClick={() => refetch()}
-              className="w-full py-2.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs transition-colors"
-            >
-              Retry Connection
-            </button>
-            <button
-              onClick={onBack}
-              className="w-full py-2.5 rounded-xl bg-forest-900 border border-[#1C3127] text-slate-300 hover:text-white text-xs font-semibold transition-colors"
-            >
-              Back to Catalog
-            </button>
+          <div className="max-w-md w-full">
+            <ErrorState
+              title="Scheme Unavailable"
+              message="Could not load scheme details from the server. Please verify your connection."
+              onRetry={() => refetch()}
+              onSecondaryAction={onBack}
+              secondaryActionLabel="Back to Catalog"
+            />
           </div>
         </main>
       </AppLayout>

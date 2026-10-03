@@ -3,6 +3,8 @@ import { Skeleton } from '../../components/ui/Skeleton';
 import { useSchemes } from '../../hooks/useSchemes';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { SearchIcon, ArrowRightIcon, LandmarkIcon, BuildingIcon } from '../../components/ui/Icons';
+import { ErrorState } from '../../components/ui/ErrorState';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 const CATEGORIES = [
   { id: 'ALL', label: 'All Schemes' },
@@ -105,25 +107,23 @@ export const SchemeCatalogScreen: React.FC<Props> = ({ onSelectScheme, onBack })
             <Skeleton height={160} className="rounded-2xl" />
           </div>
         ) : isError ? (
-          <div className="rounded-2xl bg-[#160D10] border border-rose-900/60 p-8 text-center space-y-3">
-            <p className="text-sm font-semibold text-rose-300">
-              Unable to load scheme catalog from the server.
-            </p>
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-2 bg-rose-800 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors"
-            >
-              Retry Connection
-            </button>
-          </div>
+          <ErrorState
+            title="Scheme Catalog Unavailable"
+            message="We could not retrieve the welfare scheme catalog from the server. Please check your connection and retry."
+            onRetry={() => refetch()}
+            retryLabel="Retry Connection"
+          />
         ) : schemes.length === 0 ? (
-          <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-10 text-center space-y-2">
-            <LandmarkIcon className="w-8 h-8 text-slate-500 mx-auto" />
-            <p className="text-sm font-medium text-slate-300">No welfare schemes found</p>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              No results match your search keywords or filter. Try clearing filters.
-            </p>
-          </div>
+          <EmptyState
+            icon={<LandmarkIcon className="w-6 h-6 text-mint-400" />}
+            title="No Welfare Schemes Found"
+            description="No schemes match your selected category or search keywords. Try selecting another category or clearing your search filter."
+            actionLabel={search || selectedCategory !== 'ALL' ? 'Clear Filters' : undefined}
+            onAction={() => {
+              setSearch('');
+              setSelectedCategory('ALL');
+            }}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
             {schemes.map((scheme) => (

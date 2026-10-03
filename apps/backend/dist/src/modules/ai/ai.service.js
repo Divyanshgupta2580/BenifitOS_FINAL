@@ -610,6 +610,7 @@ Explain in clear, professional, natural language how they can fulfill missing cr
                 department: scheme?.department,
                 description: scheme?.description,
                 eligibilityRules: rules,
+                language: isHindi ? 'hi' : 'en',
             });
             const sanitized = this.sanitizeAiResponse(text);
             return { content: sanitized, provider: 'AI Copilot' };

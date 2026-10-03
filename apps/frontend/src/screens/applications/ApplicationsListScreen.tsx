@@ -4,6 +4,8 @@ import { ClipboardListIcon, PlusIcon, ArrowRightIcon, CheckCircle2Icon, ClockIco
 import { useApplications } from '../../hooks/useApplications';
 import { ApplicationItem } from '../../services/application.service';
 import { AppLayout } from '../../components/layout/AppLayout';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { ErrorState } from '../../components/ui/ErrorState';
 
 interface Props {
   onStartNewApplication: () => void;
@@ -129,33 +131,19 @@ export const ApplicationsListScreen: React.FC<Props> = ({
             <Skeleton height={160} className="rounded-2xl" />
           </div>
         ) : isError ? (
-          <div className="rounded-2xl bg-[#160D10] border border-rose-900/60 p-8 text-center space-y-3">
-            <p className="text-sm font-semibold text-rose-300">Unable to load application records.</p>
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-2 bg-rose-800 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors"
-            >
-              Retry Connection
-            </button>
-          </div>
+          <ErrorState
+            title="Unable to Load Applications"
+            message="We could not retrieve your submitted benefit applications. Please verify your connection."
+            onRetry={() => refetch()}
+          />
         ) : filteredApps.length === 0 ? (
-          <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-10 text-center flex flex-col items-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-forest-950 border border-[#1C3127] flex items-center justify-center text-purple-400">
-              <ClipboardListIcon className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white">No applications match selected filter</p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Apply for eligible welfare schemes to track your approval process here.
-              </p>
-            </div>
-            <button
-              onClick={onStartNewApplication}
-              className="px-4 py-2 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 text-xs font-bold transition-colors"
-            >
-              Start First Application
-            </button>
-          </div>
+          <EmptyState
+            icon={<ClipboardListIcon className="w-6 h-6 text-mint-400" />}
+            title="No applications match selected filter"
+            description="Apply for eligible welfare schemes to track your approval process and disbursement stages here."
+            actionLabel="Start First Application"
+            onAction={onStartNewApplication}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
             {filteredApps.map((item: ApplicationItem) => {

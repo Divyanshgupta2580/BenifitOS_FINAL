@@ -13,6 +13,7 @@ import {
   ChevronUpIcon,
 } from '../../components/ui/Icons';
 import { AppLayout } from '../../components/layout/AppLayout';
+import { ErrorState } from '../../components/ui/ErrorState';
 
 interface Props {
   onSelectRecommendation: (id: string) => void;
@@ -416,22 +417,13 @@ export const RecommendationDashboardScreen: React.FC<Props> = ({
             </div>
           </div>
         ) : isError ? (
-          <div className="rounded-2xl bg-[#160D10] border border-rose-900/60 p-8 text-center space-y-3 shadow-lg">
-            <h2 className="text-base font-bold text-rose-300">
-              Unable to load your eligibility results.
-            </h2>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
-              We encountered a connection issue while communicating with the recommendation engine. Your data is safe.
-            </p>
-            <div className="pt-2">
-              <button
-                onClick={() => refetch()}
-                className="px-5 py-2.5 bg-rose-800 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md"
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
+          <ErrorState
+            title="Unable to Load Recommendations"
+            message="We encountered a connection issue while communicating with the recommendation engine. Your data is safe."
+            onRetry={() => refetch()}
+            onSecondaryAction={onBack}
+            secondaryActionLabel={onBack ? 'Back to Dashboard' : undefined}
+          />
         ) : activeTab === 'ALL' ? (
           /* ALL GROUPS VIEW (Structured Sections) */
           <div className="space-y-8">

@@ -17,6 +17,7 @@ import { NeedGuidanceSection } from "../../components/dashboard/NeedGuidanceSect
 import { GatewayStatusCard } from "../../components/dashboard/GatewayStatusCard";
 import { DashboardStatsCards } from "../../components/dashboard/DashboardStatsCards";
 import { RecentNotificationsCard } from "../../components/dashboard/RecentNotificationsCard";
+import { ErrorState } from "../../components/ui/ErrorState";
 
 interface Props {
   onNavigateToProfile: () => void;
@@ -156,22 +157,13 @@ export const DashboardScreen: React.FC<Props> = ({
             </div>
           </div>
         ) : isPrimaryDataError ? (
-          <div className="rounded-2xl border border-rose-900/60 bg-[#160D10] p-6 text-rose-200">
-            <h2 className="text-base font-bold text-rose-100">
-              Dashboard data temporarily unavailable
-            </h2>
-            <p className="mt-1 text-xs sm:text-sm text-rose-300">
-              We could not load the information needed for your dashboard.
-            </p>
-            <button
-              type="button"
-              onClick={onRefresh}
-              disabled={refreshing}
-              className="mt-4 rounded-xl bg-rose-800 hover:bg-rose-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60 transition-colors"
-            >
-              {refreshing ? "Retrying..." : "Retry Connection"}
-            </button>
-          </div>
+          <ErrorState
+            title="Dashboard Temporarily Unavailable"
+            message="We could not load the information needed for your citizen dashboard. Please verify your connection or retry."
+            onRetry={onRefresh}
+            isRetrying={refreshing}
+            retryLabel="Retry Connection"
+          />
         ) : (
           <>
             {isSecondaryDataError && (

@@ -13,6 +13,7 @@ export interface GovernmentServiceItem {
   health: ConnectionHealth;
   description: string;
   icon: string;
+  officialPortalUrl?: string;
 }
 
 export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
@@ -25,6 +26,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Unique Identification Authority of India e-KYC identity gateway',
     icon: 'id-card',
+    officialPortalUrl: 'https://myaadhaar.uidai.gov.in',
   },
   {
     id: 'gov-2',
@@ -35,6 +37,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Ministry of Electronics & IT Digital Document Repository gateway',
     icon: 'folder',
+    officialPortalUrl: 'https://www.digilocker.gov.in',
   },
   {
     id: 'gov-3',
@@ -45,6 +48,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'National Health Authority Digital Health Identity ID (Integration pending external credentials)',
     icon: 'health',
+    officialPortalUrl: 'https://abha.abdm.gov.in',
   },
   {
     id: 'gov-4',
@@ -55,6 +59,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Direct Benefit Transfer Agricultural Landholder Account portal',
     icon: 'agriculture',
+    officialPortalUrl: 'https://pmkisan.gov.in',
   },
   {
     id: 'gov-5',
@@ -65,6 +70,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Ministry of Labour Unorganised Workers Identification Portal',
     icon: 'labour',
+    officialPortalUrl: 'https://eshram.gov.in',
   },
   {
     id: 'gov-6',
@@ -75,6 +81,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Unified Mobile Application for New-age Governance Gateway',
     icon: 'mobile',
+    officialPortalUrl: 'https://web.umang.gov.in',
   },
   {
     id: 'gov-7',
@@ -85,6 +92,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Consular Passport & Visa Division Integration Portal',
     icon: 'passport',
+    officialPortalUrl: 'https://passportindia.gov.in',
   },
   {
     id: 'gov-8',
@@ -95,6 +103,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Election Commission of India EPIC Electoral Verification',
     icon: 'voter',
+    officialPortalUrl: 'https://voters.eci.gov.in',
   },
   {
     id: 'gov-9',
@@ -105,6 +114,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Permanent Account Number Tax Identity Verification',
     icon: 'card',
+    officialPortalUrl: 'https://incometax.gov.in',
   },
   {
     id: 'gov-10',
@@ -115,6 +125,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Ministry of Road Transport & Highways DL Portal',
     icon: 'vehicle',
+    officialPortalUrl: 'https://parivahan.gov.in/parivahan',
   },
   {
     id: 'gov-11',
@@ -125,6 +136,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'State E-District Revenue Income Certificate Portal',
     icon: 'document',
+    officialPortalUrl: 'https://services.india.gov.in',
   },
   {
     id: 'gov-12',
@@ -135,6 +147,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Social Welfare Caste Certificate Verification Gateway',
     icon: 'building',
+    officialPortalUrl: 'https://services.india.gov.in',
   },
   {
     id: 'gov-13',
@@ -145,6 +158,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'E-District Native Domicile & Residence Registry',
     icon: 'home',
+    officialPortalUrl: 'https://services.india.gov.in',
   },
   {
     id: 'gov-14',
@@ -155,6 +169,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Vital Statistics Birth Registration Certificate Registry',
     icon: 'child',
+    officialPortalUrl: 'https://crsorgi.gov.in',
   },
   {
     id: 'gov-15',
@@ -165,6 +180,7 @@ export const INITIAL_GOVERNMENT_SERVICES: GovernmentServiceItem[] = [
     health: 'DISCONNECTED',
     description: 'Vital Statistics Death Registration Certificate Portal',
     icon: 'registry',
+    officialPortalUrl: 'https://crsorgi.gov.in',
   },
 ];
 

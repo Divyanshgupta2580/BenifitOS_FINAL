@@ -3,6 +3,7 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { UserIcon, HomeIcon, UsersIcon, SproutIcon, CheckCircle2Icon, ArrowRightIcon } from '../../components/ui/Icons';
 import { useCitizenProfile } from '../../hooks/useCitizenProfile';
 import { AppLayout } from '../../components/layout/AppLayout';
+import { ErrorState } from '../../components/ui/ErrorState';
 
 interface Props {
   onNavigateToDemographics: () => void;
@@ -35,15 +36,14 @@ export const CitizenProfileScreen: React.FC<Props> = ({
     return (
       <AppLayout activeTab="profile">
         <main className="flex flex-col justify-center items-center min-h-[60vh] p-6 text-center">
-          <div className="bg-[#0E1712] p-8 rounded-2xl border border-[#1C3127]/80 max-w-md w-full shadow-lg space-y-4">
-            <h2 className="text-xl font-bold text-rose-300">Failed to Load Profile</h2>
-            <p className="text-xs text-slate-400">Unable to retrieve citizen details from server.</p>
-            <button
-              onClick={() => refetch()}
-              className="w-full py-2.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs transition-colors"
-            >
-              Try Again
-            </button>
+          <div className="max-w-md w-full">
+            <ErrorState
+              title="Profile Unavailable"
+              message="Unable to retrieve citizen details from the server. Please verify your connection."
+              onRetry={() => refetch()}
+              onSecondaryAction={onBack}
+              secondaryActionLabel={onBack ? 'Back to Dashboard' : undefined}
+            />
           </div>
         </main>
       </AppLayout>

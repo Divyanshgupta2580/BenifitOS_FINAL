@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Skeleton } from '../../components/ui/Skeleton';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { ErrorState } from '../../components/ui/ErrorState';
 import { FolderIcon, PlusIcon, TrashIcon, CheckCircle2Icon, AlertTriangleIcon, ArrowRightIcon } from '../../components/ui/Icons';
 import { useDocuments } from '../../hooks/useDocuments';
 import { useDeleteDocument } from '../../hooks/useDeleteDocument';
@@ -108,33 +110,20 @@ export const DocumentVaultScreen: React.FC<Props> = ({
             <Skeleton height={140} className="rounded-2xl" />
           </div>
         ) : isError ? (
-          <div className="rounded-2xl bg-[#160D10] border border-rose-900/60 p-8 text-center space-y-3">
-            <p className="text-sm font-semibold text-rose-300">Unable to load document vault.</p>
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-2 bg-rose-800 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors"
-            >
-              Retry Vault Sync
-            </button>
-          </div>
+          <ErrorState
+            title="Document Vault Sync Failed"
+            message="We could not synchronize your encrypted document vault. Please check your connection and retry."
+            onRetry={() => refetch()}
+            retryLabel="Retry Vault Sync"
+          />
         ) : filteredDocs.length === 0 ? (
-          <div className="rounded-2xl bg-[#0E1712] border border-[#1C3127]/80 p-10 text-center flex flex-col items-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-forest-950 border border-[#1C3127] flex items-center justify-center text-amber-400">
-              <FolderIcon className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white">No documents found in vault</p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Upload your ID proofs, land records, or certificates to unlock automatic scheme eligibility.
-              </p>
-            </div>
-            <button
-              onClick={onNavigateToUpload}
-              className="px-4 py-2 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 text-xs font-bold transition-colors"
-            >
-              Upload First Document
-            </button>
-          </div>
+          <EmptyState
+            icon={<FolderIcon className="w-6 h-6 text-mint-400" />}
+            title="No Documents in Vault"
+            description="Upload your ID proofs, land records, or certificates to unlock automatic welfare scheme qualification."
+            actionLabel="Upload First Document"
+            onAction={onNavigateToUpload}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
             {filteredDocs.map((item: DocumentItem) => {

@@ -20,8 +20,11 @@ import {
   XIcon,
 } from '../../components/ui/Icons';
 import { useGovernmentServices } from '../../hooks/useGovernmentServices';
-import { GovernmentServiceItem } from '../../services/government.service';
+import { GovernmentServiceItem, governmentApiService } from '../../services/government.service';
 import { AppLayout } from '../../components/layout/AppLayout';
+import { ErrorState } from '../../components/ui/ErrorState';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Button } from '../../components/ui/Button';
 
 const renderServiceIcon = (iconType: string) => {
   switch (iconType) {
@@ -87,16 +90,24 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
   const verifiedCount = services.filter((s) => s.status === 'VERIFIED').length;
   const pendingCount = services.filter((s) => s.status === 'PENDING_VERIFICATION').length;
 
-  const handleOpenConnect = (service: GovernmentServiceItem) => {
+  const handleOpenConnect = async (service: GovernmentServiceItem) => {
+    setStatusMessage(null);
     if (service.code === 'DIGILOCKER') {
-      alert('Redirecting to official DigiLocker OAuth2 authentication gateway...');
+      try {
+        const res = await governmentApiService.getDigiLockerAuthUrl();
+        if (res.redirectUrl) {
+          window.open(res.redirectUrl, '_blank', 'noopener,noreferrer');
+        }
+      } catch (err: any) {
+        alert(err.message || 'Could not initialize DigiLocker OAuth2 authentication gateway.');
+      }
       return;
     }
+
     setActiveModalService(service);
     setIsOtpSent(false);
     setOtp('');
     setTxnId('');
-    setStatusMessage(null);
   };
 
   const handleRequestOtp = async () => {
@@ -226,19 +237,24 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
             <Skeleton height={180} className="rounded-2xl" />
           </div>
         ) : isError ? (
-          <div className="rounded-2xl bg-[#160D10] border border-rose-900/60 p-8 text-center space-y-3">
-            <p className="text-sm font-semibold text-rose-300">Unable to load government integration services.</p>
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-2 bg-rose-800 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors"
-            >
-              Retry
-            </button>
-          </div>
+          <ErrorState
+            title="Unable to Load Government Registries"
+            message="We could not establish connection with the government integration gateway service. Please retry."
+            onRetry={() => refetch()}
+          />
+        ) : filteredServices.length === 0 ? (
+          <EmptyState
+            icon={<BuildingIcon className="w-6 h-6 text-mint-400" />}
+            title="No services match category filter"
+            description="Select another category to view government registries and gateways."
+            actionLabel="View All Services"
+            onAction={() => setSelectedCategory('ALL')}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {filteredServices.map((service) => {
               const isConnected = service.status === 'CONNECTED' || service.status === 'VERIFIED';
+              const isDirectApi = service.code === 'AADHAAR' || service.code === 'DIGILOCKER';
 
               return (
                 <div
@@ -254,10 +270,12 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
                         className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                           isConnected
                             ? 'bg-emerald-950/80 border-emerald-500/40 text-mint-300'
+                            : service.status === 'UNAVAILABLE'
+                            ? 'bg-amber-950/60 border-amber-500/30 text-amber-300'
                             : 'bg-forest-950 border-[#1C3127] text-slate-400'
                         }`}
                       >
-                        {service.status}
+                        {service.status === 'UNAVAILABLE' ? 'OFFICIAL PORTAL' : service.status}
                       </span>
                     </div>
 
@@ -290,13 +308,21 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
                           Disconnect
                         </button>
                       </>
-                    ) : (
+                    ) : isDirectApi ? (
                       <button
                         onClick={() => handleOpenConnect(service)}
                         disabled={isConnecting}
                         className="w-full py-2 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 text-xs font-bold shadow-md transition-all text-center"
                       >
-                        Connect Registry
+                        {service.code === 'DIGILOCKER' ? 'Connect DigiLocker' : 'Verify with Aadhaar'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenConnect(service)}
+                        className="w-full py-2 rounded-xl bg-forest-900 hover:bg-forest-800 border border-[#1C3127] text-slate-200 hover:text-white text-xs font-semibold shadow-xs transition-all text-center inline-flex items-center justify-center gap-1.5"
+                      >
+                        <span>Access Portal</span>
+                        <ArrowRightIcon className="w-3 h-3 text-mint-400" />
                       </button>
                     )}
                   </div>
@@ -306,13 +332,13 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
           </div>
         )}
 
-        {/* Modal: Connect Service */}
+        {/* Modal: Service Action / Truthful Redirection */}
         {activeModalService && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-[#0E1712] border border-[#1C3127] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
               <div className="flex justify-between items-center border-b border-[#1C3127]/60 pb-3">
                 <h3 className="text-base font-bold text-white font-heading">
-                  Connect {activeModalService.name}
+                  {activeModalService.name}
                 </h3>
                 <button
                   onClick={() => setActiveModalService(null)}
@@ -322,45 +348,72 @@ export const GovernmentServicesScreen: React.FC<Props> = ({ onBack }) => {
                 </button>
               </div>
 
-              {!isOtpSent ? (
-                <div className="space-y-4">
-                  <p className="text-xs text-slate-300">
-                    Enter your 12-digit Aadhaar number to authenticate with the {activeModalService.name} citizen registry.
-                  </p>
-                  <input
-                    type="text"
-                    value={aadhaarNumber}
-                    onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
-                    placeholder="12-digit Aadhaar number"
-                    className="w-full p-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-sm font-mono text-white text-center tracking-widest focus:outline-none focus:border-mint-500"
-                  />
-                  <button
-                    onClick={handleRequestOtp}
-                    disabled={isConnecting}
-                    className="w-full py-2.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs shadow-md transition-colors"
-                  >
-                    Request OTP
-                  </button>
-                </div>
+              {activeModalService.code === 'AADHAAR' ? (
+                !isOtpSent ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-slate-300">
+                      Enter your 12-digit Aadhaar number to authenticate with the UIDAI e-KYC gateway.
+                    </p>
+                    <input
+                      type="text"
+                      value={aadhaarNumber}
+                      onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                      placeholder="12-digit Aadhaar number"
+                      className="w-full p-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-sm font-mono text-white text-center tracking-widest focus:outline-none focus:border-mint-500"
+                    />
+                    <button
+                      onClick={handleRequestOtp}
+                      disabled={isConnecting}
+                      className="w-full py-2.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs shadow-md transition-colors"
+                    >
+                      {isConnecting ? 'Requesting...' : 'Request OTP'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-xs text-slate-300">
+                      Enter the 6-digit OTP received on your Aadhaar-linked mobile:
+                    </p>
+                    <input
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="6-digit OTP"
+                      className="w-full p-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-lg font-mono text-white text-center tracking-widest focus:outline-none focus:border-mint-500"
+                    />
+                    <button
+                      onClick={handleVerifyOtp}
+                      disabled={isConnecting}
+                      className="w-full py-2.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs shadow-md transition-colors"
+                    >
+                      {isConnecting ? 'Verifying...' : 'Verify & Link'}
+                    </button>
+                  </div>
+                )
               ) : (
-                <div className="space-y-4">
-                  <p className="text-xs text-slate-300">
-                    Enter the 6-digit OTP received on your Aadhaar-linked mobile:
-                  </p>
-                  <input
-                    type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    placeholder="6-digit OTP"
-                    className="w-full p-3 bg-[#080C0A] border border-[#1C3127] rounded-xl text-lg font-mono text-white text-center tracking-widest focus:outline-none focus:border-mint-500"
-                  />
-                  <button
-                    onClick={handleVerifyOtp}
-                    disabled={isConnecting}
-                    className="w-full py-2.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs shadow-md transition-colors"
+                <div className="space-y-4 text-left">
+                  <div className="p-3.5 bg-forest-950/80 rounded-xl border border-[#1C3127] space-y-2 text-xs">
+                    <div className="flex items-center gap-2 text-amber-300 font-bold">
+                      <AlertTriangleIcon className="w-4 h-4 shrink-0" />
+                      <span>Direct API Gateway Provisioning</span>
+                    </div>
+                    <p className="text-slate-300 leading-relaxed">
+                      BenefitOS integrates directly with central DigiLocker and UIDAI Aadhaar gateways. Direct API syncing for {activeModalService.name} is scheduled for future ministry onboarding.
+                    </p>
+                    <p className="text-slate-400">
+                      You can securely manage, download, or verify your records on the verified official portal.
+                    </p>
+                  </div>
+
+                  <a
+                    href={activeModalService.officialPortalUrl || 'https://services.india.gov.in'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-mint-400 hover:bg-mint-300 text-forest-950 font-bold text-xs shadow-md transition-all text-center"
                   >
-                    Verify &amp; Link
-                  </button>
+                    <span>Open Official Government Portal</span>
+                    <ArrowRightIcon className="w-4 h-4" />
+                  </a>
                 </div>
               )}
 

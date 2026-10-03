@@ -147,6 +147,10 @@ export class SchemeRecommendationRepositoryImpl implements ISchemeRecommendation
 
   async saveMany(recommendations: SchemeRecommendationEntity[]): Promise<void> {
     for (const rec of recommendations) {
+      const sanitizedMissingDocs = (rec.missingDocuments || [])
+        .map((d: any) => (typeof d === 'string' ? d : d?.documentType))
+        .filter(Boolean);
+
       await this.prisma.client.schemeRecommendation.upsert({
         where: { citizenProfileId_schemeId: { citizenProfileId: rec.citizenProfileId, schemeId: rec.schemeId } },
         create: {
@@ -158,7 +162,7 @@ export class SchemeRecommendationRepositoryImpl implements ISchemeRecommendation
           isEligible: rec.isEligible,
           criteriaMet: rec.criteriaMet,
           missingCriteria: rec.missingCriteria,
-          missingDocuments: rec.missingDocuments,
+          missingDocuments: sanitizedMissingDocs,
         },
         update: {
           matchPercentage: rec.matchPercentage,
@@ -166,7 +170,7 @@ export class SchemeRecommendationRepositoryImpl implements ISchemeRecommendation
           isEligible: rec.isEligible,
           criteriaMet: rec.criteriaMet,
           missingCriteria: rec.missingCriteria,
-          missingDocuments: rec.missingDocuments,
+          missingDocuments: sanitizedMissingDocs,
         },
       });
     }

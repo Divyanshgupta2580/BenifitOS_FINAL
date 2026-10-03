@@ -4,14 +4,14 @@
 
 @layer base {
   body {
-    @apply bg-[#080C0A] text-slate-100 font-sans antialiased min-h-screen selection:bg-mint-500/30 selection:text-mint-300;
+    @apply bg-slate-50 dark:bg-[#080C0A] text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen selection:bg-mint-500/30 selection:text-mint-300;
   }
 }
 
 /* Botanical and Glass Surface Utilities */
 .bg-botanical-sidebar {
   background-color: #0A120E;
-  background-image: linear-gradient(180deg, rgba(10, 18, 14, 0.88) 0%, rgba(8, 12, 10, 0.95) 100%), url('/images/botanical_sidebar_bg.jpg');
+  background-image: linear-gradient(180deg, rgba(10, 18, 14, 0.92) 0%, rgba(8, 12, 10, 0.98) 100%), url('/images/botanical_sidebar_bg.jpg');
   background-size: cover;
   background-position: center;
 }
@@ -24,13 +24,11 @@
 }
 
 .glass-card {
-  background-color: #111C16;
-  border: 1px solid #1C3127;
+  @apply bg-white/90 dark:bg-[#111C16] border border-slate-200 dark:border-[#1C3127];
 }
 
 .glass-card-elevated {
-  background-color: #16241D;
-  border: 1px solid #264234;
+  @apply bg-white dark:bg-[#16241D] border border-slate-300 dark:border-[#264234] shadow-md;
 }
 
 /* Custom modern scrollbars */
@@ -40,7 +38,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #080C0A;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -51,4 +49,3 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #2D4C3D;
 }
-

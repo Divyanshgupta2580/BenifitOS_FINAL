@@ -119,7 +119,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children, activeTab }) => 
       : 'dashboard');
 
   return (
-    <div className="min-h-screen bg-[#080C0A] text-slate-100 flex flex-col font-sans transition-colors selection:bg-mint-500 selection:text-forest-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#080C0A] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors selection:bg-mint-500 selection:text-forest-950">
       {/* Top Government Portal Header */}
       <GovernmentHeader
         onToggleSidebar={handleToggleSidebar}

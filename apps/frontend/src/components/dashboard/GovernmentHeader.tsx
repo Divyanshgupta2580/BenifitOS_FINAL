@@ -35,7 +35,7 @@ export const GovernmentHeader: React.FC<GovernmentHeaderProps> = ({
   onNavigateToNotifications,
   onNavigateToSchemes,
   onNavigateToAiCopilot,
-  unreadNotificationsCount = 2,
+  unreadNotificationsCount = 0,
   profileCompletionPercentage = 100,
   citizenName,
   onSearch,

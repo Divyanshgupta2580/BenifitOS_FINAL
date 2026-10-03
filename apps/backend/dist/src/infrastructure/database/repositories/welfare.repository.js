@@ -154,6 +154,9 @@ let SchemeRecommendationRepositoryImpl = class SchemeRecommendationRepositoryImp
     }
     async saveMany(recommendations) {
         for (const rec of recommendations) {
+            const sanitizedMissingDocs = (rec.missingDocuments || [])
+                .map((d) => (typeof d === 'string' ? d : d?.documentType))
+                .filter(Boolean);
             await this.prisma.client.schemeRecommendation.upsert({
                 where: { citizenProfileId_schemeId: { citizenProfileId: rec.citizenProfileId, schemeId: rec.schemeId } },
                 create: {
@@ -165,7 +168,7 @@ let SchemeRecommendationRepositoryImpl = class SchemeRecommendationRepositoryImp
                     isEligible: rec.isEligible,
                     criteriaMet: rec.criteriaMet,
                     missingCriteria: rec.missingCriteria,
-                    missingDocuments: rec.missingDocuments,
+                    missingDocuments: sanitizedMissingDocs,
                 },
                 update: {
                     matchPercentage: rec.matchPercentage,
@@ -173,7 +176,7 @@ let SchemeRecommendationRepositoryImpl = class SchemeRecommendationRepositoryImp
                     isEligible: rec.isEligible,
                     criteriaMet: rec.criteriaMet,
                     missingCriteria: rec.missingCriteria,
-                    missingDocuments: rec.missingDocuments,
+                    missingDocuments: sanitizedMissingDocs,
                 },
             });
         }

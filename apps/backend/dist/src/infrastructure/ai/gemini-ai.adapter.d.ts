@@ -5,6 +5,7 @@ export declare class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider 
     private aiClient;
     private guidanceClient;
     constructor();
+    private getModelCandidates;
     private getModelName;
     generateText(options: AiPromptOptions): Promise<AiResponse>;
     generateStream(options: AiPromptOptions, onChunk: (chunk: string) => void): Promise<AiResponse>;
@@ -19,5 +20,6 @@ export declare class GeminiAiAdapter implements IAiProvider, IVisionOcrProvider 
         category?: string;
         description?: string;
         eligibilityRules?: string[];
+        language?: string;
     }): Promise<string>;
 }

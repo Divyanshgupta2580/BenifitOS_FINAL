@@ -65,7 +65,13 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isBrandHovered, setIsBrandHovered] = useState(false);
 
-  const primaryNavItems = [
+  const primaryNavItems: Array<{
+    id: DashboardNavTab;
+    label: string;
+    icon: React.ReactNode;
+    onClick: () => void;
+    badgeCount?: number;
+  }> = [
     {
       id: 'dashboard' as DashboardNavTab,
       label: 'Dashboard',
@@ -107,13 +113,6 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       label: 'Profile',
       icon: <UserIcon className="w-5 h-5" />,
       onClick: onNavigateToProfile,
-    },
-    {
-      id: 'notifications' as DashboardNavTab,
-      label: 'Notifications',
-      icon: <BellIcon className="w-5 h-5" />,
-      badgeCount: unreadNotificationsCount,
-      onClick: onNavigateToNotifications || onNavigateToProfile,
     },
   ];
 
