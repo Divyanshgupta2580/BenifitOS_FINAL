@@ -495,6 +495,61 @@ export async function runDailyMaintenance(
 
           await Promise.all(upsertPromises);
           recommendationsRefreshed++;
+
+          // 5. Proactive Age Threshold Evaluation
+          for (const scheme of activeSchemes) {
+            const ageRule = scheme.eligibilityRules.find(
+              (r) => r.attributeKey === 'age' && (r.operator === 'GREATER_EQUAL' || r.operator === 'GREATER_THAN'),
+            );
+            if (!ageRule) continue;
+
+            const minAge = parseInt(ageRule.targetValue, 10);
+            if (isNaN(minAge) || calculatedAge < minAge) continue;
+
+            // Citizen has reached age requirement. Check if ALL other criteria passed
+            let allPassed = true;
+            for (const rule of scheme.eligibilityRules) {
+              const val = (profile as any)[rule.attributeKey] ?? (profile.address as any)?.[rule.attributeKey];
+              if (val === undefined || val === null) {
+                if (rule.isRequired) { allPassed = false; break; }
+                continue;
+              }
+              let isMet = false;
+              if (rule.operator === 'EQUALS') isMet = String(val).toUpperCase() === String(rule.targetValue).toUpperCase();
+              else if (rule.operator === 'LESS_EQUAL') isMet = Number(val) <= Number(rule.targetValue);
+              else if (rule.operator === 'GREATER_EQUAL') isMet = Number(val) >= Number(rule.targetValue);
+              else if (rule.operator === 'GREATER_THAN') isMet = Number(val) > Number(rule.targetValue);
+              else if (rule.operator === 'LESS_THAN') isMet = Number(val) < Number(rule.targetValue);
+              if (!isMet && rule.isRequired) { allPassed = false; break; }
+            }
+
+            if (allPassed) {
+              const dedupKey = `${profile.userId}:${scheme.id}:AGE_ELIGIBILITY_REACHED:v1`;
+              const existingNotif = await prisma.notification.findFirst({
+                where: { userId: profile.userId, dedupKey },
+              });
+
+              if (!existingNotif) {
+                await prisma.notification.create({
+                  data: {
+                    userId: profile.userId,
+                    type: 'AGE_ELIGIBILITY_REACHED' as any,
+                    title: `You're now eligible for ${scheme.title}`,
+                    body: `You're now old enough to qualify for ${scheme.title}. Check your eligibility and required documents.`,
+                    severity: 'SUCCESS',
+                    channel: 'IN_APP',
+                    isRead: false,
+                    metadata: {
+                      schemeId: scheme.id,
+                      schemeCode: scheme.code,
+                      destination: `/schemes/${scheme.id}`,
+                    },
+                    dedupKey,
+                  },
+                });
+              }
+            }
+          }
         })
       );
     }

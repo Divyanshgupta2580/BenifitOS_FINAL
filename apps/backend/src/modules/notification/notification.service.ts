@@ -17,6 +17,7 @@ export interface CreateNotificationDto {
   severity?: NotificationSeverity;
   channel?: ChannelType;
   metadata?: Record<string, any>;
+  dedupKey?: string;
   deduplicateMinutes?: number;
 }
 
@@ -34,7 +35,16 @@ export class NotificationService {
     const severity = dto.severity || NotificationSeverity.INFO;
     const channel = dto.channel || ChannelType.IN_APP;
 
-    // Deduplication check to prevent spamming identical notifications
+    // Deterministic dedupKey check (e.g. userId + schemeId + type + schemeVersion)
+    if (dto.dedupKey) {
+      const existing = await this.notificationRepo.findByDedupKey(dto.userId, dto.dedupKey);
+      if (existing) {
+        this.logger.debug(`Skipping duplicate notification with dedupKey '${dto.dedupKey}' for user ${dto.userId}`);
+        return existing;
+      }
+    }
+
+    // Time-based deduplication check to prevent spamming identical notifications
     if (dto.deduplicateMinutes && dto.deduplicateMinutes > 0) {
       const recent = await this.notificationRepo.findRecentSimilar(
         dto.userId,
@@ -58,6 +68,8 @@ export class NotificationService {
       channel,
       isRead: false,
       metadata: dto.metadata || null,
+      dedupKey: dto.dedupKey || null,
+      dismissedAt: null,
       createdAt: new Date(),
     };
 
@@ -94,6 +106,7 @@ export class NotificationService {
     type = NotificationType.SYSTEM,
     severity = NotificationSeverity.INFO,
     metadata?: Record<string, any>,
+    dedupKey?: string,
   ): Promise<NotificationProps> {
     return await this.createNotification({
       userId,
@@ -103,6 +116,7 @@ export class NotificationService {
       type,
       severity,
       metadata,
+      dedupKey,
     });
   }
 
@@ -129,6 +143,11 @@ export class NotificationService {
     await this.notificationRepo.markAllAsRead(userId);
   }
 
+  async clearAllNotifications(userId: string): Promise<{ clearedCount: number }> {
+    const clearedCount = await this.notificationRepo.dismissAll(userId);
+    return { clearedCount };
+  }
+
   async deleteNotification(userId: string, id: string): Promise<void> {
     const notification = await this.notificationRepo.findById(id);
     if (!notification) {
@@ -140,4 +159,3 @@ export class NotificationService {
     await this.notificationRepo.delete(id);
   }
 }
-

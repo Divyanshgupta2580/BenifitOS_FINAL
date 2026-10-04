@@ -16,5 +16,9 @@ export declare class NotificationController {
     markAsRead(userId: string, id: string): Promise<{
         message: string;
     }>;
+    clearAllNotifications(userId: string): Promise<{
+        message: string;
+        clearedCount: number;
+    }>;
     deleteNotification(userId: string, id: string): Promise<void>;
 }

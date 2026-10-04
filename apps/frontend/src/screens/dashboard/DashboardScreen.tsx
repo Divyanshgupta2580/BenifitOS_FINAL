@@ -28,6 +28,7 @@ interface Props {
   onNavigateToAi: () => void;
   onNavigateToGovernmentServices: () => void;
   onNavigateToAiCopilot?: () => void;
+  onNavigateToNotifications?: () => void;
 }
 
 export const DashboardScreen: React.FC<Props> = ({
@@ -39,6 +40,7 @@ export const DashboardScreen: React.FC<Props> = ({
   onNavigateToAi,
   onNavigateToGovernmentServices,
   onNavigateToAiCopilot,
+  onNavigateToNotifications,
 }) => {
   const { user, accessToken } = useAuthStore();
   const [wsStatus, setWsStatus] = useState<WsConnectionStatus>("DISCONNECTED");
@@ -226,7 +228,7 @@ export const DashboardScreen: React.FC<Props> = ({
                 />
                 <RecentNotificationsCard
                   notifications={notifications}
-                  onNavigateToNotifications={onNavigateToProfile}
+                  onNavigateToNotifications={onNavigateToNotifications || onNavigateToProfile}
                 />
               </div>
             </div>

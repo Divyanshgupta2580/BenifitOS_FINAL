@@ -106,7 +106,40 @@ export function useNotifications() {
     },
   });
 
-  // 5. Delete notification
+  // 5. Clear all notifications
+  const clearAllNotificationsMutation = useMutation({
+    mutationFn: () => notificationApiService.clearAllNotifications(),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: [NOTIFICATIONS_QUERY_KEY, userId] });
+      await queryClient.cancelQueries({ queryKey: [UNREAD_COUNT_QUERY_KEY, userId] });
+
+      const prevData = queryClient.getQueryData<any>([NOTIFICATIONS_QUERY_KEY, userId]);
+      const prevUnread = queryClient.getQueryData<any>([UNREAD_COUNT_QUERY_KEY, userId]);
+
+      queryClient.setQueryData([NOTIFICATIONS_QUERY_KEY, userId], {
+        count: 0,
+        unreadCount: 0,
+        notifications: [],
+      });
+      queryClient.setQueryData([UNREAD_COUNT_QUERY_KEY, userId], { unreadCount: 0 });
+
+      return { prevData, prevUnread };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prevData) {
+        queryClient.setQueryData([NOTIFICATIONS_QUERY_KEY, userId], context.prevData);
+      }
+      if (context?.prevUnread) {
+        queryClient.setQueryData([UNREAD_COUNT_QUERY_KEY, userId], context.prevUnread);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [NOTIFICATIONS_QUERY_KEY, userId] });
+      queryClient.invalidateQueries({ queryKey: [UNREAD_COUNT_QUERY_KEY, userId] });
+    },
+  });
+
+  // 6. Delete single notification
   const deleteNotificationMutation = useMutation({
     mutationFn: (id: string) => notificationApiService.deleteNotification(id),
     onMutate: async (id: string) => {
@@ -138,7 +171,7 @@ export function useNotifications() {
     },
   });
 
-  // 6. Real-time WebSocket Event Subscription
+  // 7. Real-time WebSocket Event Subscription
   const handleRealtimeNotification = useCallback(
     (newNotif: NotificationItem) => {
       if (!newNotif || (newNotif.userId && newNotif.userId !== userId)) return;
@@ -195,6 +228,8 @@ export function useNotifications() {
     isMarkingRead: markAsReadMutation.isPending,
     markAllAsRead: markAllAsReadMutation.mutateAsync,
     isMarkingAllRead: markAllAsReadMutation.isPending,
+    clearAllNotifications: clearAllNotificationsMutation.mutateAsync,
+    isClearingAll: clearAllNotificationsMutation.isPending,
     deleteNotification: deleteNotificationMutation.mutateAsync,
     isDeleting: deleteNotificationMutation.isPending,
   };

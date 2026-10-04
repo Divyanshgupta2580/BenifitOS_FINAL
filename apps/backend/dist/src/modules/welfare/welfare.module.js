@@ -12,11 +12,13 @@ const welfare_controller_1 = require("./welfare.controller");
 const welfare_service_1 = require("./welfare.service");
 const welfare_repository_1 = require("../../infrastructure/database/repositories/welfare.repository");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
+const notification_module_1 = require("../notification/notification.module");
 let WelfareModule = class WelfareModule {
 };
 exports.WelfareModule = WelfareModule;
 exports.WelfareModule = WelfareModule = __decorate([
     (0, common_1.Module)({
+        imports: [(0, common_1.forwardRef)(() => notification_module_1.NotificationModule)],
         controllers: [welfare_controller_1.WelfareSchemeController],
         providers: [
             welfare_service_1.WelfareSchemeService,

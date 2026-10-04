@@ -122,9 +122,13 @@ enum OutboxStatus {
 
 enum NotificationType {
   SCHEME_ELIGIBILITY
+  NEW_SCHEME_ELIGIBLE
+  BECAME_ELIGIBLE
+  AGE_ELIGIBILITY_REACHED
   DOCUMENT_REQUIRED
   DOCUMENT_VERIFIED
   DOCUMENT_REJECTED
+  APPLICATION_READY
   APPLICATION_SUBMITTED
   APPLICATION_STATUS_CHANGED
   PROFILE_INCOMPLETE
@@ -337,10 +341,12 @@ model SchemeRecommendation {
   estimatedBenefit   Float
   isEligible         Boolean
   status             EligibilityStatus  @default(NOT_ELIGIBLE)
+  previousStatus     EligibilityStatus?
   criteriaMet        String[]
   missingCriteria    String[]
   missingDocuments   DocumentType[]
   aiValidation       Json?
+  schemeVersion      String?
   calculatedAt       DateTime           @default(now())
 
   citizenProfile     CitizenProfile     @relation(fields: [citizenProfileId], references: [id], onDelete: Cascade)
@@ -484,12 +490,16 @@ model Notification {
   channel          ChannelType          @default(IN_APP)
   isRead           Boolean              @default(false)
   metadata         Json?
+  dedupKey         String?
+  dismissedAt      DateTime?
   createdAt        DateTime             @default(now())
   updatedAt        DateTime             @default(now()) @updatedAt
 
   user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
+  @@index([userId, dismissedAt])
+  @@index([userId, dedupKey])
   @@index([userId, createdAt])
   @@map("notifications")
 }

@@ -1,10 +1,12 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { WelfareSchemeController } from './welfare.controller';
 import { WelfareSchemeService } from './welfare.service';
 import { WelfareSchemeRepositoryImpl } from '../../infrastructure/database/repositories/welfare.repository';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
+  imports: [forwardRef(() => NotificationModule)],
   controllers: [WelfareSchemeController],
   providers: [
     WelfareSchemeService,

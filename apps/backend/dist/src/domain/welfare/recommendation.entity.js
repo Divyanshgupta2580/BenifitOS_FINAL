@@ -36,6 +36,7 @@ class SchemeRecommendationEntity extends domain_entity_base_1.BaseDomainEntity {
     get missingCriteria() { return this._missingCriteria; }
     get missingDocuments() { return this._missingDocuments; }
     get aiValidation() { return this._aiValidation; }
+    get calculatedAt() { return this.createdAt; }
 }
 exports.SchemeRecommendationEntity = SchemeRecommendationEntity;
 //# sourceMappingURL=recommendation.entity.js.map

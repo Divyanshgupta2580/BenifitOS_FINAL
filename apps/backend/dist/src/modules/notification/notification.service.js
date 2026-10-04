@@ -30,6 +30,13 @@ let NotificationService = NotificationService_1 = class NotificationService {
         const type = dto.type || notification_repository_interface_1.NotificationType.SYSTEM;
         const severity = dto.severity || notification_repository_interface_1.NotificationSeverity.INFO;
         const channel = dto.channel || notification_repository_interface_1.ChannelType.IN_APP;
+        if (dto.dedupKey) {
+            const existing = await this.notificationRepo.findByDedupKey(dto.userId, dto.dedupKey);
+            if (existing) {
+                this.logger.debug(`Skipping duplicate notification with dedupKey '${dto.dedupKey}' for user ${dto.userId}`);
+                return existing;
+            }
+        }
         if (dto.deduplicateMinutes && dto.deduplicateMinutes > 0) {
             const recent = await this.notificationRepo.findRecentSimilar(dto.userId, type, dto.title, dto.deduplicateMinutes);
             if (recent) {
@@ -47,6 +54,8 @@ let NotificationService = NotificationService_1 = class NotificationService {
             channel,
             isRead: false,
             metadata: dto.metadata || null,
+            dedupKey: dto.dedupKey || null,
+            dismissedAt: null,
             createdAt: new Date(),
         };
         const saved = await this.notificationRepo.save(notification);
@@ -70,7 +79,7 @@ let NotificationService = NotificationService_1 = class NotificationService {
         }
         return saved;
     }
-    async sendNotification(userId, title, body, channel = notification_repository_interface_1.ChannelType.IN_APP, type = notification_repository_interface_1.NotificationType.SYSTEM, severity = notification_repository_interface_1.NotificationSeverity.INFO, metadata) {
+    async sendNotification(userId, title, body, channel = notification_repository_interface_1.ChannelType.IN_APP, type = notification_repository_interface_1.NotificationType.SYSTEM, severity = notification_repository_interface_1.NotificationSeverity.INFO, metadata, dedupKey) {
         return await this.createNotification({
             userId,
             title,
@@ -79,6 +88,7 @@ let NotificationService = NotificationService_1 = class NotificationService {
             type,
             severity,
             metadata,
+            dedupKey,
         });
     }
     async getUserNotifications(userId) {
@@ -99,6 +109,10 @@ let NotificationService = NotificationService_1 = class NotificationService {
     }
     async markAllAsRead(userId) {
         await this.notificationRepo.markAllAsRead(userId);
+    }
+    async clearAllNotifications(userId) {
+        const clearedCount = await this.notificationRepo.dismissAll(userId);
+        return { clearedCount };
     }
     async deleteNotification(userId, id) {
         const notification = await this.notificationRepo.findById(id);

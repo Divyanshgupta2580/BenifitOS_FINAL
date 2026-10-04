@@ -153,7 +153,8 @@ CRITICAL AUDIT RULES:
           });
 
           // Clean JSON markdown fences if present
-          let jsonText = res.content.trim();
+          const rawContent = typeof res === 'string' ? res : (res?.content || (res as any)?.text || '');
+          let jsonText = rawContent.trim();
           if (jsonText.startsWith('```')) {
             jsonText = jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
           }

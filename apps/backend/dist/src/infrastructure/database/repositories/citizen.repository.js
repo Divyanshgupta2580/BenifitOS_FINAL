@@ -87,6 +87,12 @@ let CitizenRepositoryImpl = class CitizenRepositoryImpl {
         });
         return record ? this.mapToEntity(record) : null;
     }
+    async findAll() {
+        const records = await this.prisma.client.citizenProfile.findMany({
+            include: { address: true, householdMembers: true, landDetails: true },
+        });
+        return records.map((record) => this.mapToEntity(record));
+    }
     async save(citizen) {
         const record = await this.prisma.client.citizenProfile.create({
             data: {

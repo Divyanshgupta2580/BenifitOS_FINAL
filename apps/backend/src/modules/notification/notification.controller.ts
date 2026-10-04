@@ -35,10 +35,20 @@ export class NotificationController {
     return { message: 'Notification marked as read.' };
   }
 
+  @Delete()
+  @HttpCode(HttpStatus.OK)
+  async clearAllNotifications(@CurrentUser('sub') userId: string) {
+    // userId is strictly derived from the authenticated session (prevents IDOR)
+    const result = await this.notificationService.clearAllNotifications(userId);
+    return {
+      message: 'All notifications cleared successfully.',
+      clearedCount: result.clearedCount,
+    };
+  }
+
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteNotification(@CurrentUser('sub') userId: string, @Param('id') id: string) {
     await this.notificationService.deleteNotification(userId, id);
   }
 }
-

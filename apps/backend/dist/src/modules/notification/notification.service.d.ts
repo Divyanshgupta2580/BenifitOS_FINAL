@@ -8,6 +8,7 @@ export interface CreateNotificationDto {
     severity?: NotificationSeverity;
     channel?: ChannelType;
     metadata?: Record<string, any>;
+    dedupKey?: string;
     deduplicateMinutes?: number;
 }
 export declare class NotificationService {
@@ -16,10 +17,13 @@ export declare class NotificationService {
     private readonly logger;
     constructor(notificationRepo: INotificationRepository, realtimeGateway?: RealtimeGateway | undefined);
     createNotification(dto: CreateNotificationDto): Promise<NotificationProps>;
-    sendNotification(userId: string, title: string, body: string, channel?: ChannelType, type?: NotificationType, severity?: NotificationSeverity, metadata?: Record<string, any>): Promise<NotificationProps>;
+    sendNotification(userId: string, title: string, body: string, channel?: ChannelType, type?: NotificationType, severity?: NotificationSeverity, metadata?: Record<string, any>, dedupKey?: string): Promise<NotificationProps>;
     getUserNotifications(userId: string): Promise<NotificationProps[]>;
     getUnreadCount(userId: string): Promise<number>;
     markAsRead(userId: string, id: string): Promise<void>;
     markAllAsRead(userId: string): Promise<void>;
+    clearAllNotifications(userId: string): Promise<{
+        clearedCount: number;
+    }>;
     deleteNotification(userId: string, id: string): Promise<void>;
 }

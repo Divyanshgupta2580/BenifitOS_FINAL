@@ -27,6 +27,11 @@ export class RecommendationEngineService {
       throw new NotFoundException(`Citizen profile not found for user '${userId}'.`);
     }
 
+    const existingRecs = await this.recommendationRepo.findByCitizenId(citizen.id);
+    const prevStatusMap = new Map<string, EligibilityStatus>(
+      existingRecs.map((r) => [r.schemeId, r.status]),
+    );
+
     const schemes = await this.schemeRepo.findAllActive(undefined, citizen.address?.state);
     const recommendations: SchemeRecommendationEntity[] = [];
 
@@ -70,6 +75,8 @@ export class RecommendationEngineService {
         isEligible = false;
       }
 
+      const prevStatus = prevStatusMap.get(scheme.id);
+
       const rec = new SchemeRecommendationEntity({
         id: randomUUID(),
         citizenProfileId: citizen.id,
@@ -94,22 +101,45 @@ export class RecommendationEngineService {
 
       recommendations.push(rec);
 
-      // Trigger real notification for CLAIM_READY schemes (with 24hr deduplication)
+      // Proactive Notification Dispatch for CLAIM_READY schemes
       if (status === 'CLAIM_READY' && this.notificationService) {
         try {
-          await this.notificationService.createNotification({
-            userId,
-            type: NotificationType.SCHEME_ELIGIBILITY,
-            title: `You're eligible for ${scheme.title}`,
-            body: `You qualify for ${scheme.title} based on your current verified profile. Upload required documents to complete your application.`,
-            severity: NotificationSeverity.SUCCESS,
-            metadata: {
-              schemeId: scheme.id,
-              schemeCode: scheme.code,
-              status: 'CLAIM_READY',
-            },
-            deduplicateMinutes: 1440, // 24 hours
-          });
+          if (prevStatus && prevStatus !== 'CLAIM_READY') {
+            // Meaningful transition from NOT_ELIGIBLE / INSUFFICIENT_DATA -> CLAIM_READY
+            await this.notificationService.createNotification({
+              userId,
+              type: NotificationType.BECAME_ELIGIBLE,
+              title: `You're now eligible for ${scheme.title}`,
+              body: `Based on your updated profile details, you now qualify for ${scheme.title} (₹${scheme.financialBenefit.toLocaleString('en-IN')}/year).`,
+              severity: NotificationSeverity.SUCCESS,
+              metadata: {
+                schemeId: scheme.id,
+                schemeCode: scheme.code,
+                status: 'CLAIM_READY',
+                previousStatus: prevStatus,
+                destination: `/schemes/${scheme.id}`,
+              },
+              dedupKey: `${userId}:${scheme.id}:BECAME_ELIGIBLE:${Date.now().toString().substring(0, 7)}`,
+              deduplicateMinutes: 1440,
+            });
+          } else {
+            // Initial eligibility notification
+            await this.notificationService.createNotification({
+              userId,
+              type: NotificationType.SCHEME_ELIGIBILITY,
+              title: `You're eligible for ${scheme.title}`,
+              body: `You qualify for ${scheme.title} based on your current verified profile. Upload required documents to complete your application.`,
+              severity: NotificationSeverity.SUCCESS,
+              metadata: {
+                schemeId: scheme.id,
+                schemeCode: scheme.code,
+                status: 'CLAIM_READY',
+                destination: `/schemes/${scheme.id}`,
+              },
+              dedupKey: `${userId}:${scheme.id}:SCHEME_ELIGIBILITY:v1`,
+              deduplicateMinutes: 1440,
+            });
+          }
         } catch (notifErr: any) {
           this.logger.warn(`Failed to dispatch claim-ready notification: ${notifErr?.message}`);
         }
@@ -159,47 +189,19 @@ export class RecommendationEngineService {
 
         const eligibilityStatus = isClaimReady
           ? 'CLAIM_READY'
+          : r.status === 'INSUFFICIENT_DATA'
+          ? 'INSUFFICIENT_DATA'
           : r.status === 'REVIEW_REQUIRED'
           ? 'REVIEW_REQUIRED'
-          : detailed?.missingProfileFields && detailed.missingProfileFields.length > 0
-          ? 'INSUFFICIENT_DATA'
           : detailed?.eligibilityStatus === 'FUTURE_ELIGIBLE'
           ? 'FUTURE_ELIGIBLE'
+          : r.isEligible
+          ? 'ELIGIBLE'
           : 'NOT_ELIGIBLE';
-
-        const statusReason = isClaimReady
-          ? "You're eligible — upload the required documents to continue."
-          : detailed?.statusReason || 'Requirements not met based on stored profile.';
 
         return {
           id: r.id,
           schemeId: r.schemeId,
-          title: scheme?.title || 'Welfare Scheme',
-          code: scheme?.code || 'SCHEME',
-          category: scheme?.category || 'WELFARE',
-          department: scheme?.department || 'Government Department',
-          description: scheme?.description || '',
-          financialBenefit: scheme?.financialBenefit || 0,
-          matchPercentage: r.matchPercentage,
-          estimatedBenefit: r.estimatedBenefit,
-          isEligible: isClaimReady,
-          status: eligibilityStatus,
-          eligibilityStatus,
-          eligibilityTiming: detailed?.eligibilityTiming || (isClaimReady ? 'NOW' : 'NOT_APPLICABLE'),
-          yearsUntilEligible: detailed?.yearsUntilEligible || (isClaimReady ? 0 : null),
-          statusReason,
-          missingProfileFields: detailed?.missingProfileFields || [],
-          failedRules: detailed?.failedRules || [],
-          passedRules: detailed?.passedRules || r.criteriaMet,
-          criteriaMet: r.criteriaMet,
-          missingCriteria: r.missingCriteria,
-          missingDocuments: r.missingDocuments,
-          aiValidation: r.aiValidation || {
-            decision: isClaimReady ? 'CLAIM_READY' : 'NOT_ELIGIBLE',
-            reason: statusReason,
-            allNonDocumentCriteriaSatisfied: isClaimReady,
-            onlyDocumentsRemaining: isClaimReady,
-          },
           scheme: scheme
             ? {
                 id: scheme.id,
@@ -209,12 +211,29 @@ export class RecommendationEngineService {
                 category: scheme.category,
                 department: scheme.department,
                 financialBenefit: scheme.financialBenefit,
+                isCentralScheme: scheme.isCentralScheme,
+                state: scheme.state,
+                requiredDocuments: scheme.requiredDocuments,
               }
             : undefined,
+          status: r.status,
+          eligibilityStatus,
+          isEligible: isClaimReady,
+          matchPercentage: isClaimReady ? 100 : r.matchPercentage,
+          estimatedBenefit: isClaimReady && scheme ? scheme.financialBenefit : r.estimatedBenefit,
+          criteriaMet: r.criteriaMet,
+          missingCriteria: r.missingCriteria,
+          missingDocuments: r.missingDocuments,
+          aiValidation: r.aiValidation,
+          timing: detailed?.eligibilityTiming,
+          eligibilityTiming: detailed?.eligibilityTiming || 'NOT_APPLICABLE',
+          yearsUntilEligible: detailed?.yearsUntilEligible ?? null,
+          statusReason: detailed?.statusReason,
+          calculatedAt: r.calculatedAt,
         };
       }),
     );
+
     return enriched;
   }
 }
-

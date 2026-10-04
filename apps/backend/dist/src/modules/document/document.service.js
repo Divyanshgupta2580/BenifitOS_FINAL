@@ -59,6 +59,24 @@ let DocumentService = DocumentService_1 = class DocumentService {
             const detectedName = classification.detectedType
                 ? scheme_entity_1.DOCUMENT_TYPE_DISPLAY_NAMES[classification.detectedType] || classification.detectedType
                 : 'Unrecognized Document';
+            if (this.notificationService) {
+                try {
+                    await this.notificationService.createNotification({
+                        userId,
+                        type: notification_repository_interface_1.NotificationType.DOCUMENT_REJECTED,
+                        title: `Document action required: ${requiredName}`,
+                        body: classification.reason || `Uploaded file did not match ${requiredName}. Please upload your official ${requiredName}.`,
+                        severity: notification_repository_interface_1.NotificationSeverity.ERROR,
+                        metadata: {
+                            requiredDocumentType,
+                            detectedDocumentType: classification.detectedType,
+                            destination: '/documents',
+                        },
+                        deduplicateMinutes: 10,
+                    });
+                }
+                catch { }
+            }
             throw new common_1.BadRequestException({
                 statusCode: 400,
                 error: 'Bad Request',
@@ -148,6 +166,45 @@ let DocumentService = DocumentService_1 = class DocumentService {
                     severity: notification_repository_interface_1.NotificationSeverity.INFO,
                     metadata: { documentId: savedDoc.id, documentType: classification.detectedType },
                 });
+                const citizen = await this.prisma.client.citizenProfile.findUnique({
+                    where: { userId },
+                    include: {
+                        user: {
+                            include: {
+                                documents: true,
+                            },
+                        },
+                        recommendations: {
+                            where: { status: 'CLAIM_READY' },
+                            include: { scheme: { include: { requiredDocuments: true } } },
+                        },
+                    },
+                });
+                if (citizen && citizen.recommendations) {
+                    const userDocs = citizen.user?.documents || [];
+                    const allUserDocTypes = new Set(userDocs
+                        .filter((d) => d.verificationStatus !== 'REJECTED')
+                        .map((d) => d.documentType));
+                    allUserDocTypes.add(requiredDocumentType);
+                    for (const rec of citizen.recommendations) {
+                        const required = rec.scheme.requiredDocuments.map((d) => d.documentType);
+                        if (required.length > 0 && required.every((t) => allUserDocTypes.has(t))) {
+                            await this.notificationService.createNotification({
+                                userId,
+                                type: notification_repository_interface_1.NotificationType.APPLICATION_READY,
+                                title: `Your application is ready for ${rec.scheme.title}`,
+                                body: `All required documents for ${rec.scheme.title} are uploaded. You can now review and submit your application.`,
+                                severity: notification_repository_interface_1.NotificationSeverity.SUCCESS,
+                                metadata: {
+                                    schemeId: rec.scheme.id,
+                                    schemeCode: rec.scheme.code,
+                                    destination: `/applications/new?schemeId=${rec.scheme.id}`,
+                                },
+                                dedupKey: `${userId}:${rec.scheme.id}:APPLICATION_READY:v1`,
+                            });
+                        }
+                    }
+                }
             }
             catch (err) {
             }

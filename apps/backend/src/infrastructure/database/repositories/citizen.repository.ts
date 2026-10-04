@@ -81,6 +81,13 @@ export class CitizenRepositoryImpl implements ICitizenRepository {
     return record ? this.mapToEntity(record) : null;
   }
 
+  async findAll(): Promise<CitizenEntity[]> {
+    const records = await this.prisma.client.citizenProfile.findMany({
+      include: { address: true, householdMembers: true, landDetails: true },
+    });
+    return records.map((record) => this.mapToEntity(record));
+  }
+
   async save(citizen: CitizenEntity): Promise<CitizenEntity> {
     const record = await this.prisma.client.citizenProfile.create({
       data: {

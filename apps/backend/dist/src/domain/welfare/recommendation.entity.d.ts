@@ -37,4 +37,5 @@ export declare class SchemeRecommendationEntity extends BaseDomainEntity<Recomme
     get missingCriteria(): string[];
     get missingDocuments(): DocumentType[];
     get aiValidation(): Record<string, any> | null | undefined;
+    get calculatedAt(): Date;
 }

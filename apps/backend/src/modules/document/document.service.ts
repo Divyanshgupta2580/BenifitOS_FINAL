@@ -64,6 +64,24 @@ export class DocumentService {
         ? DOCUMENT_TYPE_DISPLAY_NAMES[classification.detectedType] || classification.detectedType
         : 'Unrecognized Document';
 
+      if (this.notificationService) {
+        try {
+          await this.notificationService.createNotification({
+            userId,
+            type: NotificationType.DOCUMENT_REJECTED,
+            title: `Document action required: ${requiredName}`,
+            body: classification.reason || `Uploaded file did not match ${requiredName}. Please upload your official ${requiredName}.`,
+            severity: NotificationSeverity.ERROR,
+            metadata: {
+              requiredDocumentType,
+              detectedDocumentType: classification.detectedType,
+              destination: '/documents',
+            },
+            deduplicateMinutes: 10,
+          });
+        } catch {}
+      }
+
       throw new BadRequestException({
         statusCode: 400,
         error: 'Bad Request',
@@ -164,6 +182,51 @@ export class DocumentService {
           severity: NotificationSeverity.INFO,
           metadata: { documentId: savedDoc.id, documentType: classification.detectedType },
         });
+
+        // Check if all required documents are now fulfilled for any claim-ready schemes
+        const citizen = await this.prisma.client.citizenProfile.findUnique({
+          where: { userId },
+          include: {
+            user: {
+              include: {
+                documents: true,
+              },
+            },
+            recommendations: {
+              where: { status: 'CLAIM_READY' },
+              include: { scheme: { include: { requiredDocuments: true } } },
+            },
+          },
+        });
+
+        if (citizen && citizen.recommendations) {
+          const userDocs = citizen.user?.documents || [];
+          const allUserDocTypes = new Set(
+            userDocs
+              .filter((d: { verificationStatus: string; documentType: string }) => d.verificationStatus !== 'REJECTED')
+              .map((d: { verificationStatus: string; documentType: string }) => d.documentType),
+          );
+          allUserDocTypes.add(requiredDocumentType);
+
+          for (const rec of citizen.recommendations) {
+            const required = rec.scheme.requiredDocuments.map((d: { documentType: string }) => d.documentType);
+            if (required.length > 0 && required.every((t: string) => allUserDocTypes.has(t))) {
+              await this.notificationService.createNotification({
+                userId,
+                type: NotificationType.APPLICATION_READY,
+                title: `Your application is ready for ${rec.scheme.title}`,
+                body: `All required documents for ${rec.scheme.title} are uploaded. You can now review and submit your application.`,
+                severity: NotificationSeverity.SUCCESS,
+                metadata: {
+                  schemeId: rec.scheme.id,
+                  schemeCode: rec.scheme.code,
+                  destination: `/applications/new?schemeId=${rec.scheme.id}`,
+                },
+                dedupKey: `${userId}:${rec.scheme.id}:APPLICATION_READY:v1`,
+              });
+            }
+          }
+        }
       } catch (err) {
         // silent
       }

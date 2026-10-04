@@ -61,5 +61,6 @@ export class SchemeRecommendationEntity extends BaseDomainEntity<RecommendationP
   public get missingCriteria(): string[] { return this._missingCriteria; }
   public get missingDocuments(): DocumentType[] { return this._missingDocuments; }
   public get aiValidation(): Record<string, any> | null | undefined { return this._aiValidation; }
+  public get calculatedAt(): Date { return this.createdAt; }
 }
 

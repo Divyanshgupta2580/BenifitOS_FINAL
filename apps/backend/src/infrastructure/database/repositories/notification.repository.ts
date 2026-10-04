@@ -24,6 +24,8 @@ export class NotificationRepositoryImpl implements INotificationRepository {
       channel: data.channel as ChannelType,
       isRead: data.isRead,
       metadata: (data.metadata as Record<string, unknown>) || null,
+      dedupKey: (data as any).dedupKey || null,
+      dismissedAt: (data as any).dismissedAt || null,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     };
@@ -36,7 +38,7 @@ export class NotificationRepositoryImpl implements INotificationRepository {
 
   async findByUserId(userId: string): Promise<NotificationProps[]> {
     const records = await this.prisma.client.notification.findMany({
-      where: { userId },
+      where: { userId, dismissedAt: null },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
@@ -45,7 +47,7 @@ export class NotificationRepositoryImpl implements INotificationRepository {
 
   async countUnread(userId: string): Promise<number> {
     return await this.prisma.client.notification.count({
-      where: { userId, isRead: false },
+      where: { userId, isRead: false, dismissedAt: null },
     });
   }
 
@@ -61,6 +63,8 @@ export class NotificationRepositoryImpl implements INotificationRepository {
         channel: notification.channel || 'IN_APP',
         isRead: notification.isRead || false,
         metadata: (notification.metadata as any) || {},
+        dedupKey: notification.dedupKey || null,
+        dismissedAt: notification.dismissedAt || null,
       },
     });
     return this.mapToEntity(record);
@@ -75,15 +79,34 @@ export class NotificationRepositoryImpl implements INotificationRepository {
 
   async markAllAsRead(userId: string): Promise<void> {
     await this.prisma.client.notification.updateMany({
-      where: { userId, isRead: false },
+      where: { userId, isRead: false, dismissedAt: null },
       data: { isRead: true },
     });
+  }
+
+  async dismissAll(userId: string): Promise<number> {
+    const result = await this.prisma.client.notification.updateMany({
+      where: { userId, dismissedAt: null },
+      data: { dismissedAt: new Date() },
+    });
+    return result.count;
   }
 
   async delete(id: string): Promise<void> {
     await this.prisma.client.notification.delete({
       where: { id },
     });
+  }
+
+  async findByDedupKey(userId: string, dedupKey: string): Promise<NotificationProps | null> {
+    const record = await this.prisma.client.notification.findFirst({
+      where: {
+        userId,
+        dedupKey,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return record ? this.mapToEntity(record) : null;
   }
 
   async findRecentSimilar(
@@ -105,4 +128,3 @@ export class NotificationRepositoryImpl implements INotificationRepository {
     return record ? this.mapToEntity(record) : null;
   }
 }
-

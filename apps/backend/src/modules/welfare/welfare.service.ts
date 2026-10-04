@@ -1,8 +1,9 @@
-import { Injectable, Inject, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, Inject, Optional, NotFoundException, OnModuleInit, Logger } from '@nestjs/common';
 import { IWelfareSchemeRepository } from '../../domain/welfare/welfare-repository.interface';
 import { WelfareSchemeEntity, SchemeCategory } from '../../domain/welfare/scheme.entity';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { CANONICAL_WELFARE_SCHEMES } from '../../cron/daily-maintenance.cron';
+import { ProactiveNotificationService } from '../notification/proactive-notification.service';
 
 @Injectable()
 export class WelfareSchemeService implements OnModuleInit {
@@ -11,6 +12,7 @@ export class WelfareSchemeService implements OnModuleInit {
   constructor(
     @Inject('IWelfareSchemeRepository') private readonly schemeRepo: IWelfareSchemeRepository,
     private readonly prisma: PrismaService,
+    @Optional() private readonly proactiveNotifService?: ProactiveNotificationService,
   ) {}
 
   async onModuleInit() {
@@ -22,7 +24,7 @@ export class WelfareSchemeService implements OnModuleInit {
         });
 
         if (!existing) {
-          await this.prisma.client.welfareScheme.create({
+          const created = await this.prisma.client.welfareScheme.create({
             data: {
               id: schemeDef.id,
               code: schemeDef.code,
@@ -52,6 +54,14 @@ export class WelfareSchemeService implements OnModuleInit {
               },
             },
           });
+
+          // Proactive evaluation for newly created scheme
+          if (this.proactiveNotifService) {
+            const schemeEntity = await this.schemeRepo.findById(created.id);
+            if (schemeEntity) {
+              await this.proactiveNotifService.evaluateNewSchemeForCitizens(schemeEntity);
+            }
+          }
         } else {
           // Idempotently update scheme metadata and synchronize eligibility rules
           await this.prisma.client.$transaction([

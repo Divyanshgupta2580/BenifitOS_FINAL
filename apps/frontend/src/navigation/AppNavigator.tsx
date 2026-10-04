@@ -275,6 +275,7 @@ const DashboardScreenWrapper = () => {
       onNavigateToAi={() => navigate('/ai/copilot')}
       onNavigateToGovernmentServices={() => navigate('/government-services')}
       onNavigateToAiCopilot={() => navigate('/ai/copilot')}
+      onNavigateToNotifications={() => navigate('/notifications')}
     />
   );
 };

@@ -10,6 +10,8 @@ export declare class NotificationRepositoryImpl implements INotificationReposito
     save(notification: NotificationProps): Promise<NotificationProps>;
     markAsRead(id: string): Promise<void>;
     markAllAsRead(userId: string): Promise<void>;
+    dismissAll(userId: string): Promise<number>;
     delete(id: string): Promise<void>;
+    findByDedupKey(userId: string, dedupKey: string): Promise<NotificationProps | null>;
     findRecentSimilar(userId: string, type: NotificationType, title: string, withinMinutes: number): Promise<NotificationProps | null>;
 }

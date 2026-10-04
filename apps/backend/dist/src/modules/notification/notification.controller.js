@@ -42,6 +42,13 @@ let NotificationController = class NotificationController {
         await this.notificationService.markAsRead(userId, id);
         return { message: 'Notification marked as read.' };
     }
+    async clearAllNotifications(userId) {
+        const result = await this.notificationService.clearAllNotifications(userId);
+        return {
+            message: 'All notifications cleared successfully.',
+            clearedCount: result.clearedCount,
+        };
+    }
     async deleteNotification(userId, id) {
         await this.notificationService.deleteNotification(userId, id);
     }
@@ -76,6 +83,14 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], NotificationController.prototype, "markAsRead", null);
+__decorate([
+    (0, common_1.Delete)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, current_user_decorator_1.CurrentUser)('sub')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], NotificationController.prototype, "clearAllNotifications", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),

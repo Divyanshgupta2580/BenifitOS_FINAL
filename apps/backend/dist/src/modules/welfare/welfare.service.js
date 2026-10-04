@@ -17,13 +17,16 @@ exports.WelfareSchemeService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
 const daily_maintenance_cron_1 = require("../../cron/daily-maintenance.cron");
+const proactive_notification_service_1 = require("../notification/proactive-notification.service");
 let WelfareSchemeService = WelfareSchemeService_1 = class WelfareSchemeService {
     schemeRepo;
     prisma;
+    proactiveNotifService;
     logger = new common_1.Logger(WelfareSchemeService_1.name);
-    constructor(schemeRepo, prisma) {
+    constructor(schemeRepo, prisma, proactiveNotifService) {
         this.schemeRepo = schemeRepo;
         this.prisma = prisma;
+        this.proactiveNotifService = proactiveNotifService;
     }
     async onModuleInit() {
         try {
@@ -33,7 +36,7 @@ let WelfareSchemeService = WelfareSchemeService_1 = class WelfareSchemeService {
                     where: { code: schemeDef.code },
                 });
                 if (!existing) {
-                    await this.prisma.client.welfareScheme.create({
+                    const created = await this.prisma.client.welfareScheme.create({
                         data: {
                             id: schemeDef.id,
                             code: schemeDef.code,
@@ -63,6 +66,12 @@ let WelfareSchemeService = WelfareSchemeService_1 = class WelfareSchemeService {
                             },
                         },
                     });
+                    if (this.proactiveNotifService) {
+                        const schemeEntity = await this.schemeRepo.findById(created.id);
+                        if (schemeEntity) {
+                            await this.proactiveNotifService.evaluateNewSchemeForCitizens(schemeEntity);
+                        }
+                    }
                 }
                 else {
                     await this.prisma.client.$transaction([
@@ -123,6 +132,8 @@ exports.WelfareSchemeService = WelfareSchemeService;
 exports.WelfareSchemeService = WelfareSchemeService = WelfareSchemeService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)('IWelfareSchemeRepository')),
-    __metadata("design:paramtypes", [Object, prisma_service_1.PrismaService])
+    __param(2, (0, common_1.Optional)()),
+    __metadata("design:paramtypes", [Object, prisma_service_1.PrismaService,
+        proactive_notification_service_1.ProactiveNotificationService])
 ], WelfareSchemeService);
 //# sourceMappingURL=welfare.service.js.map

@@ -7,9 +7,13 @@ export declare enum ChannelType {
 }
 export declare enum NotificationType {
     SCHEME_ELIGIBILITY = "SCHEME_ELIGIBILITY",
+    NEW_SCHEME_ELIGIBLE = "NEW_SCHEME_ELIGIBLE",
+    BECAME_ELIGIBLE = "BECAME_ELIGIBLE",
+    AGE_ELIGIBILITY_REACHED = "AGE_ELIGIBILITY_REACHED",
     DOCUMENT_REQUIRED = "DOCUMENT_REQUIRED",
     DOCUMENT_VERIFIED = "DOCUMENT_VERIFIED",
     DOCUMENT_REJECTED = "DOCUMENT_REJECTED",
+    APPLICATION_READY = "APPLICATION_READY",
     APPLICATION_SUBMITTED = "APPLICATION_SUBMITTED",
     APPLICATION_STATUS_CHANGED = "APPLICATION_STATUS_CHANGED",
     PROFILE_INCOMPLETE = "PROFILE_INCOMPLETE",
@@ -32,6 +36,8 @@ export interface NotificationProps {
     channel: ChannelType;
     isRead: boolean;
     metadata?: Record<string, any> | null;
+    dedupKey?: string | null;
+    dismissedAt?: Date | null;
     createdAt: Date;
     updatedAt?: Date;
 }
@@ -42,6 +48,8 @@ export interface INotificationRepository {
     save(notification: NotificationProps): Promise<NotificationProps>;
     markAsRead(id: string): Promise<void>;
     markAllAsRead(userId: string): Promise<void>;
+    dismissAll(userId: string): Promise<number>;
     delete(id: string): Promise<void>;
+    findByDedupKey(userId: string, dedupKey: string): Promise<NotificationProps | null>;
     findRecentSimilar(userId: string, type: NotificationType, title: string, withinMinutes: number): Promise<NotificationProps | null>;
 }

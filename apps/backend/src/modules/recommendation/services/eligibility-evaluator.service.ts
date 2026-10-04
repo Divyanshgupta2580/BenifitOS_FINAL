@@ -282,6 +282,7 @@ export class EligibilityEvaluatorService {
       case 'isRural':
         return citizen.address?.isRural !== undefined ? citizen.address.isRural : null;
       case 'hasLand':
+      case 'isLandOwner':
         return (citizen.landDetails && citizen.landDetails.length > 0) ? 'true' : 'false';
       case 'landSizeAcres': {
         const total = (citizen.landDetails || []).reduce((acc, l) => acc + (l.landSizeAcres || 0), 0);

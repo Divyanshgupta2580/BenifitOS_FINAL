@@ -290,6 +290,7 @@ async function runDynamicSchemeDiscoverySuite() {
     findById: async (id: string) => studentAge19,
     findByUserId: async (userId: string) => studentAge19,
     findByAadhaarHash: async () => null,
+    findAll: async () => [studentAge19],
     save: async (c) => c,
     update: async (c) => c,
     delete: async () => {},

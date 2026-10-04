@@ -29,6 +29,8 @@ let NotificationRepositoryImpl = class NotificationRepositoryImpl {
             channel: data.channel,
             isRead: data.isRead,
             metadata: data.metadata || null,
+            dedupKey: data.dedupKey || null,
+            dismissedAt: data.dismissedAt || null,
             createdAt: data.createdAt,
             updatedAt: data.updatedAt,
         };
@@ -39,7 +41,7 @@ let NotificationRepositoryImpl = class NotificationRepositoryImpl {
     }
     async findByUserId(userId) {
         const records = await this.prisma.client.notification.findMany({
-            where: { userId },
+            where: { userId, dismissedAt: null },
             orderBy: { createdAt: 'desc' },
             take: 100,
         });
@@ -47,7 +49,7 @@ let NotificationRepositoryImpl = class NotificationRepositoryImpl {
     }
     async countUnread(userId) {
         return await this.prisma.client.notification.count({
-            where: { userId, isRead: false },
+            where: { userId, isRead: false, dismissedAt: null },
         });
     }
     async save(notification) {
@@ -62,6 +64,8 @@ let NotificationRepositoryImpl = class NotificationRepositoryImpl {
                 channel: notification.channel || 'IN_APP',
                 isRead: notification.isRead || false,
                 metadata: notification.metadata || {},
+                dedupKey: notification.dedupKey || null,
+                dismissedAt: notification.dismissedAt || null,
             },
         });
         return this.mapToEntity(record);
@@ -74,14 +78,31 @@ let NotificationRepositoryImpl = class NotificationRepositoryImpl {
     }
     async markAllAsRead(userId) {
         await this.prisma.client.notification.updateMany({
-            where: { userId, isRead: false },
+            where: { userId, isRead: false, dismissedAt: null },
             data: { isRead: true },
         });
+    }
+    async dismissAll(userId) {
+        const result = await this.prisma.client.notification.updateMany({
+            where: { userId, dismissedAt: null },
+            data: { dismissedAt: new Date() },
+        });
+        return result.count;
     }
     async delete(id) {
         await this.prisma.client.notification.delete({
             where: { id },
         });
+    }
+    async findByDedupKey(userId, dedupKey) {
+        const record = await this.prisma.client.notification.findFirst({
+            where: {
+                userId,
+                dedupKey,
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        return record ? this.mapToEntity(record) : null;
     }
     async findRecentSimilar(userId, type, title, withinMinutes) {
         const since = new Date(Date.now() - withinMinutes * 60 * 1000);

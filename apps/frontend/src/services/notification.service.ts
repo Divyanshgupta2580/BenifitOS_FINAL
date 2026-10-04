@@ -2,9 +2,13 @@ import { apiClient } from './api-client';
 
 export type NotificationType =
   | 'SCHEME_ELIGIBILITY'
+  | 'NEW_SCHEME_ELIGIBLE'
+  | 'BECAME_ELIGIBLE'
+  | 'AGE_ELIGIBILITY_REACHED'
   | 'DOCUMENT_REQUIRED'
   | 'DOCUMENT_VERIFIED'
   | 'DOCUMENT_REJECTED'
+  | 'APPLICATION_READY'
   | 'APPLICATION_SUBMITTED'
   | 'APPLICATION_STATUS_CHANGED'
   | 'PROFILE_INCOMPLETE'
@@ -52,6 +56,10 @@ export const notificationApiService = {
 
   async markAllAsRead(): Promise<{ message: string }> {
     return await apiClient.patch<any, { message: string }>('/notifications/read-all');
+  },
+
+  async clearAllNotifications(): Promise<{ message: string; clearedCount: number }> {
+    return await apiClient.delete<any, { message: string; clearedCount: number }>('/notifications');
   },
 
   async deleteNotification(id: string): Promise<void> {
