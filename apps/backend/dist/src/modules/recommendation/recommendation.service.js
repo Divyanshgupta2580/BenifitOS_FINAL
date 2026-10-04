@@ -57,11 +57,15 @@ let RecommendationEngineService = RecommendationEngineService_1 = class Recommen
                 status = 'NOT_ELIGIBLE';
                 isEligible = false;
             }
-            else if (detailed.eligibilityStatus === 'ELIGIBLE' && aiVal.decision === 'CLAIM_READY' && aiVal.allNonDocumentCriteriaSatisfied) {
+            else if (detailed.eligibilityStatus === 'ELIGIBLE' &&
+                aiVal.decision === 'CLAIM_READY' &&
+                aiVal.allNonDocumentCriteriaSatisfied === true &&
+                aiVal.onlyDocumentsRemaining === true) {
                 status = 'CLAIM_READY';
                 isEligible = true;
             }
-            else if (detailed.eligibilityStatus === 'ELIGIBLE' && aiVal.decision === 'REVIEW_REQUIRED') {
+            else if (detailed.eligibilityStatus === 'ELIGIBLE' &&
+                (aiVal.decision === 'REVIEW_REQUIRED' || !aiVal.allNonDocumentCriteriaSatisfied)) {
                 status = 'REVIEW_REQUIRED';
                 isEligible = false;
             }
@@ -143,14 +147,18 @@ let RecommendationEngineService = RecommendationEngineService_1 = class Recommen
         const enriched = await Promise.all(recs.map(async (r) => {
             const scheme = await this.schemeRepo.findById(r.schemeId);
             const detailed = scheme ? this.evaluator.evaluateDetailedEligibility(citizen, scheme) : null;
-            const isClaimReady = r.status === 'CLAIM_READY' || (r.isEligible && (!detailed || detailed.eligibilityStatus === 'ELIGIBLE'));
+            const isClaimReady = r.status === 'CLAIM_READY' &&
+                r.isEligible &&
+                (!detailed || detailed.eligibilityStatus === 'ELIGIBLE');
             const eligibilityStatus = isClaimReady
                 ? 'CLAIM_READY'
-                : detailed?.missingProfileFields && detailed.missingProfileFields.length > 0
-                    ? 'INSUFFICIENT_DATA'
-                    : detailed?.eligibilityStatus === 'FUTURE_ELIGIBLE'
-                        ? 'FUTURE_ELIGIBLE'
-                        : 'NOT_ELIGIBLE';
+                : r.status === 'REVIEW_REQUIRED'
+                    ? 'REVIEW_REQUIRED'
+                    : detailed?.missingProfileFields && detailed.missingProfileFields.length > 0
+                        ? 'INSUFFICIENT_DATA'
+                        : detailed?.eligibilityStatus === 'FUTURE_ELIGIBLE'
+                            ? 'FUTURE_ELIGIBLE'
+                            : 'NOT_ELIGIBLE';
             const statusReason = isClaimReady
                 ? "You're eligible — upload the required documents to continue."
                 : detailed?.statusReason || 'Requirements not met based on stored profile.';

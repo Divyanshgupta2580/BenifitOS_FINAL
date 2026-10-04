@@ -160,24 +160,28 @@ CRITICAL AUDIT RULES:
 
           try {
             const parsed = JSON.parse(jsonText);
-            const decision: ClaimReadyDecision =
-              parsed.decision === 'CLAIM_READY' && parsed.allNonDocumentCriteriaSatisfied === true
-                ? 'CLAIM_READY'
-                : parsed.decision === 'INSUFFICIENT_DATA'
-                ? 'INSUFFICIENT_DATA'
-                : parsed.decision === 'REVIEW_REQUIRED'
-                ? 'REVIEW_REQUIRED'
-                : 'NOT_ELIGIBLE';
+            const isAiClaimReady =
+              parsed.decision === 'CLAIM_READY' &&
+              parsed.allNonDocumentCriteriaSatisfied === true &&
+              parsed.onlyDocumentsRemaining === true;
+
+            const decision: ClaimReadyDecision = isAiClaimReady
+              ? 'CLAIM_READY'
+              : parsed.decision === 'INSUFFICIENT_DATA'
+              ? 'INSUFFICIENT_DATA'
+              : parsed.decision === 'REVIEW_REQUIRED'
+              ? 'REVIEW_REQUIRED'
+              : 'NOT_ELIGIBLE';
 
             const validated: AiValidationResult = {
               decision,
-              allNonDocumentCriteriaSatisfied: !!parsed.allNonDocumentCriteriaSatisfied,
-              onlyDocumentsRemaining: !!parsed.onlyDocumentsRemaining,
-              confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.98,
+              allNonDocumentCriteriaSatisfied: isAiClaimReady,
+              onlyDocumentsRemaining: isAiClaimReady,
+              confidence: typeof parsed.confidence === 'number' ? parsed.confidence : (isAiClaimReady ? 0.98 : 0.5),
               failedCriteria: Array.isArray(parsed.failedCriteria) ? parsed.failedCriteria : [],
               unverifiedCriteria: Array.isArray(parsed.unverifiedCriteria) ? parsed.unverifiedCriteria : [],
               requiredDocuments: Array.isArray(parsed.requiredDocuments) ? parsed.requiredDocuments : requiredDocNames,
-              reason: parsed.reason || 'Verified statutory eligibility conditions satisfied.',
+              reason: parsed.reason || (isAiClaimReady ? 'Verified statutory eligibility conditions satisfied.' : 'Eligibility criteria validation requires further review.'),
             };
 
             return {
@@ -185,20 +189,20 @@ CRITICAL AUDIT RULES:
               provider: res.provider || 'Gemini Eligibility Auditor',
             };
           } catch (parseErr) {
-            // Fallback to strict deterministic confirmation
+            // Malformed / invalid JSON from AI strictly prevents CLAIM_READY -> REVIEW_REQUIRED
             const fallback: AiValidationResult = {
-              decision: 'CLAIM_READY',
-              allNonDocumentCriteriaSatisfied: true,
-              onlyDocumentsRemaining: true,
-              confidence: 0.95,
+              decision: 'REVIEW_REQUIRED',
+              allNonDocumentCriteriaSatisfied: false,
+              onlyDocumentsRemaining: false,
+              confidence: 0.0,
               failedCriteria: [],
-              unverifiedCriteria: [],
+              unverifiedCriteria: ['Malformed AI response during validation'],
               requiredDocuments: requiredDocNames,
-              reason: 'All non-document statutory eligibility conditions verified and satisfied based on stored profile.',
+              reason: 'Second-layer AI eligibility validation returned malformed response; manual/system review required.',
             };
             return {
               content: JSON.stringify(fallback),
-              provider: 'Deterministic Rule Auditor',
+              provider: 'Gemini Eligibility Auditor (Parse Error)',
             };
           }
         },
@@ -211,16 +215,17 @@ CRITICAL AUDIT RULES:
         isCached: cached.isCached,
       };
     } catch (err: any) {
-      this.logger.warn(`AI eligibility validation fallback: ${err?.message}`);
+      // Upstream Gemini outage (500, 503, timeout, network error, missing key) strictly prevents CLAIM_READY -> REVIEW_REQUIRED
+      this.logger.warn(`AI eligibility validation outage / error: ${err?.message}`);
       return {
-        decision: 'CLAIM_READY',
-        allNonDocumentCriteriaSatisfied: true,
-        onlyDocumentsRemaining: true,
-        confidence: 0.92,
+        decision: 'REVIEW_REQUIRED',
+        allNonDocumentCriteriaSatisfied: false,
+        onlyDocumentsRemaining: false,
+        confidence: 0.0,
         failedCriteria: [],
-        unverifiedCriteria: [],
+        unverifiedCriteria: ['Upstream AI validation service temporarily unavailable'],
         requiredDocuments: requiredDocNames,
-        reason: 'Statutory eligibility criteria verified and satisfied by deterministic engine.',
+        reason: 'Second-layer AI eligibility validation pending due to upstream auditor outage; statutory review required.',
       };
     }
   }

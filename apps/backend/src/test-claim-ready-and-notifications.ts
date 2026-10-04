@@ -12,12 +12,10 @@ import {
 } from './domain/notification/notification-repository.interface';
 import { CitizenEntity, Gender, MaritalStatus, SocialCategory, EmploymentStatus, DisabilityType } from './domain/citizen/citizen.entity';
 import { WelfareSchemeEntity, SchemeCategory, DocumentType } from './domain/welfare/scheme.entity';
-import { ICitizenRepository } from './domain/citizen/citizen-repository.interface';
-import { IWelfareSchemeRepository, ISchemeRecommendationRepository } from './domain/welfare/welfare-repository.interface';
 
 async function runClaimReadyAndNotificationsSuite() {
   console.log('========================================================================');
-  console.log(' BENEFITOS — CLAIM-READY ENGINE & NOTIFICATION SYSTEM TEST SUITE       ');
+  console.log(' BENEFITOS — CLAIM-READY ENGINE & NOTIFICATION SYSTEM AUDIT SUITE       ');
   console.log('========================================================================\n');
 
   let passCount = 0;
@@ -127,7 +125,7 @@ async function runClaimReadyAndNotificationsSuite() {
     });
 
     assert.equal(notif1.id, notif2.id);
-    assert.equal(notificationsMap.size, 2); // 1 from previous test, 1 from deduplicated
+    assert.equal(notificationsMap.size, 2);
   });
 
   await test('IDOR Protection: Citizen B cannot read or mark Citizen A notification', async () => {
@@ -170,11 +168,11 @@ async function runClaimReadyAndNotificationsSuite() {
     await notificationService.markAllAsRead(citizenA);
 
     assert.equal(await notificationService.getUnreadCount(citizenA), 0);
-    assert.equal(await notificationService.getUnreadCount(citizenB), 1); // Citizen B unread count untouched
+    assert.equal(await notificationService.getUnreadCount(citizenB), 1);
   });
 
   // -------------------------------------------------------------
-  // PART 2: STRICT CLAIM-READY RECOMMENDATION ENGINE WITH GEMINI
+  // PART 2: STRICT CLAIM-READY RECOMMENDATION ENGINE & GEMINI AUDITOR
   // -------------------------------------------------------------
   console.log('\n------------------------------------------------------------------------');
   console.log('2. STRICT CLAIM-READY ENGINE & SECOND-LAYER GEMINI VALIDATOR');
@@ -249,31 +247,36 @@ async function runClaimReadyAndNotificationsSuite() {
 
   const evaluatorService = new EligibilityEvaluatorService();
 
-  let geminiCalls = 0;
   const mockGeminiAdapter: any = {
-    generateJson: async (prompt: string) => {
-      geminiCalls++;
-      if (prompt.includes('Farmer') || prompt.includes('FARMER')) {
+    generateText: async (params: { prompt: string }) => {
+      const p = params.prompt;
+      if (p.includes('FARMER') || p.includes('Farmer')) {
         return {
-          decision: 'CLAIM_READY',
-          allNonDocumentCriteriaSatisfied: true,
-          onlyDocumentsRemaining: true,
-          confidence: 0.98,
-          failedCriteria: [],
-          unverifiedCriteria: [],
-          requiredDocuments: ['Aadhaar Card', 'Land Record / RoR / Khasra-Khatauni'],
-          reason: 'Citizen satisfies all deterministic criteria (Farmer, Income 1.8L). Only required documents remain for submission.',
+          content: JSON.stringify({
+            decision: 'CLAIM_READY',
+            allNonDocumentCriteriaSatisfied: true,
+            onlyDocumentsRemaining: true,
+            confidence: 0.98,
+            failedCriteria: [],
+            unverifiedCriteria: [],
+            requiredDocuments: ['Aadhaar Card', 'Land Record / RoR / Khasra-Khatauni'],
+            reason: 'Citizen satisfies all statutory criteria. Only required documents remain.',
+          }),
+          provider: 'Gemini 2.5 Flash',
         };
       }
       return {
-        decision: 'NOT_ELIGIBLE',
-        allNonDocumentCriteriaSatisfied: false,
-        onlyDocumentsRemaining: false,
-        confidence: 0.99,
-        failedCriteria: ['Income exceeds maximum limit'],
-        unverifiedCriteria: [],
-        requiredDocuments: [],
-        reason: 'Income exceeds threshold.',
+        content: JSON.stringify({
+          decision: 'NOT_ELIGIBLE',
+          allNonDocumentCriteriaSatisfied: false,
+          onlyDocumentsRemaining: false,
+          confidence: 0.99,
+          failedCriteria: ['Income exceeds threshold'],
+          unverifiedCriteria: [],
+          requiredDocuments: [],
+          reason: 'Income exceeds threshold.',
+        }),
+        provider: 'Gemini 2.5 Flash',
       };
     },
   };
@@ -281,7 +284,7 @@ async function runClaimReadyAndNotificationsSuite() {
   const mockAiCache: any = {
     getOrExecute: async (_opt: any, genFn: () => Promise<any>) => {
       const res = await genFn();
-      return { content: res.content, provider: 'BenefitOS AI', isCached: false };
+      return { content: res.content, provider: res.provider || 'BenefitOS AI', isCached: false };
     },
   };
 
@@ -314,7 +317,7 @@ async function runClaimReadyAndNotificationsSuite() {
     notificationService,
   );
 
-  await test('Farmer citizen receives CLAIM_READY recommendation with document checklist', async () => {
+  await test('Farmer citizen receives CLAIM_READY recommendation when all statutory criteria & Gemini pass', async () => {
     const recs = await recommendationEngine.calculateRecommendationsForCitizen(farmerCitizen.userId);
     assert.equal(recs.length, 1);
     const rec = recs[0];
@@ -326,9 +329,10 @@ async function runClaimReadyAndNotificationsSuite() {
     assert(rec.missingDocuments.includes(DocumentType.LAND_RECORD));
     assert.equal(rec.aiValidation?.decision, 'CLAIM_READY');
     assert.equal(rec.aiValidation?.allNonDocumentCriteriaSatisfied, true);
+    assert.equal(rec.aiValidation?.onlyDocumentsRemaining, true);
   });
 
-  await test('Affluent citizen receives strictly NOT_ELIGIBLE (Zero Hallucination Override)', async () => {
+  await test('Affluent citizen receives strictly NOT_ELIGIBLE (Deterministic Supremacy)', async () => {
     const recs = await recommendationEngine.calculateRecommendationsForCitizen(affluentCitizen.userId);
     assert.equal(recs.length, 1);
     const rec = recs[0];
@@ -347,9 +351,76 @@ async function runClaimReadyAndNotificationsSuite() {
     assert.equal(enriched[0].missingDocuments.length, 2);
   });
 
+  // -------------------------------------------------------------
+  // PART 3: GEMINI OUTAGE & FAILURE SIMULATION TESTS
+  // -------------------------------------------------------------
+  console.log('\n------------------------------------------------------------------------');
+  console.log('3. GEMINI OUTAGE & ERROR SIMULATION (Strict Non-Claim-Ready Fallback)');
+  console.log('------------------------------------------------------------------------');
+
+  const deterministicEvaluation = evaluatorService.evaluateDetailedEligibility(farmerCitizen, pmKisanScheme);
+  assert.equal(deterministicEvaluation.eligibilityStatus, 'ELIGIBLE');
+
+  await test('Outage 1: Gemini API Timeout -> Strictly REVIEW_REQUIRED (Never CLAIM_READY)', async () => {
+    const timeoutAdapter: any = {
+      generateText: async () => {
+        throw new Error('Gemini upstream call timed out after 10000ms');
+      },
+    };
+    const validator = new EligibilityAiValidatorService(timeoutAdapter, mockAiCache);
+    const res = await validator.validateEligibility(farmerCitizen, pmKisanScheme, deterministicEvaluation);
+
+    assert.equal(res.decision, 'REVIEW_REQUIRED');
+    assert.equal(res.allNonDocumentCriteriaSatisfied, false);
+    assert.equal(res.onlyDocumentsRemaining, false);
+  });
+
+  await test('Outage 2: Gemini HTTP 500 / 503 Server Error -> Strictly REVIEW_REQUIRED', async () => {
+    const serverErrorAdapter: any = {
+      generateText: async () => {
+        throw new Error('HTTP 503 Service Unavailable: Model overloaded');
+      },
+    };
+    const validator = new EligibilityAiValidatorService(serverErrorAdapter, mockAiCache);
+    const res = await validator.validateEligibility(farmerCitizen, pmKisanScheme, deterministicEvaluation);
+
+    assert.equal(res.decision, 'REVIEW_REQUIRED');
+    assert.equal(res.allNonDocumentCriteriaSatisfied, false);
+    assert.equal(res.onlyDocumentsRemaining, false);
+  });
+
+  await test('Outage 3: Gemini Invalid / Non-JSON Output -> Strictly REVIEW_REQUIRED', async () => {
+    const badJsonAdapter: any = {
+      generateText: async () => ({
+        content: 'I cannot answer this request right now because of a syntax error.',
+        provider: 'Gemini',
+      }),
+    };
+    const validator = new EligibilityAiValidatorService(badJsonAdapter, mockAiCache);
+    const res = await validator.validateEligibility(farmerCitizen, pmKisanScheme, deterministicEvaluation);
+
+    assert.equal(res.decision, 'REVIEW_REQUIRED');
+    assert.equal(res.allNonDocumentCriteriaSatisfied, false);
+    assert.equal(res.onlyDocumentsRemaining, false);
+  });
+
+  await test('Outage 4: Gemini Missing API Key -> Strictly REVIEW_REQUIRED', async () => {
+    const noKeyAdapter: any = {
+      generateText: async () => {
+        throw new Error('GEMINI_API_KEY environment variable is not configured');
+      },
+    };
+    const validator = new EligibilityAiValidatorService(noKeyAdapter, mockAiCache);
+    const res = await validator.validateEligibility(farmerCitizen, pmKisanScheme, deterministicEvaluation);
+
+    assert.equal(res.decision, 'REVIEW_REQUIRED');
+    assert.equal(res.allNonDocumentCriteriaSatisfied, false);
+    assert.equal(res.onlyDocumentsRemaining, false);
+  });
+
   console.log(`\n===============================================================`);
   console.log(` RESULT: ${passCount}/${totalCount} TESTS PASSED`);
-  console.log(` STATUS: ALL CLAIM-READY & NOTIFICATION AUDIT INVARIANTS MET!  `);
+  console.log(` STATUS: ALL CLAIM-READY, OUTAGE & NOTIFICATION INVARIANTS MET!`);
   console.log(`===============================================================\n`);
 }
 

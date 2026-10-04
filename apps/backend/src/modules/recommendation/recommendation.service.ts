@@ -51,10 +51,18 @@ export class RecommendationEngineService {
       } else if (detailed.eligibilityStatus === 'FUTURE_ELIGIBLE') {
         status = 'NOT_ELIGIBLE'; // Marked with future timing
         isEligible = false;
-      } else if (detailed.eligibilityStatus === 'ELIGIBLE' && aiVal.decision === 'CLAIM_READY' && aiVal.allNonDocumentCriteriaSatisfied) {
+      } else if (
+        detailed.eligibilityStatus === 'ELIGIBLE' &&
+        aiVal.decision === 'CLAIM_READY' &&
+        aiVal.allNonDocumentCriteriaSatisfied === true &&
+        aiVal.onlyDocumentsRemaining === true
+      ) {
         status = 'CLAIM_READY';
         isEligible = true;
-      } else if (detailed.eligibilityStatus === 'ELIGIBLE' && aiVal.decision === 'REVIEW_REQUIRED') {
+      } else if (
+        detailed.eligibilityStatus === 'ELIGIBLE' &&
+        (aiVal.decision === 'REVIEW_REQUIRED' || !aiVal.allNonDocumentCriteriaSatisfied)
+      ) {
         status = 'REVIEW_REQUIRED';
         isEligible = false;
       } else {
@@ -144,9 +152,15 @@ export class RecommendationEngineService {
         const scheme = await this.schemeRepo.findById(r.schemeId);
         const detailed = scheme ? this.evaluator.evaluateDetailedEligibility(citizen, scheme) : null;
 
-        const isClaimReady = r.status === 'CLAIM_READY' || (r.isEligible && (!detailed || detailed.eligibilityStatus === 'ELIGIBLE'));
+        const isClaimReady =
+          r.status === 'CLAIM_READY' &&
+          r.isEligible &&
+          (!detailed || detailed.eligibilityStatus === 'ELIGIBLE');
+
         const eligibilityStatus = isClaimReady
           ? 'CLAIM_READY'
+          : r.status === 'REVIEW_REQUIRED'
+          ? 'REVIEW_REQUIRED'
           : detailed?.missingProfileFields && detailed.missingProfileFields.length > 0
           ? 'INSUFFICIENT_DATA'
           : detailed?.eligibilityStatus === 'FUTURE_ELIGIBLE'

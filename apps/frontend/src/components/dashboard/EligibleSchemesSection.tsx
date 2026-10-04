@@ -22,7 +22,7 @@ export const EligibleSchemesSection: React.FC<EligibleSchemesSectionProps> = ({
 }) => {
   // Strictly filter only verified CLAIM_READY schemes
   const claimReadySchemes = recommendations.filter(
-    (r) => r.isEligible === true && (r.status === 'CLAIM_READY' || r.eligibilityStatus === 'CLAIM_READY' || r.eligibilityStatus === 'ELIGIBLE'),
+    (r) => r.isEligible === true && (r.status === 'CLAIM_READY' || r.eligibilityStatus === 'CLAIM_READY'),
   );
 
   const getSchemeImage = (category?: string) => {
