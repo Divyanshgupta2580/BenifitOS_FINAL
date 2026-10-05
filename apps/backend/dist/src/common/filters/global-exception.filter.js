@@ -42,8 +42,10 @@ let GlobalExceptionFilter = GlobalExceptionFilter_1 = class GlobalExceptionFilte
             }
         }
         else if (exception instanceof Error) {
-            message = exception.message;
             this.logger.error(`Unhandled exception: ${exception.message}`, exception.stack);
+            message = process.env.NODE_ENV === 'production'
+                ? 'An unexpected internal server error occurred.'
+                : exception.message;
         }
         const correlationId = request.headers['x-correlation-id'] || 'N/A';
         response.status(statusCode).json({

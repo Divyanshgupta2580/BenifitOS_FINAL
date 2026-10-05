@@ -44,6 +44,12 @@ export class RecommendationEngineService {
         })
       : [];
     const verifiedDocumentTypes = new Set(documents.map((document) => document.documentType as DocumentType));
+    if (citizen.aadhaarHash) {
+      verifiedDocumentTypes.add(DocumentType.AADHAAR);
+    }
+    if (citizen.panHash) {
+      verifiedDocumentTypes.add(DocumentType.PAN_CARD);
+    }
     const recommendations: SchemeRecommendationEntity[] = [];
 
     for (const scheme of schemes) {
@@ -229,6 +235,8 @@ export class RecommendationEngineService {
 
         const eligibilityStatus = isClaimReady
           ? 'CLAIM_READY'
+          : r.status === 'DOCUMENTS_PENDING'
+          ? 'DOCUMENTS_PENDING'
           : r.status === 'INSUFFICIENT_DATA'
           ? 'INSUFFICIENT_DATA'
           : r.status === 'REVIEW_REQUIRED'

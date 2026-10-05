@@ -23,7 +23,7 @@ export class HealthController {
           return { database: { status: 'up' } };
         } catch (err: any) {
           throw new HealthCheckError('Database connection check failed', {
-            database: { status: 'down', error: err.message },
+            database: { status: 'down' },
           });
         }
       },

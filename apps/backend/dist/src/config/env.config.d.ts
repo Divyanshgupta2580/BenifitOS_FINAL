@@ -54,11 +54,11 @@ export declare const envSchema: z.ZodObject<{
     GEMINI_API_KEY?: string | undefined;
     GEMINI_SCHEME_GUIDANCE_API_KEY?: string | undefined;
     DIGILOCKER_CLIENT_ID?: string | undefined;
+    DIGILOCKER_CLIENT_SECRET?: string | undefined;
     OPENAI_API_KEY?: string | undefined;
     SARVAM_API_KEY?: string | undefined;
     SUPABASE_URL?: string | undefined;
     SUPABASE_SERVICE_ROLE_KEY?: string | undefined;
-    DIGILOCKER_CLIENT_SECRET?: string | undefined;
 }, {
     JWT_SECRET: string;
     JWT_REFRESH_SECRET: string;
@@ -79,6 +79,7 @@ export declare const envSchema: z.ZodObject<{
     JWT_EXPIRATION?: string | undefined;
     JWT_REFRESH_EXPIRATION?: string | undefined;
     DIGILOCKER_CLIENT_ID?: string | undefined;
+    DIGILOCKER_CLIENT_SECRET?: string | undefined;
     PORT?: string | undefined;
     API_PREFIX?: string | undefined;
     DEFAULT_AI_PROVIDER?: "gemini" | "openai" | "claude" | "azure" | undefined;
@@ -88,7 +89,6 @@ export declare const envSchema: z.ZodObject<{
     SUPABASE_URL?: string | undefined;
     SUPABASE_SERVICE_ROLE_KEY?: string | undefined;
     STORAGE_BUCKET_NAME?: string | undefined;
-    DIGILOCKER_CLIENT_SECRET?: string | undefined;
 }>;
 export type EnvConfig = z.infer<typeof envSchema>;
 export declare function validateEnv(): EnvConfig;

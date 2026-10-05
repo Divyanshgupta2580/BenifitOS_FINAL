@@ -294,6 +294,7 @@ async function runSection5() {
     employmentStatus: EmploymentStatus.UNEMPLOYED,
     maritalStatus: MaritalStatus.WIDOWED,
     isBplCardHolder: true,
+    aadhaarHash: 'aadhaar_priya_verified_123',
   });
 
   const mockScheme = new WelfareSchemeEntity({

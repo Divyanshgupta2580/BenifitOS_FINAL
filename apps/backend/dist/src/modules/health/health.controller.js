@@ -34,7 +34,7 @@ let HealthController = class HealthController {
                 }
                 catch (err) {
                     throw new terminus_1.HealthCheckError('Database connection check failed', {
-                        database: { status: 'down', error: err.message },
+                        database: { status: 'down' },
                     });
                 }
             },

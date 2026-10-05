@@ -22,6 +22,7 @@ const notification_service_1 = require("../notification/notification.service");
 const notification_repository_interface_1 = require("../../domain/notification/notification-repository.interface");
 const crypto_1 = require("crypto");
 const prisma_service_1 = require("../../infrastructure/database/prisma.service");
+const scheme_entity_1 = require("../../domain/welfare/scheme.entity");
 let RecommendationEngineService = RecommendationEngineService_1 = class RecommendationEngineService {
     evaluator;
     aiValidator;
@@ -55,6 +56,12 @@ let RecommendationEngineService = RecommendationEngineService_1 = class Recommen
             })
             : [];
         const verifiedDocumentTypes = new Set(documents.map((document) => document.documentType));
+        if (citizen.aadhaarHash) {
+            verifiedDocumentTypes.add(scheme_entity_1.DocumentType.AADHAAR);
+        }
+        if (citizen.panHash) {
+            verifiedDocumentTypes.add(scheme_entity_1.DocumentType.PAN_CARD);
+        }
         const recommendations = [];
         for (const scheme of schemes) {
             const detailed = this.evaluator.evaluateDetailedEligibility(citizen, scheme);
@@ -209,15 +216,17 @@ let RecommendationEngineService = RecommendationEngineService_1 = class Recommen
                 (!detailed || detailed.eligibilityStatus === 'ELIGIBLE');
             const eligibilityStatus = isClaimReady
                 ? 'CLAIM_READY'
-                : r.status === 'INSUFFICIENT_DATA'
-                    ? 'INSUFFICIENT_DATA'
-                    : r.status === 'REVIEW_REQUIRED'
-                        ? 'REVIEW_REQUIRED'
-                        : detailed?.eligibilityStatus === 'FUTURE_ELIGIBLE'
-                            ? 'FUTURE_ELIGIBLE'
-                            : r.isEligible
-                                ? 'ELIGIBLE'
-                                : 'NOT_ELIGIBLE';
+                : r.status === 'DOCUMENTS_PENDING'
+                    ? 'DOCUMENTS_PENDING'
+                    : r.status === 'INSUFFICIENT_DATA'
+                        ? 'INSUFFICIENT_DATA'
+                        : r.status === 'REVIEW_REQUIRED'
+                            ? 'REVIEW_REQUIRED'
+                            : detailed?.eligibilityStatus === 'FUTURE_ELIGIBLE'
+                                ? 'FUTURE_ELIGIBLE'
+                                : r.isEligible
+                                    ? 'ELIGIBLE'
+                                    : 'NOT_ELIGIBLE';
             return {
                 id: r.id,
                 schemeId: r.schemeId,
