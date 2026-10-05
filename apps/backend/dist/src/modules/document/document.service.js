@@ -51,7 +51,17 @@ let DocumentService = DocumentService_1 = class DocumentService {
         if (file.size > MAX_FILE_SIZE || fileBuffer.length > MAX_FILE_SIZE) {
             throw new common_1.BadRequestException('File size exceeds maximum allowed limit of 10 MB.');
         }
-        const ocrRes = await this.geminiAdapter.extractDocumentData(fileBuffer, file.mimetype, requiredDocumentType);
+        let ocrRes;
+        try {
+            ocrRes = await this.geminiAdapter.extractDocumentData(fileBuffer, file.mimetype, requiredDocumentType);
+        }
+        catch (error) {
+            this.logger.warn(`OCR unavailable for upload: ${error?.message || error}`);
+            throw new common_1.ServiceUnavailableException({
+                code: 'OCR_UNAVAILABLE',
+                message: 'Document text extraction is currently unavailable. Your document was not uploaded; please try again later.',
+            });
+        }
         const textContent = ocrRes.rawText || fileBuffer.toString('utf-8');
         const classification = this.classificationService.classifyDocumentContent(textContent, requiredDocumentType);
         if (classification.status === 'REJECTED' || classification.detectedType !== requiredDocumentType) {

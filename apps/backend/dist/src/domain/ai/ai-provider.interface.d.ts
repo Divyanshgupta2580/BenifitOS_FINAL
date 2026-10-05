@@ -15,6 +15,7 @@ export interface IAiProvider {
     readonly providerName: string;
     generateText(options: AiPromptOptions): Promise<AiResponse>;
     generateStream(options: AiPromptOptions, onChunk: (chunk: string) => void): Promise<AiResponse>;
+    generateJson<T extends Record<string, unknown>>(options: AiPromptOptions): Promise<T>;
 }
 export interface IVisionOcrProvider {
     readonly providerName: string;

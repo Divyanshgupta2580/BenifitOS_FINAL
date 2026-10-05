@@ -17,6 +17,11 @@ export interface IAiProvider {
   readonly providerName: string;
   generateText(options: AiPromptOptions): Promise<AiResponse>;
   generateStream(options: AiPromptOptions, onChunk: (chunk: string) => void): Promise<AiResponse>;
+  /**
+   * Produces a parsed JSON value.  Callers that make stateful decisions must
+   * use this rather than attempting to recover JSON from prose themselves.
+   */
+  generateJson<T extends Record<string, unknown>>(options: AiPromptOptions): Promise<T>;
 }
 
 export interface IVisionOcrProvider {

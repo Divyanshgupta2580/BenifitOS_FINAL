@@ -41,16 +41,17 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
     getModelName() {
         return process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
     }
+    configuredClients() {
+        return [this.aiClient, this.guidanceClient].filter(Boolean);
+    }
+    unavailable(message = 'Gemini is not configured or did not return a response.') {
+        return new Error(message);
+    }
     async generateText(options) {
-        const clients = [this.aiClient, this.guidanceClient].filter(Boolean);
+        const clients = this.configuredClients();
         const models = this.getModelCandidates();
         if (clients.length === 0) {
-            return {
-                content: 'AI Copilot is currently offline. Please verify service configuration and try again.',
-                tokensUsed: 0,
-                provider: 'AI Copilot',
-                model: 'AI-Copilot',
-            };
+            throw this.unavailable('Gemini is not configured.');
         }
         const config = {
             systemInstruction: options.systemInstruction,
@@ -83,30 +84,62 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
                 }
             }
         }
-        return {
-            content: 'AI Copilot is temporarily unable to process your request. Please verify your connection or try again shortly.',
-            tokensUsed: 0,
-            provider: 'AI Copilot',
-            model: 'AI-Copilot',
-        };
+        throw this.unavailable('Gemini did not return a usable text response.');
     }
     async generateStream(options, onChunk) {
-        const res = await this.generateText(options);
-        onChunk(res.content);
-        return res;
+        const clients = this.configuredClients();
+        if (clients.length === 0)
+            throw this.unavailable('Gemini is not configured.');
+        const config = {
+            systemInstruction: options.systemInstruction,
+            temperature: options.temperature ?? 0.3,
+            maxOutputTokens: options.maxTokens ?? 8192,
+            thinkingConfig: { thinkingBudget: 512 },
+        };
+        let lastError;
+        for (const client of clients) {
+            for (const model of this.getModelCandidates()) {
+                try {
+                    const stream = await client.models.generateContentStream({ model, contents: [options.prompt], config });
+                    let content = '';
+                    for await (const chunk of stream) {
+                        const text = chunk.text || '';
+                        if (text) {
+                            content += text;
+                            onChunk(text);
+                        }
+                    }
+                    if (content)
+                        return { content, tokensUsed: Math.ceil(content.length / 4), provider: 'AI Copilot', model };
+                    lastError = new Error('Empty streaming response');
+                }
+                catch (error) {
+                    lastError = error;
+                    this.logger.warn(`Gemini stream model ${model} failed: ${error?.message || error}`);
+                }
+            }
+        }
+        throw this.unavailable(`Gemini streaming failed: ${lastError?.message || 'unknown error'}`);
+    }
+    async generateJson(options) {
+        const result = await this.generateText({
+            ...options,
+            systemInstruction: `${options.systemInstruction || ''}\nReturn only one JSON object. Do not use Markdown fences or explanatory text.`,
+        });
+        try {
+            const parsed = JSON.parse(result.content.trim());
+            if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object')
+                throw new Error('Response was not an object');
+            return parsed;
+        }
+        catch (error) {
+            throw new Error(`Gemini returned malformed JSON: ${error.message}`);
+        }
     }
     async extractDocumentData(fileBuffer, mimeType, expectedDocType) {
         const model = this.getModelName();
-        if (!this.aiClient) {
-            const bufferText = fileBuffer ? fileBuffer.toString('utf-8') : '';
-            const isReadableText = bufferText.length > 5 && !bufferText.includes('\u0000');
-            const rawText = isReadableText ? bufferText : '';
-            return {
-                rawText,
-                confidenceScore: isReadableText ? 0.85 : 0.0,
-                extractedFields: { docType: expectedDocType, providerStatus: isReadableText ? 'TEXT_STREAM_PARSED' : 'OFFLINE_UNCONFIGURED' },
-            };
-        }
+        if (!this.aiClient)
+            throw this.unavailable('Gemini OCR is not configured.');
         try {
             const prompt = `Analyze this ${expectedDocType} document image. Extract raw text and return a JSON object with key fields such as documentNumber, fullName, dateOfBirth, address, issueDate.`;
             const response = await this.aiClient.models.generateContent({
@@ -145,17 +178,7 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
         }
         catch (err) {
             this.logger.error(`Gemini Vision OCR extraction failed: ${err.message}`);
-            const bufferText = fileBuffer ? fileBuffer.toString('utf-8') : '';
-            const isReadableText = bufferText.length > 5 && !bufferText.includes('\u0000');
-            return {
-                rawText: isReadableText ? bufferText : '',
-                confidenceScore: isReadableText ? 0.85 : 0.0,
-                extractedFields: {
-                    docType: expectedDocType,
-                    providerStatus: isReadableText ? 'TEXT_STREAM_FALLBACK' : 'OFFLINE_UNCONFIGURED',
-                    error: err.message,
-                },
-            };
+            throw new Error(`Gemini OCR extraction failed: ${err.message}`);
         }
     }
     async generateSchemeInstructions(options) {
@@ -189,25 +212,8 @@ Format your response in clean, formal Markdown with clear section headings and b
 6. Tracking Application Status and Benefit Disbursement (Verification and direct transfer tracking)
 
 IMPORTANT: Do not use emojis, casual language, or marketing claims. Maintain a professional, neutral government portal tone.`;
-        if (clients.length === 0) {
-            return isHindi
-                ? `### ${options.schemeTitle} के लिए चरणबद्ध आवेदन मार्गदर्शिका
-
-1. **आवश्यक शर्तें एवं दस्तावेज़ चेकलिस्ट**: आधार कार्ड, आय प्रमाण पत्र, निवास प्रमाण पत्र और सक्रिय बैंक पासबुक की स्पष्ट प्रतियां तैयार रखें।
-2. **आधिकारिक पोर्टल पंजीकरण**: आधिकारिक सरकारी पोर्टल पर जाएं और अपने मोबाइल नंबर से पंजीकरण पूर्ण करें।
-3. **आवेदन पत्र विवरण**: अपना व्यक्तिगत विवरण, पारिवारिक आय, राज्य निवास और डीबीटी बैंक खाता विवरण दर्ज करें।
-4. **आवश्यक दस्तावेज़ अपलोड करें**: मांगे गए आवश्यक पहचान एवं श्रेणी प्रमाण पत्र पीडीएफ या जेपीईजी प्रारूप में अपलोड करें।
-5. **अंतिम सबमिशन एवं पावती**: आवेदन पत्र जमा करें और भविष्य के संदर्भ के लिए आवेदन संदर्भ संख्या (Acknowledgment Reference Number) सुरक्षित रखें।
-6. **स्थिति ट्रैक करें**: पोर्टल पर अपने आवेदन की सत्यापन स्थिति और लाभ वितरण की निगरानी करें।`
-                : `### Step-by-Step Application Guide for ${options.schemeTitle}
-
-1. **Prerequisites and Document Checklist**: Prepare clear copies of your Aadhaar Card, Income Certificate, Domicile Certificate, and Bank Account Passbook.
-2. **Official Portal Registration**: Access the official portal using the portal link. Complete registration and verify your mobile number.
-3. **Application Form Details**: Enter your personal details, household income, state domicile, and active bank account details for direct benefit transfer.
-4. **Upload Required Documents**: Upload scanned copies of required documents in PDF or JPEG format.
-5. **Final Submission and Acknowledgement**: Submit your application and save your Application Reference Number for tracking.
-6. **Track Status**: Monitor verification status and benefit disbursement timeline on the portal.`;
-        }
+        if (clients.length === 0)
+            throw this.unavailable('Gemini is not configured.');
         const config = {
             systemInstruction: isHindi
                 ? 'You are an AI Copilot scheme application specialist. Provide complete, clear, step-by-step instructions in Hindi (Devanagari script) without emojis.'
@@ -236,21 +242,7 @@ IMPORTANT: Do not use emojis, casual language, or marketing claims. Maintain a p
                 }
             }
         }
-        return isHindi
-            ? `### ${options.schemeTitle} के लिए चरणबद्ध आवेदन मार्गदर्शिका
-
-1. **आवश्यक शर्तें एवं दस्तावेज़ चेकलिस्ट**: आधार कार्ड, बैंक खाते से लिंक मोबाइल नंबर और आय प्रमाण पत्र सत्यापित करें।
-2. **आधिकारिक पोर्टल पंजीकरण**: आधिकारिक पोर्टल पर जाएं और अपने विवरण से पंजीकरण करें।
-3. **आवेदन पत्र विवरण**: व्यक्तिगत, आय और व्यावसायिक विवरण सही-सही भरें।
-4. **स्कैन किए गए प्रमाण अपलोड करें**: आवश्यक पहचान और आय प्रमाण संलग्न करें।
-5. **अंतिम सबमिशन एवं पावती**: फॉर्म जमा करें और ट्रैकिंग के लिए आवेदन संदर्भ आईडी सुरक्षित रखें।`
-            : `### Step-by-Step Application Guide for ${options.schemeTitle}
-
-1. **Prerequisites and Document Checklist**: Verify Aadhaar, mobile number linked to bank account, and category or income certificate.
-2. **Official Portal Registration**: Access the official portal and register with your credentials.
-3. **Application Form Details**: Fill personal, income, and occupational details accurately.
-4. **Upload Scanned Proofs**: Attach mandatory identity and income proofs.
-5. **Final Submission and Acknowledgement**: Submit the form and store the Application Reference ID for tracking.`;
+        throw this.unavailable('Gemini did not return scheme instructions.');
     }
 };
 exports.GeminiAiAdapter = GeminiAiAdapter;

@@ -40,7 +40,17 @@ let OcrPipelineService = OcrPipelineService_1 = class OcrPipelineService {
             throw new common_1.NotFoundException(`Document with ID '${documentId}' not found or access denied.`);
         }
         const fileBuffer = await this.storageAdapter.downloadFile(doc.storagePath);
-        const ocrResult = await this.geminiAdapter.extractDocumentData(fileBuffer, doc.mimeType, doc.documentType);
+        let ocrResult;
+        try {
+            ocrResult = await this.geminiAdapter.extractDocumentData(fileBuffer, doc.mimeType, doc.documentType);
+        }
+        catch (error) {
+            this.logger.warn(`OCR unavailable for document ${documentId}: ${error?.message || error}`);
+            throw new common_1.ServiceUnavailableException({
+                code: 'OCR_UNAVAILABLE',
+                message: 'Document text extraction is currently unavailable. Existing document data was not changed.',
+            });
+        }
         const classification = this.classificationService.classifyDocumentContent(ocrResult.rawText || fileBuffer.toString('utf-8'), doc.documentType);
         const extractedFields = {
             ...(classification.extractedFields || {}),

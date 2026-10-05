@@ -67,6 +67,9 @@ export class EligibilityAiValidatorService {
     }
 
     // GUARD 3: Deterministic passed all non-document rules -> Second-layer Gemini Validation
+    // Deliberately normalized: it contains every field currently modelled by
+    // deterministic eligibility, but never names, hashes, addresses or other
+    // database internals.
     const citizenFacts = {
       age: citizen.age,
       gender: citizen.gender,
@@ -75,9 +78,17 @@ export class EligibilityAiValidatorService {
       annualIncomeINR: citizen.annualIncomeINR,
       isBplCardHolder: citizen.isBplCardHolder,
       state: citizen.address?.state,
+      district: citizen.address?.district,
+      city: citizen.address?.city,
       isRural: citizen.address?.isRural,
-      hasLand: citizen.landDetails && citizen.landDetails.length > 0,
+      socialCategory: citizen.socialCategory,
       disabilityType: citizen.disabilityType,
+      disabilityPercent: citizen.disabilityPercent,
+      householdSize: citizen.householdMembers.length,
+      land: {
+        hasLand: citizen.landDetails.length > 0,
+        totalAcres: citizen.landDetails.reduce((total, land) => total + (land.landSizeAcres || 0), 0),
+      },
     };
 
     const schemeRules = (scheme.eligibilityRules || []).map((r) => ({
@@ -113,9 +124,15 @@ export class EligibilityAiValidatorService {
         async () => {
           const promptPayload = {
             scheme: {
+              id: scheme.id,
               code: scheme.code,
               title: scheme.title,
+              description: scheme.description,
               department: scheme.department,
+              scope: scheme.isCentralScheme ? 'CENTRAL' : 'STATE',
+              state: scheme.state,
+              sourceUrl: scheme.sourceUrl,
+              lastUpdatedAt: scheme.updatedAt?.toISOString(),
               rules: schemeRules,
               requiredDocuments: requiredDocNames,
             },
@@ -146,21 +163,19 @@ CRITICAL AUDIT RULES:
   "reason": string
 }`;
 
-          const res = await this.geminiAdapter.generateText({
+          const request = {
             prompt: `Audit eligibility for this applicant:\n${JSON.stringify(promptPayload, null, 2)}`,
             systemInstruction,
             temperature: 0.1,
-          });
-
-          // Clean JSON markdown fences if present
-          const rawContent = typeof res === 'string' ? res : (res?.content || (res as any)?.text || '');
-          let jsonText = rawContent.trim();
-          if (jsonText.startsWith('```')) {
-            jsonText = jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-          }
+          };
+          // The production adapter always provides generateJson.  The narrow
+          // fallback keeps older test doubles compatible while preserving the
+          // same strict parse/fail-closed semantics.
+          const parsed: Record<string, unknown> = typeof (this.geminiAdapter as any).generateJson === 'function'
+            ? await this.geminiAdapter.generateJson<Record<string, unknown>>(request)
+            : JSON.parse((await this.geminiAdapter.generateText(request)).content);
 
           try {
-            const parsed = JSON.parse(jsonText);
             const isAiClaimReady =
               parsed.decision === 'CLAIM_READY' &&
               parsed.allNonDocumentCriteriaSatisfied === true &&
@@ -179,15 +194,15 @@ CRITICAL AUDIT RULES:
               allNonDocumentCriteriaSatisfied: isAiClaimReady,
               onlyDocumentsRemaining: isAiClaimReady,
               confidence: typeof parsed.confidence === 'number' ? parsed.confidence : (isAiClaimReady ? 0.98 : 0.5),
-              failedCriteria: Array.isArray(parsed.failedCriteria) ? parsed.failedCriteria : [],
-              unverifiedCriteria: Array.isArray(parsed.unverifiedCriteria) ? parsed.unverifiedCriteria : [],
-              requiredDocuments: Array.isArray(parsed.requiredDocuments) ? parsed.requiredDocuments : requiredDocNames,
-              reason: parsed.reason || (isAiClaimReady ? 'Verified statutory eligibility conditions satisfied.' : 'Eligibility criteria validation requires further review.'),
+              failedCriteria: Array.isArray(parsed.failedCriteria) ? parsed.failedCriteria.filter((value): value is string => typeof value === 'string') : [],
+              unverifiedCriteria: Array.isArray(parsed.unverifiedCriteria) ? parsed.unverifiedCriteria.filter((value): value is string => typeof value === 'string') : [],
+              requiredDocuments: Array.isArray(parsed.requiredDocuments) ? parsed.requiredDocuments.filter((value): value is string => typeof value === 'string') : requiredDocNames,
+              reason: typeof parsed.reason === 'string' ? parsed.reason : (isAiClaimReady ? 'Verified statutory eligibility conditions satisfied.' : 'Eligibility criteria validation requires further review.'),
             };
 
             return {
               content: JSON.stringify(validated),
-              provider: res.provider || 'Gemini Eligibility Auditor',
+              provider: 'Gemini Eligibility Auditor',
             };
           } catch (parseErr) {
             // Malformed / invalid JSON from AI strictly prevents CLAIM_READY -> REVIEW_REQUIRED

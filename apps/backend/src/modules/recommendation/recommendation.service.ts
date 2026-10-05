@@ -7,6 +7,8 @@ import { SchemeRecommendationEntity, EligibilityStatus } from '../../domain/welf
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType, NotificationSeverity } from '../../domain/notification/notification-repository.interface';
 import { randomUUID } from 'crypto';
+import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { DocumentType } from '../../domain/welfare/scheme.entity';
 
 @Injectable()
 export class RecommendationEngineService {
@@ -19,6 +21,7 @@ export class RecommendationEngineService {
     @Inject('IWelfareSchemeRepository') private readonly schemeRepo: IWelfareSchemeRepository,
     @Inject('ISchemeRecommendationRepository') private readonly recommendationRepo: ISchemeRecommendationRepository,
     @Optional() private readonly notificationService?: NotificationService,
+    private readonly prisma?: PrismaService,
   ) {}
 
   async calculateRecommendationsForCitizen(userId: string): Promise<SchemeRecommendationEntity[]> {
@@ -33,6 +36,14 @@ export class RecommendationEngineService {
     );
 
     const schemes = await this.schemeRepo.findAllActive(undefined, citizen.address?.state);
+    // Load document state once.  A pending upload is never treated as verified.
+    const documents = this.prisma
+      ? await this.prisma.client.document.findMany({
+          where: { userId, verificationStatus: 'VERIFIED' },
+          select: { documentType: true },
+        })
+      : [];
+    const verifiedDocumentTypes = new Set(documents.map((document) => document.documentType as DocumentType));
     const recommendations: SchemeRecommendationEntity[] = [];
 
     for (const scheme of schemes) {
@@ -62,8 +73,18 @@ export class RecommendationEngineService {
         aiVal.allNonDocumentCriteriaSatisfied === true &&
         aiVal.onlyDocumentsRemaining === true
       ) {
-        status = 'CLAIM_READY';
-        isEligible = true;
+        const missingDocuments = (scheme.requiredDocuments || []).filter(
+          (documentType) => !verifiedDocumentTypes.has(documentType),
+        );
+        // A citizen can be profile-eligible while still not being able to
+        // submit.  Keep this distinct from CLAIM_READY.
+        if (missingDocuments.length > 0) {
+          status = 'DOCUMENTS_PENDING';
+          isEligible = false;
+        } else {
+          status = 'CLAIM_READY';
+          isEligible = true;
+        }
       } else if (
         detailed.eligibilityStatus === 'ELIGIBLE' &&
         (aiVal.decision === 'REVIEW_REQUIRED' || !aiVal.allNonDocumentCriteriaSatisfied)
@@ -87,7 +108,9 @@ export class RecommendationEngineService {
         status,
         criteriaMet: detailed.passedRules,
         missingCriteria: detailed.failedRules.concat(detailed.missingProfileFields),
-        missingDocuments: scheme.requiredDocuments || [],
+        missingDocuments: (scheme.requiredDocuments || []).filter(
+          (documentType) => !verifiedDocumentTypes.has(documentType),
+        ),
         aiValidation: {
           decision: aiVal.decision,
           confidence: aiVal.confidence,
@@ -100,6 +123,22 @@ export class RecommendationEngineService {
       });
 
       recommendations.push(rec);
+
+      if (status === 'DOCUMENTS_PENDING' && this.notificationService && rec.missingDocuments.length > 0) {
+        try {
+          await this.notificationService.createNotification({
+            userId,
+            type: NotificationType.DOCUMENT_REQUIRED,
+            title: `Documents required: ${scheme.title}`,
+            body: `Eligibility is confirmed based on your current profile. Upload: ${rec.missingDocuments.join(', ')}.`,
+            severity: NotificationSeverity.WARNING,
+            metadata: { schemeId: scheme.id, schemeCode: scheme.code, missingDocuments: rec.missingDocuments, destination: '/documents' },
+            dedupKey: `${userId}:${scheme.id}:DOCUMENT_REQUIRED:${scheme.updatedAt.toISOString()}`,
+          });
+        } catch (notifErr: any) {
+          this.logger.warn(`Failed to dispatch missing-document notification: ${notifErr?.message}`);
+        }
+      }
 
       // Proactive Notification Dispatch for CLAIM_READY schemes
       if (status === 'CLAIM_READY' && this.notificationService) {
@@ -153,7 +192,8 @@ export class RecommendationEngineService {
       return b.matchPercentage - a.matchPercentage;
     });
 
-    await this.recommendationRepo.deleteForCitizen(citizen.id);
+    // saveMany uses per-scheme upserts.  Do not delete first: a concurrent,
+    // older evaluation must not create a window with no recommendations.
     await this.recommendationRepo.saveMany(recommendations);
     return recommendations;
   }

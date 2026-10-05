@@ -1,4 +1,4 @@
-import { Injectable, Inject, Optional, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, Inject, Optional, NotFoundException, BadRequestException, ServiceUnavailableException, Logger } from '@nestjs/common';
 import { IDocumentRepository } from '../../domain/document/document-repository.interface';
 import { DocumentEntity, VerificationStatus } from '../../domain/document/document.entity';
 import { DocumentType, DOCUMENT_TYPE_DISPLAY_NAMES } from '../../domain/welfare/scheme.entity';
@@ -44,11 +44,20 @@ export class DocumentService {
       throw new BadRequestException('File size exceeds maximum allowed limit of 10 MB.');
     }
 
-    const ocrRes = await this.geminiAdapter.extractDocumentData(
-      fileBuffer,
-      file.mimetype,
-      requiredDocumentType,
-    );
+    let ocrRes: Awaited<ReturnType<GeminiAiAdapter['extractDocumentData']>>;
+    try {
+      ocrRes = await this.geminiAdapter.extractDocumentData(
+        fileBuffer,
+        file.mimetype,
+        requiredDocumentType,
+      );
+    } catch (error: any) {
+      this.logger.warn(`OCR unavailable for upload: ${error?.message || error}`);
+      throw new ServiceUnavailableException({
+        code: 'OCR_UNAVAILABLE',
+        message: 'Document text extraction is currently unavailable. Your document was not uploaded; please try again later.',
+      });
+    }
     const textContent = ocrRes.rawText || fileBuffer.toString('utf-8');
 
     // Anti-spoofing document classification strictly based on file content

@@ -21,6 +21,7 @@ const recommendation_entity_1 = require("../../domain/welfare/recommendation.ent
 const notification_service_1 = require("../notification/notification.service");
 const notification_repository_interface_1 = require("../../domain/notification/notification-repository.interface");
 const crypto_1 = require("crypto");
+const prisma_service_1 = require("../../infrastructure/database/prisma.service");
 let RecommendationEngineService = RecommendationEngineService_1 = class RecommendationEngineService {
     evaluator;
     aiValidator;
@@ -28,14 +29,16 @@ let RecommendationEngineService = RecommendationEngineService_1 = class Recommen
     schemeRepo;
     recommendationRepo;
     notificationService;
+    prisma;
     logger = new common_1.Logger(RecommendationEngineService_1.name);
-    constructor(evaluator, aiValidator, citizenRepo, schemeRepo, recommendationRepo, notificationService) {
+    constructor(evaluator, aiValidator, citizenRepo, schemeRepo, recommendationRepo, notificationService, prisma) {
         this.evaluator = evaluator;
         this.aiValidator = aiValidator;
         this.citizenRepo = citizenRepo;
         this.schemeRepo = schemeRepo;
         this.recommendationRepo = recommendationRepo;
         this.notificationService = notificationService;
+        this.prisma = prisma;
     }
     async calculateRecommendationsForCitizen(userId) {
         const citizen = await this.citizenRepo.findByUserId(userId);
@@ -45,6 +48,13 @@ let RecommendationEngineService = RecommendationEngineService_1 = class Recommen
         const existingRecs = await this.recommendationRepo.findByCitizenId(citizen.id);
         const prevStatusMap = new Map(existingRecs.map((r) => [r.schemeId, r.status]));
         const schemes = await this.schemeRepo.findAllActive(undefined, citizen.address?.state);
+        const documents = this.prisma
+            ? await this.prisma.client.document.findMany({
+                where: { userId, verificationStatus: 'VERIFIED' },
+                select: { documentType: true },
+            })
+            : [];
+        const verifiedDocumentTypes = new Set(documents.map((document) => document.documentType));
         const recommendations = [];
         for (const scheme of schemes) {
             const detailed = this.evaluator.evaluateDetailedEligibility(citizen, scheme);
@@ -63,8 +73,15 @@ let RecommendationEngineService = RecommendationEngineService_1 = class Recommen
                 aiVal.decision === 'CLAIM_READY' &&
                 aiVal.allNonDocumentCriteriaSatisfied === true &&
                 aiVal.onlyDocumentsRemaining === true) {
-                status = 'CLAIM_READY';
-                isEligible = true;
+                const missingDocuments = (scheme.requiredDocuments || []).filter((documentType) => !verifiedDocumentTypes.has(documentType));
+                if (missingDocuments.length > 0) {
+                    status = 'DOCUMENTS_PENDING';
+                    isEligible = false;
+                }
+                else {
+                    status = 'CLAIM_READY';
+                    isEligible = true;
+                }
             }
             else if (detailed.eligibilityStatus === 'ELIGIBLE' &&
                 (aiVal.decision === 'REVIEW_REQUIRED' || !aiVal.allNonDocumentCriteriaSatisfied)) {
@@ -86,7 +103,7 @@ let RecommendationEngineService = RecommendationEngineService_1 = class Recommen
                 status,
                 criteriaMet: detailed.passedRules,
                 missingCriteria: detailed.failedRules.concat(detailed.missingProfileFields),
-                missingDocuments: scheme.requiredDocuments || [],
+                missingDocuments: (scheme.requiredDocuments || []).filter((documentType) => !verifiedDocumentTypes.has(documentType)),
                 aiValidation: {
                     decision: aiVal.decision,
                     confidence: aiVal.confidence,
@@ -98,6 +115,22 @@ let RecommendationEngineService = RecommendationEngineService_1 = class Recommen
                 calculatedAt: new Date(),
             });
             recommendations.push(rec);
+            if (status === 'DOCUMENTS_PENDING' && this.notificationService && rec.missingDocuments.length > 0) {
+                try {
+                    await this.notificationService.createNotification({
+                        userId,
+                        type: notification_repository_interface_1.NotificationType.DOCUMENT_REQUIRED,
+                        title: `Documents required: ${scheme.title}`,
+                        body: `Eligibility is confirmed based on your current profile. Upload: ${rec.missingDocuments.join(', ')}.`,
+                        severity: notification_repository_interface_1.NotificationSeverity.WARNING,
+                        metadata: { schemeId: scheme.id, schemeCode: scheme.code, missingDocuments: rec.missingDocuments, destination: '/documents' },
+                        dedupKey: `${userId}:${scheme.id}:DOCUMENT_REQUIRED:${scheme.updatedAt.toISOString()}`,
+                    });
+                }
+                catch (notifErr) {
+                    this.logger.warn(`Failed to dispatch missing-document notification: ${notifErr?.message}`);
+                }
+            }
             if (status === 'CLAIM_READY' && this.notificationService) {
                 try {
                     if (prevStatus && prevStatus !== 'CLAIM_READY') {
@@ -148,7 +181,6 @@ let RecommendationEngineService = RecommendationEngineService_1 = class Recommen
                 return 1;
             return b.matchPercentage - a.matchPercentage;
         });
-        await this.recommendationRepo.deleteForCitizen(citizen.id);
         await this.recommendationRepo.saveMany(recommendations);
         return recommendations;
     }
@@ -230,6 +262,7 @@ exports.RecommendationEngineService = RecommendationEngineService = Recommendati
     __param(4, (0, common_1.Inject)('ISchemeRecommendationRepository')),
     __param(5, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [eligibility_evaluator_service_1.EligibilityEvaluatorService,
-        eligibility_ai_validator_service_1.EligibilityAiValidatorService, Object, Object, Object, notification_service_1.NotificationService])
+        eligibility_ai_validator_service_1.EligibilityAiValidatorService, Object, Object, Object, notification_service_1.NotificationService,
+        prisma_service_1.PrismaService])
 ], RecommendationEngineService);
 //# sourceMappingURL=recommendation.service.js.map

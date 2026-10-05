@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ServiceUnavailableException, Logger } from '@nestjs/common';
 import { IDocumentRepository } from '../../domain/document/document-repository.interface';
 import { GeminiAiAdapter } from '../../infrastructure/ai/gemini-ai.adapter';
 import { LocalStorageAdapter } from '../../infrastructure/storage/local-storage.adapter';
@@ -28,7 +28,16 @@ export class OcrPipelineService {
     }
 
     const fileBuffer = await this.storageAdapter.downloadFile(doc.storagePath);
-    const ocrResult = await this.geminiAdapter.extractDocumentData(fileBuffer, doc.mimeType, doc.documentType);
+    let ocrResult: Awaited<ReturnType<GeminiAiAdapter['extractDocumentData']>>;
+    try {
+      ocrResult = await this.geminiAdapter.extractDocumentData(fileBuffer, doc.mimeType, doc.documentType);
+    } catch (error: any) {
+      this.logger.warn(`OCR unavailable for document ${documentId}: ${error?.message || error}`);
+      throw new ServiceUnavailableException({
+        code: 'OCR_UNAVAILABLE',
+        message: 'Document text extraction is currently unavailable. Existing document data was not changed.',
+      });
+    }
 
     const classification = this.classificationService.classifyDocumentContent(
       ocrResult.rawText || fileBuffer.toString('utf-8'),
