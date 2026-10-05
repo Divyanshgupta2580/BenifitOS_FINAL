@@ -1,7 +1,7 @@
 export const storageService = {
   async getItem(key: string): Promise<string | null> {
-    if (key === 'refresh_token') {
-      console.warn('Security Notice: refresh_token is managed via HttpOnly cookies and is not accessible from web storage.');
+    if (key === 'refresh_token' || key === 'refreshToken' || key === 'accessToken' || key === 'access_token') {
+      console.warn(`Security Notice: ${key} is kept in memory only and is strictly not accessible from web storage.`);
       return null;
     }
     try {
@@ -15,8 +15,8 @@ export const storageService = {
   },
 
   async setItem(key: string, value: string): Promise<void> {
-    if (key === 'refresh_token') {
-      console.warn('Security Notice: refresh_token is managed via HttpOnly cookies and will not be stored in localStorage.');
+    if (key === 'refresh_token' || key === 'refreshToken' || key === 'accessToken' || key === 'access_token') {
+      console.warn(`Security Notice: ${key} is kept in memory only and will never be stored in persistent web storage.`);
       return;
     }
     try {
@@ -29,9 +29,6 @@ export const storageService = {
   },
 
   async removeItem(key: string): Promise<void> {
-    if (key === 'refresh_token') {
-      return;
-    }
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.removeItem(key);

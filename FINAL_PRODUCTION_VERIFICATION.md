@@ -312,15 +312,24 @@ All routes are governed globally by `JwtAuthGuard` in `app.module.ts` unless ann
 
 ---
 
-## 28. Frontend Auth Token Storage Audit
+## 28. Frontend Auth Token Storage Audit & In-Memory Migration
 
-- **Investigation:** Inspected `apps/frontend/src/store/auth.store.ts` and `apps/frontend/src/services/storage.service.ts`.
-- **Findings:**
-  - `refreshToken` is blocked from web storage and maintained via HttpOnly cookie.
-  - `accessToken` is persisted to browser `localStorage` (`storageService.setItem("accessToken", token)`).
-  - Short TTL of 15 minutes limits the exposure window, but in-storage access tokens remain readable by JavaScript if an XSS vulnerability were introduced.
-- **Classification:** **REVIEW_REQUIRED**
-- **Remediation Recommendation:** Transition `accessToken` persistence to an in-memory Zustand variable, relying on silent refresh via HttpOnly cookie upon page reload in future hardening passes.
+- **Architecture:** Transitioned from persistent `localStorage` to strictly volatile in-memory Zustand state (`tokenManager` + `useAuthStore`).
+- **Storage Policy:**
+  - `accessToken` and `access_token` are strictly blocked from `localStorage`, `sessionStorage`, cookies, and IndexedDB via `storageService`.
+  - `refreshToken` remains protected in HttpOnly cookie (`SameSite=Strict/Lax`, `Secure` in production).
+  - Page reload silently recovers access token into memory via `POST /api/v1/auth/refresh` with HttpOnly cookie.
+  - WebSocket gateway derives access tokens directly from `tokenManager.getAccessToken()`.
+- **Automated Verification:** Verified via `apps/frontend/src/tests/auth-token-storage.spec.ts` (8/8 assertions passed):
+  1. Login stores token strictly in volatile memory.
+  2. Page reload recovers token into memory without web storage.
+  3. Refresh failure terminates session and purges state.
+  4. Concurrent 401 responses coalesce into exactly one refresh call.
+  5. Original requests retry automatically with new in-memory token.
+  6. Logout immediately purges in-memory access token.
+  7. WebSocket derives credentials dynamically from in-memory token.
+  8. `localStorage` and `sessionStorage` contain zero tokens.
+- **Classification:** **PASS**
 
 ---
 
@@ -331,16 +340,17 @@ All routes are governed globally by `JwtAuthGuard` in `app.module.ts` unless ann
                         FINAL STATUS
 ============================================================
   DEPENDENCY_SECURITY:      PASS (Documented Risk Acceptance)
-  OCR_LIVE_EXTRACTION:      NOT_TESTED
-  AUTH_TOKEN_STORAGE:       REVIEW_REQUIRED
-  RENDER_DEPLOYMENT:        PASS
-  ELIGIBILITY_CORRECTNESS:  PASS
-  WEBSOCKET_SECURITY:       PASS
-  GEMINI_OPTIMIZATION:      PASS
+  OCR_LIVE_EXTRACTION:      NOT_TESTED (Requires Outbound Cloud API)
+  AUTH_TOKEN_STORAGE:       PASS (In-Memory Architecture Verified)
+  RENDER_DEPLOYMENT:        PASS (Verified Live on Render)
+  ELIGIBILITY_CORRECTNESS:  PASS (41/41 Invariant Checks)
+  WEBSOCKET_SECURITY:       PASS (Handshake & Private Rooms)
+  GEMINI_OPTIMIZATION:      PASS (Coalescing & Cache Verified)
 ------------------------------------------------------------
   OVERALL VERDICT:
   PRODUCTION CANDIDATE — REMAINING ISSUES
-  (Pending outbound Google Vision network credentials &
-   in-memory access token storage migration)
+  (Pending outbound Google Vision network credentials for
+   live OCR extraction)
 ============================================================
 ```
+

@@ -1,8 +1,12 @@
 import axios from 'axios';
 import { storageService } from './storage.service';
 import { wsService } from './websocket-client';
+import { tokenManager } from './token-manager';
 
-const getApiBaseUrl = (): string => {
+export const getApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined' && (window as any).__BENEFITOS_API_URL__) {
+    return (window as any).__BENEFITOS_API_URL__;
+  }
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
@@ -40,12 +44,26 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Request interceptor to attach access token
+const setAuthHeader = (headers: any, token: string) => {
+  if (!headers) return;
+  if (typeof headers.delete === 'function') {
+    headers.delete('authorization');
+    headers.delete('Authorization');
+  }
+  if (typeof headers.set === 'function') {
+    headers.set('Authorization', `Bearer ${token}`);
+  } else {
+    headers.Authorization = `Bearer ${token}`;
+  }
+};
+
+// Request interceptor to attach in-memory access token
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = (await storageService.getItem('accessToken')) || (await storageService.getItem('access_token'));
+    config.baseURL = getApiBaseUrl();
+    const token = tokenManager.getAccessToken();
     if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+      setAuthHeader(config.headers, token);
     }
     return config;
   },
@@ -70,12 +88,25 @@ apiClient.interceptors.response.use(
       } else {
         originalRequest._retry = true;
 
+        const currentToken = tokenManager.getAccessToken();
+        const requestToken = (
+          typeof originalRequest.headers?.get === 'function'
+            ? originalRequest.headers.get('Authorization')
+            : originalRequest.headers?.Authorization
+        )?.toString().replace(/^Bearer\s+/i, '');
+
+        // If token in memory has already been refreshed since this request was sent, retry immediately with fresh token
+        if (currentToken && requestToken && currentToken !== requestToken) {
+          setAuthHeader(originalRequest.headers, currentToken);
+          return apiClient(originalRequest);
+        }
+
         if (isRefreshing) {
-          return new Promise((resolve, reject) => {
+          return new Promise<string>((resolve, reject) => {
             failedQueue.push({ resolve, reject });
           })
             .then((token) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
+              setAuthHeader(originalRequest.headers, token);
               return apiClient(originalRequest);
             })
             .catch((err) => Promise.reject(err));
@@ -84,18 +115,30 @@ apiClient.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          const refreshResponse = await axios.post(
+          const refreshResponse = await axios.post<{
+            success?: boolean;
+            data?: {
+              tokens?: { accessToken: string };
+              accessToken?: string;
+            };
+            tokens?: { accessToken: string };
+            accessToken?: string;
+          }>(
             `${getApiBaseUrl()}/auth/refresh`,
             {},
             { withCredentials: true },
           );
 
-          const newAccessToken = refreshResponse.data?.tokens?.accessToken || refreshResponse.data?.accessToken;
+          const resData = refreshResponse.data?.data || refreshResponse.data;
+          const newAccessToken =
+            resData?.tokens?.accessToken ??
+            resData?.accessToken ??
+            refreshResponse.data?.tokens?.accessToken ??
+            refreshResponse.data?.accessToken;
 
           if (newAccessToken) {
-            await storageService.setItem('accessToken', newAccessToken);
-            apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
-            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            tokenManager.setAccessToken(newAccessToken);
+            setAuthHeader(originalRequest.headers, newAccessToken);
 
             processQueue(null, newAccessToken);
             isRefreshing = false;
@@ -112,12 +155,13 @@ apiClient.interceptors.response.use(
         } catch (refreshErr) {
           processQueue(refreshErr, null);
           isRefreshing = false;
+          tokenManager.clearAccessToken();
           await storageService.removeItem('accessToken');
           await storageService.removeItem('access_token');
           try {
             wsService.disconnect();
           } catch {}
-          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          if (typeof window !== 'undefined' && window.location?.pathname && window.location.pathname !== '/login') {
             window.location.href = '/login';
           }
           return Promise.reject(refreshErr);

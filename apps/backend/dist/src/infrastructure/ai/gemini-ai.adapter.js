@@ -35,7 +35,7 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
     }
     getModelCandidates() {
         const configured = process.env.GEMINI_MODEL;
-        const candidates = [configured, 'gemini-3.5-flash-lite', 'gemini-3.8-flash'].filter(Boolean);
+        const candidates = [configured, 'gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.1-flash-lite'].filter(Boolean);
         return Array.from(new Set(candidates));
     }
     getModelName() {
@@ -154,18 +154,20 @@ let GeminiAiAdapter = GeminiAiAdapter_1 = class GeminiAiAdapter {
                     model,
                     contents: [
                         {
-                            inlineData: {
-                                mimeType,
-                                data: fileBuffer.toString('base64'),
-                            },
+                            role: 'user',
+                            parts: [
+                                {
+                                    inlineData: {
+                                        mimeType,
+                                        data: fileBuffer.toString('base64'),
+                                    },
+                                },
+                                { text: prompt },
+                            ],
                         },
-                        prompt,
                     ],
                     config: {
-                        maxOutputTokens: 4096,
-                        thinkingConfig: {
-                            thinkingBudget: 512,
-                        },
+                        maxOutputTokens: 2048,
                     },
                 });
                 const rawText = response.text || '';

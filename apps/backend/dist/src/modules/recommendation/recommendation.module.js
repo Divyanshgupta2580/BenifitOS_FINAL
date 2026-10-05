@@ -22,7 +22,7 @@ let RecommendationModule = class RecommendationModule {
 exports.RecommendationModule = RecommendationModule;
 exports.RecommendationModule = RecommendationModule = __decorate([
     (0, common_1.Module)({
-        imports: [ai_module_1.AiModule, notification_module_1.NotificationModule],
+        imports: [ai_module_1.AiModule, (0, common_1.forwardRef)(() => notification_module_1.NotificationModule)],
         controllers: [recommendation_controller_1.RecommendationController],
         providers: [
             recommendation_service_1.RecommendationEngineService,

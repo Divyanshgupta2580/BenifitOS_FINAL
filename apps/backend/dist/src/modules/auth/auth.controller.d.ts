@@ -40,6 +40,11 @@ export declare class AuthController {
     }>;
     refresh(req: Request, dto: Partial<RefreshTokenDto>, res: Response): Promise<{
         message: string;
+        user: {
+            id: string;
+            email: string;
+            role: import("../../domain/user/user.entity").UserRole;
+        };
         tokens: {
             accessToken: string;
         };

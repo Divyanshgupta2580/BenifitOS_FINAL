@@ -83,12 +83,17 @@ let AuthController = class AuthController {
         if (!token) {
             throw new common_1.UnauthorizedException('No refresh token provided.');
         }
-        const tokens = await this.authService.refreshToken({ refreshToken: token });
-        this.setRefreshCookie(res, tokens.refreshToken);
+        const result = await this.authService.refreshToken({ refreshToken: token });
+        this.setRefreshCookie(res, result.refreshToken);
         return {
             message: 'Token refreshed successfully.',
+            user: {
+                id: result.user.id,
+                email: result.user.email,
+                role: result.user.role,
+            },
             tokens: {
-                accessToken: tokens.accessToken,
+                accessToken: result.accessToken,
             },
         };
     }

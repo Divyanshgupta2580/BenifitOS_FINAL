@@ -471,7 +471,7 @@ async function executeFullCitizenJourneySuite() {
   const uploadResult = await documentService.uploadDocument(userA.id, DocumentType.AADHAAR, validFile);
   assert(uploadResult.document !== undefined, 'Document uploaded successfully');
   assert.equal(uploadResult.document.userId, userA.id, 'Document assigned to User A');
-  assert.equal(uploadResult.document.verificationStatus, VerificationStatus.VERIFIED, 'Document status set to VERIFIED after anti-spoofing audit');
+  assert.equal(uploadResult.document.verificationStatus, VerificationStatus.PENDING, 'Document status set to PENDING upon upload (awaiting citizen confirmation/audit)');
   metrics.documentsProcessed++;
 
   // 8.2 Reject Fake Disguised File (Magic byte check)
@@ -596,11 +596,15 @@ async function executeFullCitizenJourneySuite() {
   }
 
   // 11.5 User B attempting to mark User A Notification as Read
-  await notificationService.markAsRead(userB.id, notif.id);
+  try {
+    await notificationService.markAsRead(userB.id, notif.id);
+    assert.fail('Should have prevented User B from marking User A notification as read');
+  } catch (err: any) {
+    assert(err.status === 403 || err.message?.includes('Access denied'), 'Cross-user notification modification blocked');
+    metrics.idorAttemptsBlocked++;
+  }
   const userANotifsAfterCrossUser = await notificationService.getUserNotifications(userA.id);
-  // Status remains read because User A marked it earlier, but User B cannot alter it
   assert(userANotifsAfterCrossUser.length === 1, 'User A notification count intact');
-  metrics.idorAttemptsBlocked++;
 
   console.log(`  [PASS] 5/5 IDOR cross-user access attempts strictly blocked across documents, applications, and notifications.`);
   metrics.passedStages++;

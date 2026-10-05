@@ -184,7 +184,8 @@ let AuthService = AuthService_1 = class AuthService {
                 throw new common_1.UnauthorizedException('User no longer exists.');
             }
             await this.redisService.set(`bl_${dto.refreshToken}`, 'true', 7 * 24 * 60 * 60);
-            return await this.generateTokens(user);
+            const tokens = await this.generateTokens(user);
+            return { user, ...tokens };
         }
         catch {
             throw new common_1.UnauthorizedException('Invalid or expired refresh token.');

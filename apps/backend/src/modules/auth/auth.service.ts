@@ -182,7 +182,7 @@ export class AuthService {
     return { user, ...tokens };
   }
 
-  async refreshToken(dto: RefreshTokenDto): Promise<{ accessToken: string; refreshToken: string }> {
+  async refreshToken(dto: RefreshTokenDto): Promise<{ user: UserEntity; accessToken: string; refreshToken: string }> {
     try {
       const refreshSecret = process.env.JWT_REFRESH_SECRET;
       if (!refreshSecret) {
@@ -201,7 +201,8 @@ export class AuthService {
       }
       // Blacklist old refresh token (Token Family Rotation)
       await this.redisService.set(`bl_${dto.refreshToken}`, 'true', 7 * 24 * 60 * 60);
-      return await this.generateTokens(user);
+      const tokens = await this.generateTokens(user);
+      return { user, ...tokens };
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token.');
     }

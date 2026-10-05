@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { RecommendationController } from './recommendation.controller';
 import { RecommendationEngineService } from './recommendation.service';
 import { EligibilityEvaluatorService } from './services/eligibility-evaluator.service';
@@ -10,7 +10,7 @@ import { AiModule } from '../ai/ai.module';
 import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [AiModule, NotificationModule],
+  imports: [AiModule, forwardRef(() => NotificationModule)],
   controllers: [RecommendationController],
   providers: [
     RecommendationEngineService,

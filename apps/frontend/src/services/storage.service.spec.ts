@@ -18,6 +18,12 @@ describe('StorageService Specification', () => {
     expect(token).toBeNull();
   });
 
+  it('should block reading and setting accessToken in localStorage', async () => {
+    await storageService.setItem('accessToken', 'in_memory_only_token');
+    const token = await storageService.getItem('accessToken');
+    expect(token).toBeNull();
+  });
+
   it('should allow storing and retrieving non-sensitive keys', async () => {
     await storageService.setItem('theme', 'dark');
     const theme = await storageService.getItem('theme');

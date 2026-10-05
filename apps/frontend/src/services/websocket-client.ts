@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { storageService } from "./storage.service";
+import { tokenManager } from "./token-manager";
 import { aiApiService } from "./ai.service";
 
 export type WsConnectionStatus =
@@ -81,7 +81,7 @@ class WebSocketService {
     this.setStatus("CONNECTING");
 
     try {
-      const token = await storageService.getItem("accessToken");
+      const token = tokenManager.getAccessToken();
       if (!token) {
         this.setStatus("DISCONNECTED");
         this.isConnecting = false;
@@ -140,9 +140,9 @@ class WebSocketService {
         );
       });
 
-      this.socket.io.on("reconnect_attempt", async () => {
+      this.socket.io.on("reconnect_attempt", () => {
         this.setStatus("CONNECTING");
-        const latestToken = await storageService.getItem("accessToken");
+        const latestToken = tokenManager.getAccessToken();
         if (this.socket && latestToken) {
           this.socket.auth = { token: latestToken };
         }
@@ -166,7 +166,7 @@ class WebSocketService {
   }
 
   async reauthenticate(newToken?: string): Promise<boolean> {
-    const token = newToken || (await storageService.getItem("accessToken"));
+    const token = newToken || tokenManager.getAccessToken();
     if (!token) {
       this.disconnect();
       return false;

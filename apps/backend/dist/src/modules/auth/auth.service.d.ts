@@ -36,6 +36,7 @@ export declare class AuthService {
         refreshToken: string;
     }>;
     refreshToken(dto: RefreshTokenDto): Promise<{
+        user: UserEntity;
         accessToken: string;
         refreshToken: string;
     }>;
