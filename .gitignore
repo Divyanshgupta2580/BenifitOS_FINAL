@@ -65,5 +65,6 @@ apps/backend/uploads/
 !README.md
 !design.md
 !PRODUCTION_AUDIT_REPORT.md
+!FINAL_PRODUCTION_VERIFICATION.md
 !docs/*.md
 !docs/**/*.md
